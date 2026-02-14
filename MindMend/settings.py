@@ -13,6 +13,13 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from pathlib import Path
 
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    ...
+]
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -164,3 +171,5 @@ LOGIN_URL = 'login'
 MINDMEND_LLM_PROVIDER = os.environ.get('MINDMEND_LLM_PROVIDER', '')
 MINDMEND_GEMINI_API_KEY = os.environ.get('MINDMEND_GEMINI_API_KEY', '') or os.environ.get('GEMINI_API_KEY', '')
 MINDMEND_OPENAI_API_KEY = os.environ.get('MINDMEND_OPENAI_API_KEY', '') or os.environ.get('OPENAI_API_KEY', '')
+
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

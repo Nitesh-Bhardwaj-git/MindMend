@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Result{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="bg-white rounded-2xl shadow-lg p-8">
+        <h3 class="text-2xl font-semibold mb-4">{{ assessment_name }} Result</h3>
+        <p class="text-lg mb-2">Your score: <strong>{{ score }}</strong> / {{ max_score }}</p>
+        <p class="mb-4">Interpretation: <strong>{{ result_level }}</strong></p>
+        <p class="text-gray-600 text-sm mb-6">This is a screening tool only, not a diagnosis. Consider speaking with a mental health professional for guidance.</p>
+        <div class="flex gap-3">
+            <a href="{% url next_url %}" class="px-4 py-2 border-2 border-primary text-primary rounded-lg hover:bg-primary hover:text-white transition">Back to Assessments</a>
+            <a href="{% url 'resources' %}" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition">View Helplines</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

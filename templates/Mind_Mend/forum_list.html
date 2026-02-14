@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Community Forum{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h2 class="text-2xl font-semibold mb-2">Community Forum</h2>
+    <p class="text-gray-600 mb-6">Share experiences and connect with others. Posts can be anonymous.</p>
+    {% if user.is_authenticated %}
+    <a href="{% url 'forum_create' %}" class="inline-block px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition mb-6">New Post</a>
+    {% endif %}
+    {% for post in posts %}
+    <div class="forum-post">
+        <h5 class="font-semibold text-lg"><a href="{% url 'forum_detail' post.pk %}" class="text-primary hover:underline">{{ post.title }}</a></h5>
+        <p class="text-gray-500 text-sm mb-2">
+            {% if post.is_anonymous %}Anonymous{% else %}{{ post.author.username }}{% endif %} · {{ post.created_at|date:"M d, Y" }}
+            · {{ post.reply_count }} repl{{ post.reply_count|pluralize:"y,ies" }}
+        </p>
+        <p class="text-gray-700">{{ post.content|truncatewords:30 }}</p>
+    </div>
+    {% empty %}
+    <p class="text-gray-600">No posts yet. Be the first to share!</p>
+    {% endfor %}
+    {% if posts.has_other_pages %}
+    <nav class="mt-6 flex gap-4">
+        {% if posts.has_previous %}
+        <a href="?page={{ posts.previous_page_number }}" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Previous</a>
+        {% endif %}
+        {% if posts.has_next %}
+        <a href="?page={{ posts.next_page_number }}" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">Next</a>
+        {% endif %}
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

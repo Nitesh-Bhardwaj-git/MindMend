@@ -1,0 +1,386 @@
+{% extends 'base.html' %}
+{% block title %}Home{% endblock %}
+{% block content %}
+{% if user.is_authenticated %}
+<div id="locationShareBanner" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-4 hidden">
+    <div class="flex items-center justify-between gap-4 py-2 px-4 bg-primary/10 border border-primary/30 rounded-lg text-sm">
+        <span class="text-gray-700">📍 Share your location for accurate regional insights on our map.</span>
+        <div class="flex gap-2 shrink-0">
+            <button type="button" id="shareLocationBtn" class="px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary-dark transition font-medium">Share</button>
+            <button type="button" id="dismissLocationBanner" class="px-2 text-gray-500 hover:text-gray-700">×</button>
+        </div>
+    </div>
+</div>
+{% endif %}
+<div class="bg-gradient-to-br from-primary-dark via-primary to-primary-light text-white py-16 rounded-b-3xl mb-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h1 class="font-display font-semibold text-4xl md:text-5xl mb-4">MindMend</h1>
+        <p class="text-xl opacity-95 mb-2">AI-Enabled Health Awareness & Support Platform</p>
+        <p class="opacity-90 mb-6">A stigma-free, accessible space to understand your mental well-being and seek timely help.</p>
+        {% if not user.is_authenticated %}
+        <a href="{% url 'register' %}" class="inline-block bg-white text-primary-dark px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">Get Started</a>
+        <a href="{% url 'chat' %}" class="inline-block border-2 border-white px-6 py-3 rounded-lg font-semibold hover:bg-white/10 transition ml-2">Try AI Chat</a>
+        {% else %}
+        <a href="{% url 'dashboard' %}" class="inline-block bg-white text-primary-dark px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition">My Dashboard</a>
+        <a href="{% url 'chat' %}" class="inline-block border-2 border-white px-6 py-3 rounded-lg font-semibold hover:bg-white/10 transition ml-2">AI Chat</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <h2 class="text-center text-2xl font-semibold mb-8">What MindMend Offers</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="bg-white rounded-2xl p-6 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all text-center">
+            <div class="text-5xl mb-4">💬</div>
+            <h5 class="text-lg font-semibold mb-2">AI Chatbot</h5>
+            <p class="text-gray-600 mb-4">Sentiment analysis & personalized recommendations for emotional support.</p>
+            <a href="{% url 'chat' %}" class="inline-block border-2 border-primary text-primary px-4 py-2 rounded-lg hover:bg-primary hover:text-white transition">Start Chat</a>
+        </div>
+        <div class="bg-white rounded-2xl p-6 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all text-center">
+            <div class="text-5xl mb-4">📋</div>
+            <h5 class="text-lg font-semibold mb-2">Self-Assessments</h5>
+            <p class="text-gray-600 mb-4">PHQ-9, GAD-7 & PSS tools for mental health evaluation.</p>
+            <a href="{% url 'assessments' %}" class="inline-block border-2 border-primary text-primary px-4 py-2 rounded-lg hover:bg-primary hover:text-white transition">Take Assessment</a>
+        </div>
+        <div class="bg-white rounded-2xl p-6 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all text-center">
+            <div class="text-5xl mb-4">👥</div>
+            <h5 class="text-lg font-semibold mb-2">Community Forum</h5>
+            <p class="text-gray-600 mb-4">Anonymous, moderated peer support and experience sharing.</p>
+            <a href="{% url 'forum_list' %}" class="inline-block border-2 border-primary text-primary px-4 py-2 rounded-lg hover:bg-primary hover:text-white transition">Join Forum</a>
+        </div>
+        <div class="bg-white rounded-2xl p-6 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all text-center">
+            <div class="text-5xl mb-4">📅</div>
+            <h5 class="text-lg font-semibold mb-2">Counsellor Booking</h5>
+            <p class="text-gray-600 mb-4">Schedule professional mental health consultations.</p>
+            <a href="{% url 'counsellor_booking' %}" class="inline-block border-2 border-primary text-primary px-4 py-2 rounded-lg hover:bg-primary hover:text-white transition">Book Now</a>
+        </div>
+        <div class="bg-white rounded-2xl p-6 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all text-center">
+            <div class="text-5xl mb-4">📊</div>
+            <h5 class="text-lg font-semibold mb-2">Mood Tracking</h5>
+            <p class="text-gray-600 mb-4">Monitor emotional patterns over time.</p>
+            <a href="{% url 'mood_tracker' %}" class="inline-block border-2 border-primary text-primary px-4 py-2 rounded-lg hover:bg-primary hover:text-white transition">Track Mood</a>
+        </div>
+        <div class="bg-white rounded-2xl p-6 shadow-md hover:shadow-xl hover:-translate-y-1 transition-all text-center">
+            <div class="text-5xl mb-4">📞</div>
+            <h5 class="text-lg font-semibold mb-2">Helplines</h5>
+            <p class="text-gray-600 mb-4">24/7 access to KIRAN & Tele-MANAS.</p>
+            <a href="{% url 'resources' %}" class="inline-block border-2 border-primary text-primary px-4 py-2 rounded-lg hover:bg-primary hover:text-white transition">View Helplines</a>
+        </div>
+    </div>
+</div>
+
+<!-- FAQ Section -->
+<section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 mb-16">
+    <div class="flex items-center gap-2 mb-6">
+        <svg class="w-6 h-6 text-amber-500" fill="currentColor" viewBox="0 0 24 24"><path d="M9 21c0 .5.4 1 1 1h4c.6 0 1-.5 1-1v-1H9v1zm3-19C8.1 2 5 5.1 5 9c0 2.4 1.2 4.5 3 5.7V17c0 .5.4 1 1 1h6c.6 0 1-.5 1-1v-2.3c1.8-1.3 3-3.4 3-5.7 0-3.9-3.1-7-7-7z"/></svg>
+        <h2 class="text-2xl font-bold text-gray-900">Q&A FAQ</h2>
+    </div>
+    <div class="flex flex-wrap gap-2 mb-6">
+        <button type="button" class="faq-tab px-4 py-2 rounded-full text-sm font-medium transition bg-gray-200 text-gray-800" data-category="ai">🤖 AI & Platform</button>
+        <button type="button" class="faq-tab px-4 py-2 rounded-full text-sm font-medium transition text-gray-500 hover:bg-gray-100" data-category="privacy">🔒 Privacy & Security</button>
+        <button type="button" class="faq-tab px-4 py-2 rounded-full text-sm font-medium transition text-gray-500 hover:bg-gray-100" data-category="features">🌟 Features & Usage</button>
+        <button type="button" class="faq-tab px-4 py-2 rounded-full text-sm font-medium transition text-gray-500 hover:bg-gray-100" data-category="counseling">👩‍⚕️ Counseling</button>
+        <button type="button" class="faq-tab px-4 py-2 rounded-full text-sm font-medium transition text-gray-500 hover:bg-gray-100" data-category="support">💬 Usage & Support</button>
+    </div>
+    <div>
+        <!-- AI & Platform Overview -->
+        <div class="faq-category space-y-3" data-category="ai">
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>1. What is this platform?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">🧠 An AI-powered mental health support platform that helps you track mood, reduce stress, and improve emotional well-being.</p>
+                </div>
+            </div>
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>2. How does the AI detect my mental health condition?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">🤖 The AI analyzes your mood inputs, responses, and behavior patterns to identify emotional trends.</p>
+                </div>
+            </div>
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>3. Can the AI provide real-time emotional support?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">⏱️ Yes, the AI chatbot is available 24/7 for instant emotional guidance and support.</p>
+                </div>
+            </div>
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>4. What makes this platform different from others?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">✨ It combines AI detection, real-time support, personalized care, and counselor booking in one place.</p>
+                </div>
+            </div>
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>5. Why should I trust this platform?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">🤝 The platform uses secure technology, verified experts, and ethical AI practices to ensure safe and reliable support.</p>
+                </div>
+            </div>
+        </div>
+        <!-- Privacy & Security -->
+        <div class="faq-category hidden space-y-3" data-category="privacy">
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>1. Is it confidential?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">🔒 Yes, all your data and conversations are secure, encrypted, and completely private.</p>
+                </div>
+            </div>
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>2. Can I delete my data anytime?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">🗑️ Yes, you can request permanent deletion of your data at any time, and it will be securely removed from our system.</p>
+                </div>
+            </div>
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>3. How is my data protected on this platform?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">🛡️ Your data is protected using advanced encryption, secure servers, and strict access controls.</p>
+                </div>
+            </div>
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>4. Will my data be shared with anyone?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">🔐 No, your data is never shared without your consent.</p>
+                </div>
+            </div>
+        </div>
+        <!-- Features & Usage -->
+        <div class="faq-category hidden space-y-3" data-category="features">
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>1. Who can use this platform?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">👥 Anyone—students, professionals, or anyone seeking mental health support and emotional well-being.</p>
+                </div>
+            </div>
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>2. How is this platform helpful for students?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">🎓 It helps students manage exam stress, anxiety, focus issues, and emotional pressure.</p>
+                </div>
+            </div>
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>3. Can I track my mood daily?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">📊 Yes, you can log and monitor your daily mood and emotional patterns.</p>
+                </div>
+            </div>
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>4. Does the platform support multiple languages?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">🌐 Yes, the platform supports multiple languages for better accessibility.</p>
+                </div>
+            </div>
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>5. Can I use voice instead of typing?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">🎤 Yes, you can interact using voice commands for a more comfortable experience.</p>
+                </div>
+            </div>
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>6. Is it free?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">💸 Yes, basic features are free, while advanced services like counseling may have a cost.</p>
+                </div>
+            </div>
+        </div>
+        <!-- Counseling & Professional Help -->
+        <div class="faq-category hidden space-y-3" data-category="counseling">
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>1. Can I talk to a real counselor?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">👩‍⚕️ Yes, you can book sessions with verified professional counselors directly on the platform.</p>
+                </div>
+            </div>
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>2. How do I book a counseling session?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">📅 Go to the "Book Counselor" section, choose a counselor, select a time, and confirm your session.</p>
+                </div>
+            </div>
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>3. Are the counselors verified professionals?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">✅ Yes, all counselors are certified and verified mental health experts.</p>
+                </div>
+            </div>
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>4. Are counseling sessions anonymous?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">🕶️ Yes, sessions are private and confidential, and you may remain anonymous if allowed.</p>
+                </div>
+            </div>
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>5. Is there any charge for online counseling session?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">💳 Yes, online counseling sessions may have a fee depending on the counselor and service.</p>
+                </div>
+            </div>
+        </div>
+        <!-- Usage & Support -->
+        <div class="faq-category hidden space-y-3" data-category="support">
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>1. Can I use the platform on mobile devices?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">📱 Yes, the platform is fully mobile-friendly and works on phones, tablets, and desktops.</p>
+                </div>
+            </div>
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>2. How can I give feedback or suggestions?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">💬 You can share feedback through our <a href="{% url 'contact_us' %}" class="text-primary font-medium hover:underline">Contact Us</a> page anytime.</p>
+                </div>
+            </div>
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>3. Can I use the platform 24/7?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">🕐 Yes, the platform is available anytime, anywhere for your support.</p>
+                </div>
+            </div>
+            <div class="faq-item bg-gray-50 rounded-lg border border-gray-100 overflow-hidden">
+                <button type="button" class="faq-question w-full flex items-center justify-between gap-4 px-4 py-3 text-left text-gray-900 font-medium hover:bg-gray-100/50 transition">
+                    <span>4. Do I need an account to use all features?</span>
+                    <span class="faq-icon text-xl text-gray-500 shrink-0">+</span>
+                </button>
+                <div class="faq-answer hidden px-4 pb-3 pt-0">
+                    <p class="text-gray-600 text-sm">👤 Yes, an account is required to access personalized features and track progress.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+{% block scripts %}
+{{ block.super }}
+{% if user.is_authenticated %}
+<script>
+(function(){
+    if (localStorage.getItem('mindmend_location_shared') || localStorage.getItem('mindmend_location_dismissed')) return;
+    const banner = document.getElementById('locationShareBanner');
+    if (!banner) return;
+    banner.classList.remove('hidden');
+    document.getElementById('dismissLocationBanner')?.addEventListener('click', function(){
+        banner.classList.add('hidden');
+        localStorage.setItem('mindmend_location_dismissed', '1');
+    });
+    document.getElementById('shareLocationBtn')?.addEventListener('click', function(){
+        if (!navigator.geolocation) { alert('Geolocation not supported.'); return; }
+        const btn = this;
+        btn.disabled = true;
+        btn.textContent = '...';
+        navigator.geolocation.getCurrentPosition(
+            function(pos){
+                fetch('{% url "share_location_api" %}', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({lat: pos.coords.latitude, lon: pos.coords.longitude})
+                }).then(function(r){ return r.json(); }).then(function(data){
+                    banner.classList.add('hidden');
+                    localStorage.setItem('mindmend_location_shared', '1');
+                }).catch(function(){ btn.disabled = false; btn.textContent = 'Share'; });
+            },
+            function(){ btn.disabled = false; btn.textContent = 'Share'; },
+            {enableHighAccuracy: true, timeout: 10000}
+        );
+    });
+})();
+</script>
+{% endif %}
+<script>
+(function(){
+    var tabs = document.querySelectorAll('.faq-tab');
+    var categories = document.querySelectorAll('.faq-category');
+    tabs.forEach(function(tab){
+        tab.addEventListener('click', function(){
+            var cat = this.getAttribute('data-category');
+            tabs.forEach(function(t){ t.classList.remove('bg-gray-200', 'text-gray-800'); t.classList.add('text-gray-500'); });
+            this.classList.add('bg-gray-200', 'text-gray-800'); this.classList.remove('text-gray-500');
+            categories.forEach(function(c){
+                c.classList.toggle('hidden', c.getAttribute('data-category') !== cat);
+            });
+        });
+    });
+    document.querySelectorAll('.faq-question').forEach(function(btn){
+        btn.addEventListener('click', function(){
+            var item = this.closest('.faq-item');
+            var answer = item.querySelector('.faq-answer');
+            var icon = item.querySelector('.faq-icon');
+            var isOpen = !answer.classList.contains('hidden');
+            document.querySelectorAll('.faq-answer').forEach(function(a){ a.classList.add('hidden'); });
+            document.querySelectorAll('.faq-icon').forEach(function(i){ i.textContent = '+'; });
+            if (!isOpen) {
+                answer.classList.remove('hidden');
+                icon.textContent = '−';
+            }
+        });
+    });
+})();
+</script>
+{% endblock %}

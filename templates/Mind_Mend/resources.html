@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Helplines & Resources{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <h2 class="text-2xl font-semibold mb-2">24/7 Mental Health Helplines</h2>
+    <p class="text-lg text-gray-600 mb-8">Free, confidential support. Available in multiple languages.</p>
+    {% for h in helplines %}
+    <div class="bg-white rounded-2xl shadow-lg p-8 mb-6">
+        <h4 class="text-xl font-semibold text-primary mb-2">{{ h.name }}</h4>
+        <p class="text-3xl font-bold mb-3">{{ h.number }}</p>
+        <p class="text-gray-700 mb-2">{{ h.desc }}</p>
+        <p class="text-sm text-gray-500">Languages: {{ h.languages }}</p>
+    </div>
+    {% endfor %}
+    <div class="bg-gray-50 rounded-2xl p-8 border border-gray-200">
+        <h5 class="text-lg font-semibold mb-3">When to Call</h5>
+        <p class="text-gray-700">Reach out if you're experiencing stress, anxiety, depression, panic, trauma, substance use concerns, or thoughts of self-harm. These helplines offer early screening, psychological support, distress management, and crisis intervention.</p>
+    </div>
+</div>
+{% endblock %}

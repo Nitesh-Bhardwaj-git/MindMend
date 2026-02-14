@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+{% block title %}Mental Health Heatmap{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-6">
+        <h2 class="text-2xl font-semibold mb-1">Mental Health Heatmap</h2>
+        <p class="text-gray-600">Stress levels, depression trends, and mood analytics by region — aggregated from assessments & mood tracking</p>
+    </div>
+
+    <div class="flex flex-wrap gap-4 mb-6">
+        <form method="get" class="flex items-center gap-2">
+            <input type="hidden" name="days" value="{{ days }}">
+            <label class="text-sm text-gray-600">Color map by:</label>
+            <select name="metric" onchange="this.form.submit()" class="rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                <option value="mood" {% if metric == 'mood' %}selected{% endif %}>Mood (1–5, higher=better)</option>
+                <option value="stress" {% if metric == 'stress' %}selected{% endif %}>Stress (PSS, lower=better)</option>
+                <option value="depression" {% if metric == 'depression' %}selected{% endif %}>Depression (PHQ-9, lower=better)</option>
+            </select>
+        </form>
+        <form method="get" class="flex items-center gap-2">
+            <input type="hidden" name="metric" value="{{ metric }}">
+            <label class="text-sm text-gray-600">Period:</label>
+            <select name="days" onchange="this.form.submit()" class="rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                <option value="30" {% if days == 30 %}selected{% endif %}>30 days</option>
+                <option value="60" {% if days == 60 %}selected{% endif %}>60 days</option>
+                <option value="90" {% if days == 90 %}selected{% endif %}>90 days</option>
+            </select>
+        </form>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-amber-500">
+            <h5 class="font-semibold mb-2">Stress Level by Region (PSS)</h5>
+            <p class="text-xs text-gray-500 mb-3">Lower score = less stress. Red = higher stress.</p>
+            {% if stress_by_region %}
+            <div class="space-y-2 max-h-48 overflow-y-auto">
+                {% for r in stress_by_region %}
+                <div class="flex justify-between items-center text-sm">
+                    <span>{{ r.state|default:"" }}{% if r.state and r.country %}, {% endif %}{{ r.country }}</span>
+                    <span class="px-2 py-0.5 rounded font-medium {% if r.avg >= 20 %}bg-red-100 text-red-800{% elif r.avg >= 14 %}bg-amber-100 text-amber-800{% else %}bg-green-100 text-green-800{% endif %}">{{ r.avg }} (n={{ r.n }})</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-500 text-sm">No PSS data in this period.</p>
+            {% endif %}
+        </div>
+        <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-500">
+            <h5 class="font-semibold mb-2">Depression Trend by Region (PHQ-9)</h5>
+            <p class="text-xs text-gray-500 mb-3">Lower score = less depression. Red = higher.</p>
+            {% if depression_by_region %}
+            <div class="space-y-2 max-h-48 overflow-y-auto">
+                {% for r in depression_by_region %}
+                <div class="flex justify-between items-center text-sm">
+                    <span>{{ r.state|default:"" }}{% if r.state and r.country %}, {% endif %}{{ r.country }}</span>
+                    <span class="px-2 py-0.5 rounded font-medium {% if r.avg >= 15 %}bg-red-100 text-red-800{% elif r.avg >= 10 %}bg-amber-100 text-amber-800{% else %}bg-green-100 text-green-800{% endif %}">{{ r.avg }} (n={{ r.n }})</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-500 text-sm">No PHQ-9 data in this period.</p>
+            {% endif %}
+        </div>
+        <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-500">
+            <h5 class="font-semibold mb-2">Mood Analytics by Region</h5>
+            <p class="text-xs text-gray-500 mb-3">1–5 scale. Higher = better mood. Green = better.</p>
+            {% if mood_by_region %}
+            <div class="space-y-2 max-h-48 overflow-y-auto">
+                {% for r in mood_by_region %}
+                <div class="flex justify-between items-center text-sm">
+                    <span>{{ r.state|default:"" }}{% if r.state and r.country %}, {% endif %}{{ r.country }}</span>
+                    <span class="px-2 py-0.5 rounded font-medium {% if r.avg <= 2 %}bg-red-100 text-red-800{% elif r.avg <= 3 %}bg-amber-100 text-amber-800{% else %}bg-green-100 text-green-800{% endif %}">{{ r.avg }}/5 (n={{ r.n }})</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-500 text-sm">No mood data in this period.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
+        <div class="p-4 border-b bg-gray-50 flex items-center gap-2">
+            <span class="text-sm font-medium text-gray-600">Map:</span>
+            <span class="flex gap-2">
+                <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">High stress / Low mood</span>
+                <span class="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs">Moderate</span>
+                <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Low stress / High mood</span>
+            </span>
+        </div>
+        <div id="map" class="w-full h-[450px]"></div>
+    </div>
+
+    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+        <strong>How it works:</strong> Data is aggregated from logged-in users who have completed PHQ-9, PSS, or mood tracking, matched to their access location. <strong>For accurate locations,</strong> ask users to click "Share" in the location banner (uses browser GPS). Otherwise locations come from IP (approximate). Regions with more participants show more reliable averages. Privacy-preserving — no individual data shown.
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+(function() {
+    const markers = {{ markers_json|safe }};
+    const metric = '{{ metric }}';
+
+    function getColor(m) {
+        if (metric === 'mood') {
+            const v = m.avg_mood;
+            if (v == null) return '#9ca3af';
+            if (v <= 2) return '#ef4444';
+            if (v <= 3) return '#f59e0b';
+            return '#22c55e';
+        }
+        if (metric === 'stress') {
+            const v = m.avg_pss;
+            if (v == null) return '#9ca3af';
+            if (v >= 20) return '#ef4444';
+            if (v >= 14) return '#f59e0b';
+            return '#22c55e';
+        }
+        if (metric === 'depression') {
+            const v = m.avg_phq9;
+            if (v == null) return '#9ca3af';
+            if (v >= 15) return '#ef4444';
+            if (v >= 10) return '#f59e0b';
+            return '#22c55e';
+        }
+        return '#6b7280';
+    }
+
+    const map = L.map('map').setView([20.5937, 78.9629], 3);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    markers.forEach(function(m) {
+        if (m.lat && m.lon) {
+            const val = metric === 'mood' ? m.avg_mood : (metric === 'stress' ? m.avg_pss : m.avg_phq9);
+            const label = metric === 'mood' ? 'Mood' : (metric === 'stress' ? 'Stress (PSS)' : 'Depression (PHQ-9)');
+            const popup = '<strong>' + (m.label || 'Unknown') + '</strong><br>'
+                + (m.avg_mood != null ? 'Mood: ' + m.avg_mood + '/5<br>' : '')
+                + (m.avg_pss != null ? 'Stress (PSS): ' + m.avg_pss + '<br>' : '')
+                + (m.avg_phq9 != null ? 'Depression (PHQ-9): ' + m.avg_phq9 + '<br>' : '')
+                + 'Sample: ' + (m.n || 0);
+            const color = getColor(m);
+            L.circleMarker([m.lat, m.lon], {
+                radius: Math.min(8 + (m.n || 1) * 2, 25),
+                fillColor: color,
+                color: '#333',
+                weight: 1,
+                opacity: 1,
+                fillOpacity: 0.7
+            }).addTo(map).bindPopup(popup);
+        }
+    });
+
+    const valid = markers.filter(function(m){ return m.lat && m.lon && m.lat !== 0 && m.lon !== 0; });
+    if (valid.length > 0) {
+        const bounds = L.latLngBounds(valid.map(function(m){ return [m.lat, m.lon]; }));
+        map.fitBounds(bounds.pad(0.1));
+    }
+})();
+</script>
+{% endblock %}

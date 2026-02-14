@@ -1,0 +1,10 @@
+Django>=5.0,<7.0
+python-dotenv>=1.0.0
+Pillow>=10.0
+django-widget-tweaks>=1.5
+google-generativeai>=0.8.0
+openai>=1.0.0
+gunicorn>=21.0
+whitenoise>=6.0
+psycopg2-binary>=2.9
+dj-database-url>=2.0

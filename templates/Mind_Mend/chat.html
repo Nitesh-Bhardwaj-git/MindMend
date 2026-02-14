@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+{% block title %}AI Chat{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div>
+            <h2 class="text-2xl font-semibold mb-1">Chat</h2>
+            <p class="text-gray-600">Talk to someone who listens. Share what's on your mind—English & Hindi.</p>
+        </div>
+        <div class="flex rounded-lg border border-primary overflow-hidden">
+            <label class="flex cursor-pointer">
+                <input type="radio" class="peer sr-only" name="lang" id="langEn" value="en" checked>
+                <span class="px-4 py-2 peer-checked:bg-primary peer-checked:text-white bg-white text-gray-700">English</span>
+            </label>
+            <label class="flex cursor-pointer border-l border-gray-200">
+                <input type="radio" class="peer sr-only" name="lang" id="langHi" value="hi">
+                <span class="px-4 py-2 peer-checked:bg-primary peer-checked:text-white bg-white text-gray-700">Hindi</span>
+            </label>
+        </div>
+    </div>
+    <div class="bg-white rounded-2xl shadow-lg overflow-hidden max-w-2xl mx-auto">
+        <div class="h-96 overflow-y-auto p-4 bg-gray-50" id="chatMessages">
+            <div class="msg-bot" id="welcomeMsg">Hey! Good to see you. How are you doing today? Whatever you're feeling—good, not so good, or just okay—I'm here to listen. Tell me what's on your mind.</div>
+        </div>
+        <div class="p-4 border-t">
+            <form id="chatForm" class="flex gap-2 items-center">
+                <input type="text" id="messageInput" class="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none" placeholder="Type your message..." autocomplete="off">
+                <button type="button" id="micBtn" class="p-3 rounded-lg border border-gray-300 hover:bg-gray-100 transition" title="Voice input (speak instead of type)">
+                    <svg class="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/></svg>
+                </button>
+                <button type="submit" class="px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary-dark transition">Send</button>
+            </form>
+            <p id="micStatus" class="text-sm text-gray-500 mt-1 hidden">Listening... speak now.</p>
+        </div>
+    </div>
+    <div id="recommendations" class="mt-4 max-w-2xl mx-auto"></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function() {
+    const form = document.getElementById('chatForm');
+    const input = document.getElementById('messageInput');
+    const messages = document.getElementById('chatMessages');
+    const recs = document.getElementById('recommendations');
+    const welcomeMsg = document.getElementById('welcomeMsg');
+    const langEn = document.getElementById('langEn');
+    const langHi = document.getElementById('langHi');
+    let sessionId = localStorage.getItem('mindmend_session') || '';
+
+    function getLang() { return langHi.checked ? 'hi' : 'en'; }
+    const welcomeEn = "Hey! Good to see you. How are you doing today? Whatever you're feeling—good, not so good, or just okay—I'm here to listen. Tell me what's on your mind.";
+    const welcomeHi = "नमस्ते! अच्छा लगा कि आप आए। आज कैसे हैं? जो भी महसूस कर रहे हों—अच्छा, अच्छा नहीं, या बस ठीक—मैं सुनने के लिए यहां हूं। बताइए क्या चल रहा है।";
+    function updatePlaceholder() {
+        input.placeholder = getLang() === 'hi' ? 'अपना संदेश लिखें...' : 'Type your message...';
+        if (welcomeMsg && messages.querySelectorAll('.msg-bot, .msg-user').length <= 1) {
+            welcomeMsg.textContent = getLang() === 'hi' ? welcomeHi : welcomeEn;
+        }
+    }
+    langEn.addEventListener('change', updatePlaceholder);
+    langHi.addEventListener('change', updatePlaceholder);
+
+    function addMsg(text, isUser) {
+        const div = document.createElement('div');
+        div.className = isUser ? 'msg-user' : 'msg-bot';
+        div.textContent = text;
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    // Load prior conversation for logged-in users
+    const priorMessages = {{ prior_messages_json|safe }};
+    if (priorMessages && priorMessages.length > 0) {
+        welcomeMsg.style.display = 'none';
+        priorMessages.forEach(function(m) {
+            addMsg(m.content, m.role === 'user');
+        });
+    }
+
+    function showRecommendations(items) {
+        recs.innerHTML = '';
+        if (!items || items.length === 0) return;
+        items.forEach(r => {
+            const card = document.createElement('div');
+            card.className = 'recommendation-card' + (r.priority === 'urgent' ? ' urgent' : '');
+            card.innerHTML = '<strong>' + r.title + '</strong><p class="mb-0 mt-1">' + r.content + '</p>';
+            recs.appendChild(card);
+        });
+    }
+
+    // Voice input
+    const micBtn = document.getElementById('micBtn');
+    const micStatus = document.getElementById('micStatus');
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    let isListening = false;
+
+    if (SpeechRecognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = false;
+        recognition.interimResults = true;
+        recognition.lang = getLang() === 'hi' ? 'hi-IN' : 'en-IN';
+
+        recognition.onresult = function(e) {
+            const transcript = Array.from(e.results).map(r => r[0].transcript).join('').trim();
+            if (transcript) input.value = transcript;
+        };
+        recognition.onend = function() {
+            isListening = false;
+            micBtn.classList.remove('bg-red-100', 'border-red-400');
+            micStatus.classList.add('hidden');
+        };
+        recognition.onerror = function() {
+            isListening = false;
+            micBtn.classList.remove('bg-red-100', 'border-red-400');
+            micStatus.classList.add('hidden');
+        };
+
+        micBtn.addEventListener('click', function() {
+            if (isListening) {
+                recognition.stop();
+                return;
+            }
+            input.focus();
+            recognition.lang = getLang() === 'hi' ? 'hi-IN' : 'en-IN';
+            recognition.start();
+            isListening = true;
+            micBtn.classList.add('bg-red-100', 'border-red-400');
+            micStatus.classList.remove('hidden');
+            micStatus.textContent = 'Listening... speak now.';
+        });
+    } else {
+        micBtn.style.display = 'none';
+    }
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const msg = input.value.trim();
+        if (!msg) return;
+        addMsg(msg, true);
+        input.value = '';
+        const btn = form.querySelector('button');
+        btn.disabled = true;
+
+        try {
+            const res = await fetch('{% url "chat_api" %}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: msg, session_id: sessionId, lang: getLang() })
+            });
+            const data = await res.json();
+            if (data.session_id) {
+                sessionId = data.session_id;
+                localStorage.setItem('mindmend_session', sessionId);
+            }
+            addMsg(data.response || 'Sorry, something went wrong.', false);
+            showRecommendations(data.recommendations || []);
+        } catch (err) {
+            addMsg('Unable to connect. Please try again.', false);
+        }
+        btn.disabled = false;
+    });
+})();
+</script>
+{% endblock %}

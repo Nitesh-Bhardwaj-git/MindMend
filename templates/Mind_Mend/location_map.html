@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% block title %}User Location Map{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+        <div>
+            <h2 class="text-2xl font-semibold mb-1">User Location Map</h2>
+            <p class="text-gray-600">Where users are accessing MindMend from — Country, State, City</p>
+        </div>
+        <a href="{% url 'mental_health_heatmap' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/90 hover:bg-amber-500 text-white rounded-lg font-medium transition">
+            🧠 Mental Health Heatmap
+        </a>
+        <div class="flex items-center gap-4">
+            <form method="get" class="flex items-center gap-2">
+                <label class="text-sm text-gray-600">Last</label>
+                <select name="days" onchange="this.form.submit()" class="rounded-lg border border-gray-300 px-3 py-2 text-sm">
+                    <option value="7" {% if days == 7 %}selected{% endif %}>7 days</option>
+                    <option value="14" {% if days == 14 %}selected{% endif %}>14 days</option>
+                    <option value="30" {% if days == 30 %}selected{% endif %}>30 days</option>
+                    <option value="90" {% if days == 90 %}selected{% endif %}>90 days</option>
+                </select>
+            </form>
+            <div class="flex gap-4 text-sm">
+                <span class="px-3 py-1 bg-primary/10 text-primary rounded-lg">{{ stats.total|default:0 }} accesses</span>
+                <span class="px-3 py-1 bg-primary/10 text-primary rounded-lg">{{ stats.countries|default:0 }} countries</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow-lg p-5 border-l-4 border-primary">
+            <p class="text-sm text-gray-500 font-medium">Active Users Right Now</p>
+            <p class="text-3xl font-bold text-primary mt-1">{{ active_now|default:0 }}</p>
+            <p class="text-xs text-gray-500 mt-1">Unique IPs in last 15 min</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-lg p-5">
+            <p class="text-sm text-gray-500 font-medium">Total Accesses ({{ days }}d)</p>
+            <p class="text-3xl font-bold text-gray-800 mt-1">{{ stats.total|default:0 }}</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-lg p-5">
+            <p class="text-sm text-gray-500 font-medium">Countries Reached</p>
+            <p class="text-3xl font-bold text-gray-800 mt-1">{{ stats.countries|default:0 }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h5 class="font-semibold mb-4 flex items-center gap-2">📈 Total Users per Country</h5>
+            {% if users_per_country %}
+            <div class="space-y-2 max-h-64 overflow-y-auto">
+                {% for row in users_per_country %}
+                <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                    <span class="font-medium">{{ row.country|default:"Unknown" }}</span>
+                    <span class="px-2 py-0.5 bg-primary/10 text-primary rounded font-medium">{{ row.count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-500 text-sm">No country data in this period.</p>
+            {% endif %}
+        </div>
+        <div class="bg-white rounded-xl shadow-lg p-6">
+            <h5 class="font-semibold mb-4 flex items-center gap-2">📈 Total Users per State</h5>
+            {% if users_per_state %}
+            <div class="space-y-2 max-h-64 overflow-y-auto">
+                {% for row in users_per_state %}
+                <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                    <span class="font-medium">{{ row.state|default:"Unknown" }}{% if row.country %}, {{ row.country }}{% endif %}</span>
+                    <span class="px-2 py-0.5 bg-primary/10 text-primary rounded font-medium">{{ row.count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-gray-500 text-sm">No state data in this period.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
+        <div id="map" class="w-full h-[500px]"></div>
+    </div>
+
+    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
+        <strong>Privacy note:</strong> Locations come from IP (approximate) or browser GPS (accurate). Users see a "Share location" banner for precise positioning. Markers show 📍 GPS when shared, or IP for IP-based. Local dev shows "Localhost".
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+(function() {
+    const markers = {{ markers_json|safe }};
+    const map = L.map('map').setView([20.5937, 78.9629], 3); // India center, zoomed out
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }).addTo(map);
+
+    markers.forEach(function(m) {
+        if (m.lat && m.lon) {
+            const popup = '<strong>' + (m.label || 'Unknown') + '</strong><br>'
+                + 'User: ' + (m.user || 'Anonymous') + '<br>'
+                + (m.date ? 'When: ' + m.date + '<br>' : '')
+                + (m.page ? 'Page: ' + m.page + '<br>' : '')
+                + (m.source === 'browser' ? '<span class="text-green-600">📍 GPS</span>' : '<span class="text-gray-500">IP</span>');
+            L.marker([m.lat, m.lon]).addTo(map).bindPopup(popup);
+        }
+    });
+
+    if (markers.length > 0) {
+        const valid = markers.filter(function(m){ return m.lat && m.lon && m.lat !== 0 && m.lon !== 0; });
+        if (valid.length > 0) {
+            const bounds = L.latLngBounds(valid.map(function(m){ return [m.lat, m.lon]; }));
+            map.fitBounds(bounds.pad(0.1));
+        }
+    }
+})();
+</script>
+{% endblock %}

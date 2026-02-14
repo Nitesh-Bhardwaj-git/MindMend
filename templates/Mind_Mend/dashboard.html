@@ -4,21 +4,22 @@
 <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="flex flex-wrap justify-between items-center gap-4 mb-8">
         <h2 class="text-2xl font-semibold">My Dashboard</h2>
-        <div class="flex gap-2">
-            <a href="{% url 'location_map' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition font-medium">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
-                Location Map
-            </a>
-            <a href="{% url 'mental_health_heatmap' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/20 text-amber-800 rounded-lg hover:bg-amber-500 hover:text-white transition font-medium">
-                🧠 Heatmap
-            </a>
+        <div class="flex gap-2 flex-wrap">
+            <a href="{% url 'mood_tracker' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition font-medium">Mood</a>
+            <a href="{% url 'location_map' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition font-medium">Map</a>
+            <a href="{% url 'mental_health_heatmap' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/20 text-amber-800 rounded-lg hover:bg-amber-500 hover:text-white transition font-medium">🧠 Heatmap</a>
+            {% if is_counsellor %}
+            <a href="{% url 'counsellor_sessions' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition font-medium">💬 My Sessions</a>
+            {% endif %}
         </div>
     </div>
+
+    <!-- Widget 1: Mental health score -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="bg-white rounded-2xl shadow-lg p-6">
-            <h5 class="font-semibold mb-2">Average Mood (14 days)</h5>
-            <p class="text-4xl font-bold text-primary mb-1">{% if avg_mood %}{{ avg_mood }}{% else %}—{% endif %}</p>
-            <small class="text-gray-500">1=Very Low, 5=Very Good</small>
+        <div class="bg-white rounded-2xl shadow-lg p-6 border-l-4 border-primary">
+            <h5 class="font-semibold mb-2">🧠 Mental health score</h5>
+            <p class="text-4xl font-bold text-primary mb-1">{{ mental_health_score|default:"—" }}<span class="text-xl font-normal text-gray-500">/100</span></p>
+            <small class="text-gray-500">From mood + assessments. Higher = better.</small>
         </div>
         <div class="md:col-span-2 bg-white rounded-2xl shadow-lg p-6">
             <h5 class="font-semibold mb-4">Recent Assessments</h5>
@@ -33,21 +34,40 @@
             {% endfor %}
         </div>
     </div>
-    <div class="bg-white rounded-2xl shadow-lg p-6">
-        <h5 class="font-semibold mb-4">Mood Trend (Last 14 Days)</h5>
-        {% if mood_data %}
-        <div class="flex items-end gap-1 h-32">
-            {% for d in mood_data %}
-            <div class="flex-1 bg-primary rounded-t min-h-[10px]" style="height: {% widthratio d.mood 5 100 %}%;" title="{{ d.date }}: {{ d.mood }}"></div>
+
+    <!-- Wellness suggestions -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+        <h5 class="font-semibold mb-4">🧘 Wellness suggestions</h5>
+        <p class="text-xs text-gray-500 mb-3">Personalised tips from your data.</p>
+        {% if wellness_suggestions %}
+        <ul class="space-y-2">
+            {% for tip in wellness_suggestions %}
+            <li class="flex items-start gap-2 text-gray-700 text-sm">
+                <span class="text-primary mt-0.5">•</span>
+                <span>{{ tip }}</span>
+            </li>
             {% endfor %}
-        </div>
-        <div class="flex justify-between mt-2 text-xs text-gray-500">
-            {% for d in mood_data %}
-            <span>{{ d.date|slice:"5:" }}</span>
-            {% endfor %}
-        </div>
+        </ul>
         {% else %}
-        <p class="text-gray-600">Log moods to see your trend. <a href="{% url 'mood_tracker' %}" class="text-primary font-medium hover:underline">Track mood</a></p>
+        <p class="text-gray-600">Log mood regularly to get suggestions.</p>
+        {% endif %}
+    </div>
+
+    <!-- Emotional patterns (kept) -->
+    <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
+        <h5 class="font-semibold mb-4">Emotional pattern detection</h5>
+        <p class="text-sm text-gray-600 mb-4">Insights from your mood and activity logs (last 90 days).</p>
+        {% if emotional_patterns %}
+        <ul class="space-y-2">
+            {% for p in emotional_patterns %}
+            <li class="flex items-start gap-2 text-gray-700">
+                <span class="text-primary mt-0.5">•</span>
+                <span>{{ p }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="text-gray-600">Keep logging mood and activities to discover patterns. <a href="{% url 'mood_tracker' %}" class="text-primary font-medium hover:underline">Track mood</a></p>
         {% endif %}
     </div>
 </div>

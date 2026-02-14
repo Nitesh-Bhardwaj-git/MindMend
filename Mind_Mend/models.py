@@ -43,6 +43,47 @@ class CounsellorBooking(models.Model):
         ordering = ['date', 'time_slot']
 
 
+class CounsellorChatMessage(models.Model):
+    """Live chat messages between user and counsellor for a booking."""
+    booking = models.ForeignKey(CounsellorBooking, on_delete=models.CASCADE)
+    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+
+class CounsellorReview(models.Model):
+    """Rating and review for a completed counsellor session."""
+    booking = models.OneToOneField(CounsellorBooking, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    rating = models.PositiveSmallIntegerField(
+        choices=[(i, str(i)) for i in range(1, 6)],
+        help_text='1-5 stars'
+    )
+    review_text = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+
+class SleepLog(models.Model):
+    """Daily sleep log for wellness tracking."""
+    QUALITY_CHOICES = [(i, str(i) + ' – ' + ['Very poor', 'Poor', 'Fair', 'Good', 'Very good'][i - 1]) for i in range(1, 6)]
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    date = models.DateField()
+    quality = models.PositiveSmallIntegerField(choices=QUALITY_CHOICES, help_text='1–5')
+    hours = models.DecimalField(max_digits=3, decimal_places=1, help_text='Hours slept')
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['user', 'date']
+        ordering = ['-date']
+
+
 class MoodEntry(models.Model):
     """Daily mood tracking."""
     MOOD_CHOICES = [
@@ -77,8 +118,14 @@ class MoodEntry(models.Model):
 
 
 class ForumPost(models.Model):
-    """Anonymous community forum posts."""
+    """Anonymous community forum posts — support, discussion, recovery stories."""
+    CATEGORY_CHOICES = [
+        ('support', 'Support'),
+        ('discussion', 'Discussion'),
+        ('recovery', 'Recovery Story'),
+    ]
     author = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='support')
     title = models.CharField(max_length=200)
     content = models.TextField()
     is_anonymous = models.BooleanField(default=True)

@@ -12,9 +12,17 @@ def _call_llm(user_message, conversation_history, lang):
     """
     Call Gemini or OpenAI for human-like response. Returns response text or None on failure.
     """
-    provider = getattr(settings, 'MINDMEND_LLM_PROVIDER', '') or ''
+    provider = (getattr(settings, 'MINDMEND_LLM_PROVIDER', '') or '').strip().lower()
+    gemini_key = getattr(settings, 'MINDMEND_GEMINI_API_KEY', '') or ''
+    openai_key = getattr(settings, 'MINDMEND_OPENAI_API_KEY', '') or ''
     if not provider:
-        return None
+        # Auto-pick provider when keys are present to avoid silent fallback.
+        if gemini_key:
+            provider = 'gemini'
+        elif openai_key:
+            provider = 'openai'
+        else:
+            return None
 
     is_hindi = lang == 'hi'
     lang_instruction = "Respond in Hindi (हिन्दी)." if is_hindi else "Respond in English."
@@ -36,8 +44,8 @@ Guidelines:
     messages.append({"role": "user", "content": user_message})
 
     try:
-        if provider.lower() == 'gemini':
-            api_key = getattr(settings, 'MINDMEND_GEMINI_API_KEY', '') or ''
+        if provider == 'gemini':
+            api_key = gemini_key
             if not api_key:
                 return None
             import google.generativeai as genai
@@ -88,8 +96,8 @@ Guidelines:
                 except Exception:
                     continue
             return resp.text.strip() if resp and resp.text else None
-        elif provider.lower() == 'openai':
-            api_key = getattr(settings, 'MINDMEND_OPENAI_API_KEY', '') or ''
+        elif provider == 'openai':
+            api_key = openai_key
             if not api_key:
                 return None
             from openai import OpenAI
@@ -102,6 +110,21 @@ Guidelines:
     except Exception:
         return None
     return None
+
+
+# Violence / serious harm keywords for emergency-safe handling.
+VIOLENCE_KEYWORDS = {
+    'kill', 'killed', 'murder', 'stab', 'stabbing', 'shot', 'shoot', 'shooting',
+    'beat', 'beating', 'hit', 'iron rod', 'weapon', 'blood', 'dead body',
+    'body', 'accidentally killed', 'i killed', 'i hit him', 'hurt him badly'
+}
+
+
+def detect_violence_risk(text):
+    """Detect statements about serious harm to others."""
+    t = (text or '').lower()
+    hits = [kw for kw in VIOLENCE_KEYWORDS if kw in t]
+    return len(hits) > 0, hits
 
 
 # Distress keywords (English)
@@ -309,8 +332,48 @@ def get_chat_response(user_message, session_id=None, lang='en', conversation_his
     """
     sentiment = analyze_sentiment(user_message)
     has_distress, distress_keywords = detect_distress(user_message)
+    has_violence_risk, violence_keywords = detect_violence_risk(user_message)
     recommendations = get_recommendations(sentiment, distress_keywords, user_message, lang)
     history = conversation_history or []
+
+    # Handle serious violence admissions before normal chat behavior.
+    if has_violence_risk:
+        if lang == 'hi':
+            recommendations = [{
+                'type': 'emergency',
+                'title': 'तुरंत आपातकालीन सहायता',
+                'content': 'अगर किसी को चोट लगी है तो तुरंत आपातकालीन सेवा को कॉल करें (भारत: 112) और मेडिकल मदद लें।',
+                'priority': 'urgent'
+            }]
+        else:
+            recommendations = [{
+                'type': 'emergency',
+                'title': 'Immediate Emergency Help',
+                'content': 'If someone is injured, call emergency services now (India: 112) and get medical help immediately.',
+                'priority': 'urgent'
+            }]
+        if lang == 'hi':
+            response = (
+                "यह बहुत गंभीर स्थिति है। अगर किसी को चोट लगी है, कृपया तुरंत आपातकालीन सहायता बुलाइए। "
+                "मैं किसी को नुकसान पहुंचाने या छिपाने में मदद नहीं कर सकता। "
+                "अभी सुरक्षित कदम लें: (1) आपातकालीन सेवा/पुलिस को कॉल करें (भारत में 112), "
+                "(2) घायल व्यक्ति के लिए मेडिकल मदद लें, (3) किसी विश्वसनीय बड़े/परिजन को तुरंत बताएं। "
+                "अगर आप घबराए हुए हैं, मैं अगले कुछ मिनट के लिए आपको शांत रहने में मदद कर सकता हूं।"
+            )
+        else:
+            response = (
+                "This is a serious emergency. If someone may be hurt, call emergency services right now. "
+                "I can't help with harming someone or hiding what happened. "
+                "Take immediate safe steps: (1) call emergency/police now (India: 112), "
+                "(2) get medical help for the injured person, (3) inform a trusted adult/family member immediately. "
+                "If you're panicking, I can help you stay calm for the next few minutes while you do this."
+            )
+        return {
+            'response': response,
+            'sentiment': 'negative',
+            'is_distress': True,
+            'recommendations': recommendations,
+        }
 
     # Try LLM first when provider and API key are set
     llm_response = _call_llm(user_message, history, lang)
@@ -388,17 +451,16 @@ def get_chat_response(user_message, session_id=None, lang='en', conversation_his
                     "How are you feeling? ",
                 ])
             else:
-                fallbacks = [
-                    "I'm listening. What's on your mind? ",
-                    "Go on—I'm here. ",
-                    "What's going on with you? ",
-                ]
-                if prior:
-                    fallbacks.extend([
-                        "And how are you feeling about that now? ",
-                        "How's that going? ",
+                if phrase:
+                    response = f"I hear you. When you say \"{phrase}\", what feels hardest about it right now? "
+                elif prior:
+                    response = "I remember what you shared earlier. What changed most since then? "
+                else:
+                    response = random.choice([
+                        "I hear you. What part is feeling most difficult right now? ",
+                        "Thanks for sharing that. What happened just before you started feeling this way? ",
+                        "I'm with you. What do you need most right now: to vent, to calm down, or to plan next steps? ",
                     ])
-                response = random.choice(fallbacks)
     else:
         # Hindi responses - conversational, person-to-person
         if has_distress and any(kw in distress_keywords for kw in ['suicide', 'suicidal', 'kill', 'self harm', 'aatmahatya', 'khudkushi']):
@@ -438,16 +500,24 @@ def get_chat_response(user_message, session_id=None, lang='en', conversation_his
                     "बताइए, सुन रहा हूं। ",
                 ]
             else:
-                fallbacks_hi = [
-                    "सुन रहा हूं। क्या बात है? ",
-                    "जारी रखें—मैं यहां हूं। ",
-                    "आज कैसा महसूस कर रहे हैं? ",
-                ]
-            response = random.choice(fallbacks_hi)
+                if phrase:
+                    response = f"मैं समझ रहा हूं। जब आप \"{phrase}\" कहते हैं, अभी सबसे मुश्किल हिस्सा क्या लग रहा है? "
+                    fallbacks_hi = []
+                elif prior:
+                    response = "मैंने आपकी पिछली बात याद रखी है। तब से सबसे ज्यादा क्या बदला है? "
+                    fallbacks_hi = []
+                else:
+                    fallbacks_hi = [
+                        "मैं सुन रहा हूं। अभी सबसे भारी क्या लग रहा है? ",
+                        "शेयर करने के लिए धन्यवाद। अभी आपको क्या चाहिए: बस vent करना, calm होना, या next step plan करना? ",
+                        "मैं आपके साथ हूं। यह भावना कब से ज्यादा बढ़ी है? ",
+                    ]
+            if not response.strip() and fallbacks_hi:
+                response = random.choice(fallbacks_hi)
 
     return {
         'response': response.strip(),
         'sentiment': sentiment,
-        'is_distress': has_distress,
+        'is_distress': has_distress or has_violence_risk,
         'recommendations': recommendations
     }

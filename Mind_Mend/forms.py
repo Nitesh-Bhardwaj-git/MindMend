@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import MoodEntry, ForumPost, ForumReply, CounsellorBooking, Counsellor
+from .models import MoodEntry, ForumPost, ForumReply, CounsellorBooking, Counsellor, CounsellorReview, SleepLog
 from .assessment_data import PHQ9_QUESTIONS, GAD7_QUESTIONS, PSS_QUESTIONS
 
 
@@ -42,11 +42,24 @@ class MoodEntryForm(forms.ModelForm):
         }
 
 
+class SleepLogForm(forms.ModelForm):
+    class Meta:
+        model = SleepLog
+        fields = ['date', 'quality', 'hours', 'notes']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date'}),
+            'quality': forms.Select(),
+            'hours': forms.NumberInput(attrs={'min': 0, 'max': 24, 'step': 0.5, 'placeholder': 'e.g. 7.5'}),
+            'notes': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Optional notes'}),
+        }
+
+
 class ForumPostForm(forms.ModelForm):
     class Meta:
         model = ForumPost
-        fields = ['title', 'content', 'is_anonymous']
+        fields = ['category', 'title', 'content', 'is_anonymous']
         widgets = {
+            'category': forms.Select(attrs={'class': 'form-control'}),
             'title': forms.TextInput(attrs={'placeholder': 'Post title'}),
             'content': forms.Textarea(attrs={'rows': 5, 'placeholder': 'Share your thoughts...'}),
         }
@@ -73,6 +86,16 @@ class CounsellorBookingForm(forms.ModelForm):
             'date': forms.DateInput(attrs={'type': 'date'}),
             'time_slot': forms.TimeInput(attrs={'type': 'time'}),
             'notes': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Any specific concerns?'}),
+        }
+
+
+class CounsellorReviewForm(forms.ModelForm):
+    class Meta:
+        model = CounsellorReview
+        fields = ['rating', 'review_text']
+        widgets = {
+            'rating': forms.Select(choices=[(i, '★' * i + ' (' + str(i) + '/5)') for i in range(1, 6)]),
+            'review_text': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Share your experience (optional)'}),
         }
 
 

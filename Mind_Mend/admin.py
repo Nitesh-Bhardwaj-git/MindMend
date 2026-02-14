@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
-    Counsellor, CounsellorBooking, MoodEntry,
-    ForumPost, ForumReply, AssessmentResult, ChatMessage, UserAccessLocation
+    Counsellor, CounsellorBooking, CounsellorChatMessage, CounsellorReview,
+    MoodEntry, SleepLog, ForumPost, ForumReply, AssessmentResult, ChatMessage, UserAccessLocation
 )
 
 
@@ -15,9 +15,24 @@ class CounsellorBookingAdmin(admin.ModelAdmin):
     list_display = ['user', 'counsellor', 'date', 'time_slot', 'status']
 
 
+@admin.register(CounsellorChatMessage)
+class CounsellorChatMessageAdmin(admin.ModelAdmin):
+    list_display = ['booking', 'sender', 'created_at']
+
+
+@admin.register(CounsellorReview)
+class CounsellorReviewAdmin(admin.ModelAdmin):
+    list_display = ['booking', 'user', 'rating', 'created_at']
+
+
 @admin.register(MoodEntry)
 class MoodEntryAdmin(admin.ModelAdmin):
     list_display = ['user', 'mood', 'energy_level', 'activities', 'date', 'created_at']
+
+
+@admin.register(SleepLog)
+class SleepLogAdmin(admin.ModelAdmin):
+    list_display = ['user', 'date', 'quality', 'hours', 'created_at']
 
 
 @admin.register(ForumPost)

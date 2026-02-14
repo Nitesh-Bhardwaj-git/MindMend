@@ -40,9 +40,9 @@
                 <label class="block text-sm font-medium text-gray-700 mb-2">How are you feeling? <span class="text-red-500">*</span></label>
                 <div class="flex flex-wrap gap-4">
                     {% for value, label in form.mood.field.choices %}
-                    <label class="flex flex-col items-center cursor-pointer p-3 rounded-xl border-2 border-gray-200 hover:border-primary hover:bg-primary/5 transition has-[:checked]:border-primary has-[:checked]:bg-primary/10">
+                    <label class="mood-emoji-option flex flex-col items-center cursor-pointer p-3 rounded-xl border-2 border-gray-200 hover:border-primary hover:bg-primary/5 transition has-[:checked]:border-primary has-[:checked]:bg-primary/10">
                         <input type="radio" name="mood" value="{{ value }}" id="mood{{ value }}" required class="sr-only">
-                        <span class="text-2xl mb-1">{% if value == 1 %}😢{% elif value == 2 %}😔{% elif value == 3 %}😐{% elif value == 4 %}🙂{% else %}😊{% endif %}</span>
+                        <span class="mood-emoji-char text-2xl mb-1">{% if value == 1 %}😢{% elif value == 2 %}😔{% elif value == 3 %}😐{% elif value == 4 %}🙂{% else %}😊{% endif %}</span>
                         <span class="text-sm">{{ label }}</span>
                     </label>
                     {% endfor %}
@@ -77,11 +77,12 @@
     </div>
 
     <h5 class="text-lg font-semibold mb-4">Recent Entries</h5>
+    <div class="mood-entries-list">
     {% for e in entries %}
     <div class="bg-white rounded-xl shadow p-4 mb-3">
         <div class="flex justify-between items-start">
             <div class="flex items-center gap-2">
-                <span class="text-xl">{% if e.mood == 1 %}😢{% elif e.mood == 2 %}😔{% elif e.mood == 3 %}😐{% elif e.mood == 4 %}🙂{% else %}😊{% endif %}</span>
+                <span class="recent-entry-emoji text-xl">{% if e.mood == 1 %}😢{% elif e.mood == 2 %}😔{% elif e.mood == 3 %}😐{% elif e.mood == 4 %}🙂{% else %}😊{% endif %}</span>
                 <span class="font-medium">{{ e.get_mood_display }}</span>
                 {% if e.energy_level %}<span class="text-xs text-gray-500">• Energy: {{ e.get_energy_level_display }}</span>{% endif %}
             </div>
@@ -93,5 +94,6 @@
     {% empty %}
     <p class="text-gray-600">No entries yet. Log your first mood above.</p>
     {% endfor %}
+    </div>
 </div>
 {% endblock %}

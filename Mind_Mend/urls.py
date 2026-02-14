@@ -18,8 +18,9 @@ urlpatterns = [
     path('assessments/gad7/', views.assessment_gad7, name='assessment_gad7'),
     path('assessments/pss/', views.assessment_pss, name='assessment_pss'),
 
-    # Forum
+    # Forum & Community (anonymous support, peer-to-peer, recovery stories)
     path('forum/', views.forum_list, name='forum_list'),
+    path('forum/recovery/', views.recovery_stories, name='recovery_stories'),
     path('forum/new/', views.forum_create, name='forum_create'),
     path('forum/<int:pk>/', views.forum_detail, name='forum_detail'),
     path('forum/<int:pk>/reply/', views.forum_reply, name='forum_reply'),
@@ -27,9 +28,17 @@ urlpatterns = [
     # Counsellor Booking
     path('book/', views.counsellor_booking, name='counsellor_booking'),
     path('my-bookings/', views.my_bookings, name='my_bookings'),
+    path('counsellor/sessions/', views.counsellor_sessions, name='counsellor_sessions'),
+    path('booking/<int:booking_id>/chat/', views.counsellor_chat, name='counsellor_chat'),
+    path('api/booking/<int:booking_id>/messages/', views.booking_messages_api, name='booking_messages_api'),
+    path('booking/<int:booking_id>/review/', views.submit_review, name='submit_review'),
 
-    # Mood Tracking
+    # Mood & Sleep
     path('mood/', views.mood_tracker, name='mood_tracker'),
+    path('sleep/', views.sleep_tracker, name='sleep_tracker'),
+
+    # Forum & Community
+    path('forum/recovery/', views.recovery_stories, name='recovery_stories'),
 
     # Resources & Helplines
     path('resources/', views.resources, name='resources'),

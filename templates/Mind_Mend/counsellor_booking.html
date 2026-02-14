@@ -23,7 +23,13 @@
             <h5 class="text-lg font-semibold mb-4">Available Counsellors</h5>
             {% for c in counsellors %}
             <div class="bg-white rounded-xl shadow p-4 mb-3">
-                <strong>{{ c.name }}</strong> — {{ c.specialization }}
+                <div class="flex items-center gap-2 flex-wrap">
+                    <strong>{{ c.name }}</strong>
+                    {% if c.avg_rating %}
+                    <span class="text-amber-500 text-sm" title="Average rating {{ c.avg_rating|floatformat:1 }}/5">★ {{ c.avg_rating|floatformat:1 }}</span>
+                    {% endif %}
+                </div>
+                <p class="text-gray-600">{{ c.specialization }}</p>
                 <p class="text-sm text-gray-500 mt-1">{{ c.available_days }}, {{ c.available_time_start|time:"H:i" }}-{{ c.available_time_end|time:"H:i" }}</p>
             </div>
             {% empty %}

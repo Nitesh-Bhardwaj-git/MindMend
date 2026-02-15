@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
-    Counsellor, CounsellorBooking, CounsellorChatMessage, CounsellorReview,
-    MoodEntry, SleepLog, ForumPost, ForumReply, AssessmentResult, ChatMessage, UserAccessLocation
+    Counsellor, CounsellorBooking, CounsellorChatMessage, CounsellorNotification, CounsellorReview,
+    ContactMessage, MoodEntry, ForumPost, ForumReply, AssessmentResult, ChatMessage, UserAccessLocation
 )
 
 
@@ -20,6 +20,12 @@ class CounsellorChatMessageAdmin(admin.ModelAdmin):
     list_display = ['booking', 'sender', 'created_at']
 
 
+@admin.register(CounsellorNotification)
+class CounsellorNotificationAdmin(admin.ModelAdmin):
+    list_display = ['counsellor', 'event_type', 'title', 'is_read', 'created_at']
+    list_filter = ['event_type', 'is_read', 'created_at']
+
+
 @admin.register(CounsellorReview)
 class CounsellorReviewAdmin(admin.ModelAdmin):
     list_display = ['booking', 'user', 'rating', 'created_at']
@@ -28,11 +34,6 @@ class CounsellorReviewAdmin(admin.ModelAdmin):
 @admin.register(MoodEntry)
 class MoodEntryAdmin(admin.ModelAdmin):
     list_display = ['user', 'mood', 'energy_level', 'activities', 'date', 'created_at']
-
-
-@admin.register(SleepLog)
-class SleepLogAdmin(admin.ModelAdmin):
-    list_display = ['user', 'date', 'quality', 'hours', 'created_at']
 
 
 @admin.register(ForumPost)
@@ -59,3 +60,9 @@ class ChatMessageAdmin(admin.ModelAdmin):
 class UserAccessLocationAdmin(admin.ModelAdmin):
     list_display = ['user', 'country', 'state', 'city', 'ip_address', 'page_path', 'created_at']
     list_filter = ['country', 'created_at']
+
+
+@admin.register(ContactMessage)
+class ContactMessageAdmin(admin.ModelAdmin):
+    list_display = ['name', 'email', 'subject', 'created_at']
+    search_fields = ['name', 'email', 'subject', 'message']

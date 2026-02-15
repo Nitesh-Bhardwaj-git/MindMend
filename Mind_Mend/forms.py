@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import MoodEntry, ForumPost, ForumReply, CounsellorBooking, Counsellor, CounsellorReview, SleepLog
+from .models import MoodEntry, ForumPost, ForumReply, CounsellorBooking, Counsellor, CounsellorReview
 from .assessment_data import PHQ9_QUESTIONS, GAD7_QUESTIONS, PSS_QUESTIONS
 
 
@@ -39,18 +39,6 @@ class MoodEntryForm(forms.ModelForm):
             'activities': forms.TextInput(attrs={'placeholder': 'e.g. work, sleep, exercise (optional)'}),
             'notes': forms.Textarea(attrs={'rows': 3, 'placeholder': 'What\'s on your mind? (optional)'}),
             'date': forms.DateInput(attrs={'type': 'date'}),
-        }
-
-
-class SleepLogForm(forms.ModelForm):
-    class Meta:
-        model = SleepLog
-        fields = ['date', 'quality', 'hours', 'notes']
-        widgets = {
-            'date': forms.DateInput(attrs={'type': 'date'}),
-            'quality': forms.Select(),
-            'hours': forms.NumberInput(attrs={'min': 0, 'max': 24, 'step': 0.5, 'placeholder': 'e.g. 7.5'}),
-            'notes': forms.Textarea(attrs={'rows': 2, 'placeholder': 'Optional notes'}),
         }
 
 

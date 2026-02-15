@@ -8,7 +8,7 @@
             <p class="text-gray-600">Where users are accessing MindMend from — Country, State, City</p>
         </div>
         <a href="{% url 'mental_health_heatmap' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/90 hover:bg-amber-500 text-white rounded-lg font-medium transition">
-            🧠 Mental Health Heatmap
+            🧠 Heatmap
         </a>
         <div class="flex items-center gap-4">
             <form method="get" class="flex items-center gap-2">
@@ -22,6 +22,8 @@
             </form>
             <div class="flex gap-4 text-sm">
                 <span class="px-3 py-1 bg-primary/10 text-primary rounded-lg">{{ stats.total|default:0 }} accesses</span>
+                <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg">{{ stats.gps_shared|default:0 }} GPS shared</span>
+                <span class="px-3 py-1 bg-sky-100 text-sky-700 rounded-lg">{{ stats.visitors|default:0 }} visitors</span>
                 <span class="px-3 py-1 bg-primary/10 text-primary rounded-lg">{{ stats.countries|default:0 }} countries</span>
             </div>
         </div>
@@ -31,15 +33,15 @@
         <div class="bg-white rounded-xl shadow-lg p-5 border-l-4 border-primary">
             <p class="text-sm text-gray-500 font-medium">Active Users Right Now</p>
             <p class="text-3xl font-bold text-primary mt-1">{{ active_now|default:0 }}</p>
-            <p class="text-xs text-gray-500 mt-1">Unique IPs in last 15 min</p>
+            <p class="text-xs text-gray-500 mt-1">Unique visitors in last 15 min</p>
         </div>
         <div class="bg-white rounded-xl shadow-lg p-5">
             <p class="text-sm text-gray-500 font-medium">Total Accesses ({{ days }}d)</p>
             <p class="text-3xl font-bold text-gray-800 mt-1">{{ stats.total|default:0 }}</p>
         </div>
         <div class="bg-white rounded-xl shadow-lg p-5">
-            <p class="text-sm text-gray-500 font-medium">Countries Reached</p>
-            <p class="text-3xl font-bold text-gray-800 mt-1">{{ stats.countries|default:0 }}</p>
+            <p class="text-sm text-gray-500 font-medium">Visitors with GPS Shared</p>
+            <p class="text-3xl font-bold text-gray-800 mt-1">{{ stats.gps_shared|default:0 }}</p>
         </div>
     </div>
 

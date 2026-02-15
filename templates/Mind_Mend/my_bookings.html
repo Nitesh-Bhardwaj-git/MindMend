@@ -19,6 +19,13 @@
                 {% if b.status != 'cancelled' %}
                 <a href="{% url 'counsellor_chat' b.id %}" class="inline-flex items-center gap-1 px-3 py-1.5 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition text-sm font-medium">💬 Chat</a>
                 {% endif %}
+                {% if b.status != 'completed' and b.status != 'cancelled' %}
+                <form method="post" action="{% url 'finish_session' b.id %}" onsubmit="return confirm('Finish this session now? This will disable chat and mark it as completed.');">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{% url 'my_bookings' %}">
+                    <button type="submit" class="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-700 hover:text-white transition text-sm font-medium">Finish Session</button>
+                </form>
+                {% endif %}
                 {% if b.status == 'completed' %}
                     {% if b.has_review %}
                     <span class="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-sm">⭐ Reviewed</span>

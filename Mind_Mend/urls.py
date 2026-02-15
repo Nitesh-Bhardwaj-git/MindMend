@@ -5,6 +5,7 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('register/', views.register, name='register'),
     path('login/', views.login_view, name='login'),
+    path('doctor/login/', views.doctor_login_view, name='doctor_login'),
     path('logout/', views.logout_view, name='logout'),
 
     # AI Chatbot
@@ -29,13 +30,17 @@ urlpatterns = [
     path('book/', views.counsellor_booking, name='counsellor_booking'),
     path('my-bookings/', views.my_bookings, name='my_bookings'),
     path('counsellor/sessions/', views.counsellor_sessions, name='counsellor_sessions'),
+    path('doctor/dashboard/', views.doctor_dashboard, name='doctor_dashboard'),
+    path('doctor/booking/<int:booking_id>/action/', views.doctor_booking_action, name='doctor_booking_action'),
     path('booking/<int:booking_id>/chat/', views.counsellor_chat, name='counsellor_chat'),
+    path('booking/<int:booking_id>/finish/', views.finish_session, name='finish_session'),
     path('api/booking/<int:booking_id>/messages/', views.booking_messages_api, name='booking_messages_api'),
+    path('api/doctor/notifications/', views.doctor_notifications_api, name='doctor_notifications_api'),
+    path('api/doctor/notifications/mark-read/', views.doctor_notifications_mark_read_api, name='doctor_notifications_mark_read_api'),
     path('booking/<int:booking_id>/review/', views.submit_review, name='submit_review'),
 
-    # Mood & Sleep
+    # Mood
     path('mood/', views.mood_tracker, name='mood_tracker'),
-    path('sleep/', views.sleep_tracker, name='sleep_tracker'),
 
     # Forum & Community
     path('forum/recovery/', views.recovery_stories, name='recovery_stories'),

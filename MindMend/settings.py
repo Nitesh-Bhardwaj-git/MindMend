@@ -13,13 +13,6 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 from pathlib import Path
 
-MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    ...
-]
-
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -27,8 +20,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 from dotenv import load_dotenv
 load_dotenv(BASE_DIR / 'MindMend' / '.env')
 
-# Production detection (Render sets RENDER_EXTERNAL_URL or we check DATABASE_URL)
-RENDER = os.environ.get('RENDER') == 'true'
+# Production detection.
+# Treat as Render production only when both Render flag and DATABASE_URL are present.
+# This avoids local breakage if RENDER=true is accidentally set on a developer machine.
+RENDER = os.environ.get('RENDER') == 'true' and bool(os.environ.get('DATABASE_URL'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -37,7 +32,7 @@ RENDER = os.environ.get('RENDER') == 'true'
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-e&5+mk2q3fvb$7%-00+#%%$b8y_x^sl12es)*mvn(=-a)4-h&#')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG', 'False').lower() in ('true', '1', 'yes')
+DEBUG = os.environ.get('DEBUG', 'False' if RENDER else 'True').lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.onrender.com']
 if os.environ.get('ALLOWED_HOSTS'):
@@ -53,6 +48,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'channels',
     'Mind_Mend',
     'widget_tweaks',
 ]
@@ -87,6 +83,13 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'MindMend.wsgi.application'
+ASGI_APPLICATION = 'MindMend.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    },
+}
 
 
 # Database
@@ -143,13 +146,22 @@ LANGUAGES = [
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
 STATICFILES_DIRS = [BASE_DIR / 'static'] if (BASE_DIR / 'static').exists() else []
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+# Use manifest storage only on Render/production. Local development should not depend on collectstatic manifest.
 STORAGES = {
     'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
-    'staticfiles': {'BACKEND': 'whitenoise.storage.CompressedStaticFilesStorage'},
+    'staticfiles': {
+        'BACKEND': (
+            'whitenoise.storage.CompressedManifestStaticFilesStorage'
+            if RENDER else
+            'django.contrib.staticfiles.storage.StaticFilesStorage'
+        )
+    },
 }
+# Avoid 500 errors when manifest entries are missing (e.g., local runs with production-like env vars).
+WHITENOISE_MANIFEST_STRICT = False
 
 # CSRF trusted origins for Render (HTTPS)
 CSRF_TRUSTED_ORIGINS = []
@@ -158,7 +170,7 @@ if os.environ.get('RENDER_EXTERNAL_URL'):
 if os.environ.get('CSRF_TRUSTED_ORIGINS'):
     CSRF_TRUSTED_ORIGINS.extend(o.strip() for o in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip())
 
-MEDIA_URL = 'media/'
+MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 # Login redirect
@@ -171,5 +183,3 @@ LOGIN_URL = 'login'
 MINDMEND_LLM_PROVIDER = os.environ.get('MINDMEND_LLM_PROVIDER', '')
 MINDMEND_GEMINI_API_KEY = os.environ.get('MINDMEND_GEMINI_API_KEY', '') or os.environ.get('GEMINI_API_KEY', '')
 MINDMEND_OPENAI_API_KEY = os.environ.get('MINDMEND_OPENAI_API_KEY', '') or os.environ.get('OPENAI_API_KEY', '')
-
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

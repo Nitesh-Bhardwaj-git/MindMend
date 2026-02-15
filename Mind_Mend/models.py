@@ -54,6 +54,27 @@ class CounsellorChatMessage(models.Model):
         ordering = ['created_at']
 
 
+class CounsellorNotification(models.Model):
+    """Notifications for counsellors about bookings and chat activity."""
+    EVENT_CHOICES = [
+        ('booking_created', 'New booking'),
+        ('chat_started', 'Chat started'),
+        ('message_received', 'New message'),
+        ('booking_status', 'Booking status changed'),
+    ]
+    counsellor = models.ForeignKey(Counsellor, on_delete=models.CASCADE)
+    booking = models.ForeignKey(CounsellorBooking, on_delete=models.CASCADE, null=True, blank=True)
+    actor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    event_type = models.CharField(max_length=30, choices=EVENT_CHOICES)
+    title = models.CharField(max_length=200)
+    body = models.TextField(blank=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+
 class CounsellorReview(models.Model):
     """Rating and review for a completed counsellor session."""
     booking = models.OneToOneField(CounsellorBooking, on_delete=models.CASCADE)
@@ -69,19 +90,16 @@ class CounsellorReview(models.Model):
         ordering = ['-created_at']
 
 
-class SleepLog(models.Model):
-    """Daily sleep log for wellness tracking."""
-    QUALITY_CHOICES = [(i, str(i) + ' – ' + ['Very poor', 'Poor', 'Fair', 'Good', 'Very good'][i - 1]) for i in range(1, 6)]
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    date = models.DateField()
-    quality = models.PositiveSmallIntegerField(choices=QUALITY_CHOICES, help_text='1–5')
-    hours = models.DecimalField(max_digits=3, decimal_places=1, help_text='Hours slept')
-    notes = models.TextField(blank=True)
+class ContactMessage(models.Model):
+    """Messages submitted from the Contact Us form."""
+    name = models.CharField(max_length=100)
+    email = models.EmailField()
+    subject = models.CharField(max_length=200)
+    message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ['user', 'date']
-        ordering = ['-date']
+        ordering = ['-created_at']
 
 
 class MoodEntry(models.Model):

@@ -9,17 +9,20 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
+from django.db import IntegrityError
 from django.db.models import Count, Avg
 from django.core.paginator import Paginator
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 from .models import (
     MoodEntry, ForumPost, ForumReply, Counsellor, CounsellorBooking,
-    CounsellorChatMessage, CounsellorReview, SleepLog,
-    AssessmentResult, ChatMessage, UserAccessLocation
+    CounsellorChatMessage, CounsellorNotification, CounsellorReview,
+    AssessmentResult, ChatMessage, ContactMessage, UserAccessLocation
 )
-from .forms import SignUpForm, MoodEntryForm, ForumPostForm, ForumReplyForm, CounsellorBookingForm, ContactForm, CounsellorReviewForm, SleepLogForm
+from .forms import SignUpForm, MoodEntryForm, ForumPostForm, ForumReplyForm, CounsellorBookingForm, ContactForm, CounsellorReviewForm
 from .services import get_chat_response, get_session_id
-from .location_tracker import reverse_geocode
+from .location_tracker import reverse_geocode, get_client_ip
 from .assessment_data import (
     PHQ9_QUESTIONS, GAD7_QUESTIONS, PSS_QUESTIONS,
     get_phq9_result, get_gad7_result, get_pss_result, PSS_REVERSE_ITEMS
@@ -34,6 +37,12 @@ def contact_us(request):
     if request.method == 'POST':
         form = ContactForm(request.POST)
         if form.is_valid():
+            ContactMessage.objects.create(
+                name=form.cleaned_data['name'],
+                email=form.cleaned_data['email'],
+                subject=form.cleaned_data['subject'],
+                message=form.cleaned_data['message'],
+            )
             messages.success(request, 'Thank you for your message. We will get back to you soon.')
             return redirect('contact_us')
     else:
@@ -73,6 +82,31 @@ def login_view(request):
     return render(request, 'Mind_Mend/login.html', {'form': form, 'username_not_found': username_not_found})
 
 
+def doctor_login_view(request):
+    """Dedicated login entrypoint for counsellors/doctors."""
+    if request.user.is_authenticated and Counsellor.objects.filter(user=request.user).exists():
+        return redirect('doctor_dashboard')
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            user = form.get_user()
+            if not Counsellor.objects.filter(user=user).exists():
+                form.add_error(None, 'This account is not registered as a counsellor.')
+            else:
+                login(request, user)
+                return redirect('doctor_dashboard')
+        username = request.POST.get('username', '').strip()
+        username_not_found = username and not User.objects.filter(username=username).exists()
+    else:
+        form = AuthenticationForm()
+        username_not_found = False
+    return render(request, 'Mind_Mend/login.html', {
+        'form': form,
+        'username_not_found': username_not_found,
+        'is_doctor_login': True,
+    })
+
+
 def logout_view(request):
     logout(request)
     return redirect('home')
@@ -99,19 +133,39 @@ def share_location_api(request):
     if not (-90 <= lat_f <= 90) or not (-180 <= lon_f <= 180):
         return JsonResponse({'error': 'Invalid coordinates'}, status=400)
 
+    if not request.session.session_key:
+        request.session.save()
+    session_id = request.session.session_key or get_session_id()
     addr = reverse_geocode(lat_f, lon_f)
-    UserAccessLocation.objects.create(
-        user=request.user if request.user.is_authenticated else None,
-        session_id=getattr(request.session, 'session_key', '') or '',
-        ip_address=None,
-        country=addr.get('country', ''),
-        state=addr.get('state', ''),
-        city=addr.get('city', ''),
+    ip = get_client_ip(request)
+
+    # Avoid spamming identical browser-GPS logs for the same visitor.
+    from datetime import timedelta
+    recent_cutoff = timezone.now() - timedelta(minutes=10)
+    recent_qs = UserAccessLocation.objects.filter(
+        location_source='browser',
+        created_at__gte=recent_cutoff,
         latitude=lat_f,
         longitude=lon_f,
-        page_path=request.META.get('HTTP_REFERER', '')[:255] or '/',
-        location_source='browser',
     )
+    if request.user.is_authenticated:
+        recent_qs = recent_qs.filter(user=request.user)
+    else:
+        recent_qs = recent_qs.filter(user__isnull=True, session_id=session_id)
+
+    if not recent_qs.exists():
+        UserAccessLocation.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            session_id=session_id,
+            ip_address=ip or None,
+            country=addr.get('country', ''),
+            state=addr.get('state', ''),
+            city=addr.get('city', ''),
+            latitude=lat_f,
+            longitude=lon_f,
+            page_path=request.META.get('HTTP_REFERER', '')[:255] or '/',
+            location_source='browser',
+        )
     return JsonResponse({'ok': True, 'city': addr.get('city'), 'state': addr.get('state'), 'country': addr.get('country')})
 
 
@@ -367,8 +421,20 @@ def counsellor_booking(request):
         if form.is_valid():
             booking = form.save(commit=False)
             booking.user = request.user
-            booking.save()
-            return redirect('my_bookings')
+            try:
+                booking.save()
+            except IntegrityError:
+                form.add_error(None, 'This time slot is already booked for the counsellor. Please choose another slot.')
+            else:
+                _notify_counsellor(
+                    booking.counsellor,
+                    'booking_created',
+                    'New appointment booked',
+                    f'{request.user.get_username()} booked {booking.date} at {booking.time_slot.strftime("%H:%M")}.',
+                    booking=booking,
+                    actor=request.user
+                )
+                return redirect('my_bookings')
     else:
         form = CounsellorBookingForm()
     return render(request, 'Mind_Mend/counsellor_booking.html', {
@@ -384,6 +450,39 @@ def _user_can_access_booking(user, booking):
     if booking.counsellor.user_id and booking.counsellor.user_id == user.id:
         return True
     return False
+
+
+def _notify_counsellor(counsellor, event_type, title, body='', booking=None, actor=None):
+    """Create persistent notification and push it via websocket when available."""
+    notif = CounsellorNotification.objects.create(
+        counsellor=counsellor,
+        booking=booking,
+        actor=actor,
+        event_type=event_type,
+        title=title,
+        body=body,
+    )
+    if not counsellor.user_id:
+        return notif
+    channel_layer = get_channel_layer()
+    if not channel_layer:
+        return notif
+    async_to_sync(channel_layer.group_send)(
+        f'doctor_{counsellor.user_id}',
+        {
+            'type': 'doctor.notification',
+            'notification': {
+                'id': notif.id,
+                'event_type': notif.event_type,
+                'title': notif.title,
+                'body': notif.body,
+                'booking_id': notif.booking_id,
+                'created_at': notif.created_at.isoformat(),
+                'is_read': notif.is_read,
+            }
+        }
+    )
+    return notif
 
 
 @login_required
@@ -408,13 +507,59 @@ def counsellor_chat(request, booking_id):
     chat_messages = CounsellorChatMessage.objects.filter(booking=booking).select_related('sender').order_by('created_at')
     if request.method == 'POST':
         content = (request.POST.get('content') or '').strip()
+        if booking.status in ('completed', 'cancelled'):
+            messages.info(request, f'This session is {booking.status}. Chat is disabled.')
+            return redirect('counsellor_chat', booking_id=booking.pk)
         if content:
+            is_first_message = not CounsellorChatMessage.objects.filter(booking=booking).exists()
             CounsellorChatMessage.objects.create(booking=booking, sender=request.user, content=content)
+            if request.user.id != booking.counsellor.user_id:
+                _notify_counsellor(
+                    booking.counsellor,
+                    'chat_started' if is_first_message else 'message_received',
+                    'Patient started chat' if is_first_message else 'New patient message',
+                    f'{request.user.get_username()}: {content[:120]}',
+                    booking=booking,
+                    actor=request.user
+                )
         return redirect('counsellor_chat', booking_id=booking.pk)
     return render(request, 'Mind_Mend/counsellor_chat.html', {
         'booking': booking,
         'chat_messages': chat_messages,
     })
+
+
+@login_required
+@require_http_methods(['POST'])
+def finish_session(request, booking_id):
+    """Allow either patient or counsellor to mark a session as completed."""
+    booking = get_object_or_404(CounsellorBooking, pk=booking_id)
+    if not _user_can_access_booking(request.user, booking):
+        messages.error(request, 'You do not have permission to finish this session.')
+        return redirect('home')
+    if booking.status in ('completed', 'cancelled'):
+        messages.info(request, f'This session is already {booking.status}.')
+    else:
+        booking.status = 'completed'
+        booking.save(update_fields=['status'])
+        if request.user.id != booking.counsellor.user_id:
+            _notify_counsellor(
+                booking.counsellor,
+                'booking_status',
+                'Session marked completed',
+                f'{request.user.get_username()} marked the session as completed.',
+                booking=booking,
+                actor=request.user
+            )
+        messages.success(request, 'Session marked as completed.')
+    next_url = request.POST.get('next')
+    if next_url:
+        return redirect(next_url)
+    if booking.user_id == request.user.id:
+        if not CounsellorReview.objects.filter(booking=booking).exists():
+            return redirect('submit_review', booking_id=booking.id)
+        return redirect('dashboard')
+    return redirect('counsellor_sessions')
 
 
 @login_required
@@ -424,10 +569,110 @@ def counsellor_sessions(request):
     if not counsellor:
         messages.info(request, 'You are not registered as a counsellor.')
         return redirect('home')
-    bookings = CounsellorBooking.objects.filter(counsellor=counsellor).select_related('user').order_by('-date', '-time_slot')
+    bookings = list(CounsellorBooking.objects.filter(counsellor=counsellor).select_related('user').order_by('-date', '-time_slot'))
+    reviews_by_booking = {
+        r.booking_id: r
+        for r in CounsellorReview.objects.filter(booking__in=bookings)
+    }
     for b in bookings:
-        b.has_review = CounsellorReview.objects.filter(booking=b).exists()
+        b.review = reviews_by_booking.get(b.id)
+        b.has_review = b.review is not None
     return render(request, 'Mind_Mend/counsellor_sessions.html', {'bookings': bookings, 'counsellor': counsellor})
+
+
+@login_required
+def doctor_dashboard(request):
+    """Doctor-facing dashboard for appointments and notifications."""
+    counsellor = Counsellor.objects.filter(user=request.user).first()
+    if not counsellor:
+        messages.info(request, 'You are not registered as a counsellor.')
+        return redirect('home')
+    bookings = list(CounsellorBooking.objects.filter(counsellor=counsellor).select_related('user').order_by('date', 'time_slot'))
+    reviews_by_booking = {
+        r.booking_id: r
+        for r in CounsellorReview.objects.filter(booking__in=bookings)
+    }
+    for b in bookings:
+        b.review = reviews_by_booking.get(b.id)
+        b.has_review = b.review is not None
+    notifications_qs = CounsellorNotification.objects.filter(counsellor=counsellor)
+    notifications = notifications_qs[:20]
+    return render(request, 'Mind_Mend/doctor_dashboard.html', {
+        'counsellor': counsellor,
+        'pending_bookings': [b for b in bookings if b.status == 'pending'],
+        'bookings': bookings,
+        'notifications': notifications,
+        'unread_count': notifications_qs.filter(is_read=False).count(),
+    })
+
+
+@login_required
+@require_http_methods(['POST'])
+def doctor_booking_action(request, booking_id):
+    """Accept/reject/complete booking from doctor panel."""
+    counsellor = Counsellor.objects.filter(user=request.user).first()
+    if not counsellor:
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+    booking = get_object_or_404(CounsellorBooking, pk=booking_id, counsellor=counsellor)
+    action = (request.POST.get('action') or '').strip().lower()
+    status_map = {
+        'accept': 'confirmed',
+        'reject': 'cancelled',
+        'complete': 'completed',
+    }
+    if action not in status_map:
+        return JsonResponse({'error': 'Invalid action'}, status=400)
+    booking.status = status_map[action]
+    booking.save(update_fields=['status'])
+    messages.success(request, f'Booking status updated to {booking.status}.')
+    return redirect('doctor_dashboard')
+
+
+@login_required
+@require_http_methods(['GET'])
+def doctor_notifications_api(request):
+    """Fetch doctor notifications for dashboard polling/bootstrap."""
+    counsellor = Counsellor.objects.filter(user=request.user).first()
+    if not counsellor:
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+    unread_only = request.GET.get('unread') in ('1', 'true', 'True')
+    qs = CounsellorNotification.objects.filter(counsellor=counsellor)
+    if unread_only:
+        qs = qs.filter(is_read=False)
+    notifications = [
+        {
+            'id': n.id,
+            'event_type': n.event_type,
+            'title': n.title,
+            'body': n.body,
+            'booking_id': n.booking_id,
+            'created_at': n.created_at.isoformat(),
+            'is_read': n.is_read,
+        }
+        for n in qs[:50]
+    ]
+    return JsonResponse({'notifications': notifications})
+
+
+@login_required
+@require_http_methods(['POST'])
+def doctor_notifications_mark_read_api(request):
+    """Mark all or selected doctor notifications as read."""
+    counsellor = Counsellor.objects.filter(user=request.user).first()
+    if not counsellor:
+        return JsonResponse({'error': 'Forbidden'}, status=403)
+    ids = []
+    try:
+        payload = json.loads(request.body or '{}')
+        ids = payload.get('ids') or []
+    except json.JSONDecodeError:
+        ids = []
+    qs = CounsellorNotification.objects.filter(counsellor=counsellor, is_read=False)
+    if ids:
+        qs = qs.filter(id__in=ids)
+    updated = qs.update(is_read=True)
+    unread_count = CounsellorNotification.objects.filter(counsellor=counsellor, is_read=False).count()
+    return JsonResponse({'updated': updated, 'unread_count': unread_count})
 
 
 @require_http_methods(['GET'])
@@ -473,7 +718,7 @@ def submit_review(request, booking_id):
             obj.user = request.user
             obj.save()
             messages.success(request, 'Thank you for your review!')
-            return redirect('my_bookings')
+            return redirect('dashboard')
     else:
         form = CounsellorReviewForm(instance=review)
     return render(request, 'Mind_Mend/review_form.html', {'form': form, 'booking': booking})
@@ -523,37 +768,6 @@ def mood_tracker(request):
     })
 
 
-@login_required
-def sleep_tracker(request):
-    """Log and view sleep (quality, hours)."""
-    entries = SleepLog.objects.filter(user=request.user).order_by('-date')[:14]
-    if request.method == 'POST':
-        form = SleepLogForm(request.POST)
-        if form.is_valid():
-            cd = form.cleaned_data
-            SleepLog.objects.update_or_create(
-                user=request.user,
-                date=cd['date'],
-                defaults={
-                    'quality': cd['quality'],
-                    'hours': float(cd['hours']),
-                    'notes': cd.get('notes', ''),
-                }
-            )
-            return redirect('sleep_tracker')
-    else:
-        form = SleepLogForm(initial={'date': timezone.now().date()})
-    week_entries = SleepLog.objects.filter(user=request.user).order_by('-date')[:7]
-    avg_hours = week_entries.aggregate(Avg('hours'))['hours__avg']
-    avg_quality = week_entries.aggregate(Avg('quality'))['quality__avg']
-    return render(request, 'Mind_Mend/sleep_tracker.html', {
-        'form': form,
-        'entries': entries,
-        'avg_hours': round(float(avg_hours), 1) if avg_hours else None,
-        'avg_quality': round(float(avg_quality), 1) if avg_quality else None,
-    })
-
-
 def resources(request):
     helplines = [
         {
@@ -575,56 +789,85 @@ def resources(request):
 @login_required
 def location_map(request):
     """Map view showing where users access from. Staff only."""
-    from django.db.models import Count
+    from collections import Counter
     from datetime import timedelta
-    days = int(request.GET.get('days', 30))
+    try:
+        days = int(request.GET.get('days', 30))
+    except (TypeError, ValueError):
+        days = 30
+    days = 7 if days < 7 else 90 if days > 90 else days
     cutoff = timezone.now() - timedelta(days=days)
     active_cutoff = timezone.now() - timedelta(minutes=15)
 
-    # Prefer browser GPS locations (accurate); include IP-based as fallback
-    locations = UserAccessLocation.objects.filter(
+    locations = list(UserAccessLocation.objects.filter(
         created_at__gte=cutoff,
         latitude__isnull=False,
         longitude__isnull=False
-    ).values('country', 'state', 'city', 'latitude', 'longitude', 'user__username', 'user_id', 'session_id', 'created_at', 'page_path', 'location_source').order_by('location_source', '-created_at')[:500]
-    # Prefer browser GPS over IP: when both exist for same user, show browser
-    seen_users = set()
-    markers = []
+    ).select_related('user').order_by('-created_at')[:2000])
+
+    def _identity_key(loc):
+        if loc.user_id:
+            return f'u:{loc.user_id}'
+        if loc.session_id:
+            return f's:{loc.session_id}'
+        if loc.ip_address:
+            return f'ip:{loc.ip_address}'
+        return f'id:{loc.id}'
+
+    # One marker per visitor identity: newest location, preferring GPS when available.
+    latest_by_identity = {}
     for loc in locations:
-        user_key = str(loc.get('user_id') or '') or (loc.get('session_id') or '') or (str(loc.get('latitude', '')) + ',' + str(loc.get('longitude', '')))
-        if user_key in seen_users and loc.get('location_source') == 'ip':
+        key = _identity_key(loc)
+        prev = latest_by_identity.get(key)
+        if prev is None:
+            latest_by_identity[key] = loc
             continue
-        if loc.get('location_source') == 'browser':
-            seen_users.discard(user_key)
-        seen_users.add(user_key)
-        label = ', '.join(filter(None, [str(loc.get('city') or ''), str(loc.get('state') or ''), str(loc.get('country') or '')])) or 'Unknown'
+        if prev.location_source != 'browser' and loc.location_source == 'browser':
+            latest_by_identity[key] = loc
+
+    markers = []
+    for loc in sorted(latest_by_identity.values(), key=lambda x: x.created_at, reverse=True):
+        label = ', '.join(filter(None, [str(loc.city or ''), str(loc.state or ''), str(loc.country or '')])) or 'Unknown'
         markers.append({
-            'lat': float(loc['latitude'] or 0),
-            'lon': float(loc['longitude'] or 0),
+            'lat': float(loc.latitude or 0),
+            'lon': float(loc.longitude or 0),
             'label': label,
-            'user': loc.get('user__username') or 'Anonymous',
-            'date': loc['created_at'].strftime('%Y-%m-%d %H:%M') if loc.get('created_at') else '',
-            'page': loc.get('page_path') or '',
-            'source': loc.get('location_source') or 'ip',
+            'user': (loc.user.username if loc.user_id else 'Anonymous'),
+            'date': loc.created_at.strftime('%Y-%m-%d %H:%M') if loc.created_at else '',
+            'page': loc.page_path or '',
+            'source': loc.location_source or 'ip',
         })
 
-    base_qs = UserAccessLocation.objects.filter(created_at__gte=cutoff)
-    stats = base_qs.aggregate(
-        total=Count('id'),
-        countries=Count('country', distinct=True),
-    )
-    active_now = UserAccessLocation.objects.filter(created_at__gte=active_cutoff).values('ip_address').distinct().count()
+    active_now = len({
+        _identity_key(loc)
+        for loc in locations
+        if loc.created_at >= active_cutoff
+    })
+    gps_shared = len({
+        _identity_key(loc)
+        for loc in locations
+        if loc.location_source == 'browser'
+    })
 
-    # Total accesses per country (exclude Local/dev placeholder)
-    users_per_country = list(
-        base_qs.filter(country__isnull=False).exclude(country='').exclude(country__iexact='Local').values('country')
-        .annotate(count=Count('id')).order_by('-count')[:15]
-    )
-    # Total accesses per state (exclude Development, Local)
-    users_per_state = list(
-        base_qs.filter(state__isnull=False).exclude(state='').exclude(country__iexact='Local').values('country', 'state')
-        .annotate(count=Count('id')).order_by('-count')[:15]
-    )
+    by_country = Counter()
+    by_state = Counter()
+    for loc in latest_by_identity.values():
+        if (loc.country or '').lower() == 'local' or (loc.state or '').lower() == 'development':
+            continue
+        if loc.country:
+            by_country[loc.country] += 1
+        if loc.state:
+            by_state[(loc.country or '', loc.state)] += 1
+
+    users_per_country = [{'country': c, 'count': n} for c, n in by_country.most_common(15)]
+    users_per_state = [{'country': c, 'state': s, 'count': n} for (c, s), n in by_state.most_common(15)]
+
+    stats = {
+        'total': len(locations),
+        'countries': len({loc.country for loc in latest_by_identity.values() if loc.country and loc.country.lower() != 'local'}),
+        'visitors': len(latest_by_identity),
+        'gps_shared': gps_shared,
+    }
 
     return render(request, 'Mind_Mend/location_map.html', {
         'markers_json': json.dumps(markers),

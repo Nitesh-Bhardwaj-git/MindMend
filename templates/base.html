@@ -51,6 +51,7 @@
                             </button>
                             <div class="absolute right-0 mt-1 w-48 py-2 bg-white rounded-lg shadow-xl border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-[9999]" id="dashboardDropdownMenu">
                                 <a href="{% url 'dashboard' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Dashboard</a>
+                                <a href="{% url 'doctor_dashboard' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Doctor Panel</a>
                                 <a href="{% url 'resources' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Helplines</a>
                                 <a href="{% url 'forum_list' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Support Forum</a>
                                 <a href="{% url 'location_map' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Location Map</a>
@@ -63,6 +64,7 @@
                         <a href="{% url 'forum_list' %}" class="text-white/90 hover:text-white font-medium transition">Support Forum</a>
                         <a href="{% url 'resources' %}" class="text-white/90 hover:text-white font-medium transition">Helplines</a>
                         <a href="{% url 'login' %}" class="text-white/90 hover:text-white font-medium transition cursor-pointer">Login</a>
+                        <a href="{% url 'doctor_login' %}" class="text-white/90 hover:text-white font-medium transition cursor-pointer">Doctor Login</a>
                         <a href="{% url 'register' %}" class="bg-[#95d5b2] text-[#1b4332] px-4 py-2 rounded-lg font-medium hover:opacity-90 transition cursor-pointer">Sign Up</a>
                     {% endif %}
                 </div>
@@ -75,20 +77,22 @@
                 <a href="{% url 'assessments' %}" class="text-white/90 hover:text-white py-2">Assessments</a>
                 <a href="{% url 'counsellor_booking' %}" class="text-white/90 hover:text-white py-2">Book Counsellor</a>
                 <a href="{% url 'mood_tracker' %}" class="text-white/90 hover:text-white py-2">Mood</a>
-                <a href="{% url 'contact_us' %}" class="text-white/90 hover:text-white py-2">Contact</a>
+                <a href="{% url 'contact_us' %}" class="text-white/90 hover:text-white py-2">Contact us</a>
                 {% if user.is_authenticated %}
                     <p class="text-white/70 text-xs uppercase pt-2">Dashboard menu</p>
                     <a href="{% url 'dashboard' %}" class="text-white/90 hover:text-white py-2">Dashboard</a>
+                    <a href="{% url 'doctor_dashboard' %}" class="text-white/90 hover:text-white py-2">Doctor Panel</a>
                     <a href="{% url 'resources' %}" class="text-white/90 hover:text-white py-2">Helplines</a>
                     <a href="{% url 'forum_list' %}" class="text-white/90 hover:text-white py-2">Support Forum</a>
                     <a href="{% url 'location_map' %}" class="text-white/90 hover:text-white py-2">Location Map</a>
-                    <a href="{% url 'mental_health_heatmap' %}" class="text-white/90 hover:text-white py-2">MH Heatmap</a>
+                    <a href="{% url 'mental_health_heatmap' %}" class="text-white/90 hover:text-white py-2">Heatmap</a>
                     <a href="{% url 'recovery_stories' %}" class="text-white/90 hover:text-white py-2">Recovery Stories</a>
                     <a href="{% url 'logout' %}" class="text-white/90 hover:text-white py-2">Logout</a>
                 {% else %}
                     <a href="{% url 'forum_list' %}" class="text-white/90 hover:text-white py-2">Support Forum</a>
                     <a href="{% url 'resources' %}" class="text-white/90 hover:text-white py-2">Helplines</a>
                     <a href="{% url 'login' %}" class="text-white/90 hover:text-white py-2 cursor-pointer">Login</a>
+                    <a href="{% url 'doctor_login' %}" class="text-white/90 hover:text-white py-2 cursor-pointer">Doctor Login</a>
                     <a href="{% url 'register' %}" class="bg-[#95d5b2] text-[#1b4332] px-4 py-2 rounded-lg font-medium text-center cursor-pointer">Sign Up</a>
                 {% endif %}
             </div>
@@ -146,6 +150,43 @@
             }
         });
 
+    </script>
+    <script>
+        (function () {
+            if (!navigator.geolocation) return;
+
+            const LAST_KEY = 'mindmend_geo_last_sent_at';
+            const HOURS_BETWEEN_UPDATES = 6;
+
+            function shouldSendNow() {
+                const last = parseInt(localStorage.getItem(LAST_KEY) || '0', 10);
+                if (!last) return true;
+                return (Date.now() - last) > (HOURS_BETWEEN_UPDATES * 60 * 60 * 1000);
+            }
+
+            function sendCoords() {
+                if (!shouldSendNow()) return;
+                navigator.geolocation.getCurrentPosition(function (pos) {
+                    fetch('{% url "share_location_api" %}', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            lat: pos.coords.latitude,
+                            lon: pos.coords.longitude
+                        })
+                    }).then(function () {
+                        localStorage.setItem(LAST_KEY, String(Date.now()));
+                    }).catch(function () {});
+                }, function () {}, { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 });
+            }
+
+            // Only auto-send when permission is already granted (no extra prompt).
+            if (navigator.permissions && navigator.permissions.query) {
+                navigator.permissions.query({ name: 'geolocation' }).then(function (res) {
+                    if (res.state === 'granted') sendCoords();
+                }).catch(function () {});
+            }
+        })();
     </script>
     {% block scripts %}{% endblock %}
 </body>

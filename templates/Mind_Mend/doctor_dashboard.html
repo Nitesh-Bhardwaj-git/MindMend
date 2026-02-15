@@ -1,0 +1,175 @@
+{% extends 'base.html' %}
+{% block title %}Doctor Dashboard{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div>
+            <h2 class="text-2xl font-semibold">Doctor Dashboard</h2>
+            <p class="text-gray-600">{{ counsellor.name }} • {{ counsellor.specialization }}</p>
+        </div>
+        <a href="{% url 'counsellor_sessions' %}" class="px-4 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition">Sessions View</a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 space-y-6">
+            <section class="bg-white rounded-xl shadow p-5">
+                <h3 class="text-lg font-semibold mb-4">Pending Appointments</h3>
+                {% for b in pending_bookings %}
+                <div class="border border-gray-200 rounded-lg p-4 mb-3">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <p class="font-semibold">{{ b.user.get_username }}</p>
+                            <p class="text-gray-600 text-sm">{{ b.date|date:"l, M d, Y" }} at {{ b.time_slot|time:"H:i" }}</p>
+                            {% if b.notes %}<p class="text-gray-600 text-sm mt-1">Notes: {{ b.notes }}</p>{% endif %}
+                        </div>
+                        <div class="flex gap-2">
+                            <form method="post" action="{% url 'doctor_booking_action' b.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="accept">
+                                <button type="submit" class="px-3 py-1.5 rounded-lg bg-green-100 text-green-800 hover:bg-green-600 hover:text-white transition text-sm font-medium">Accept</button>
+                            </form>
+                            <form method="post" action="{% url 'doctor_booking_action' b.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="reject">
+                                <button type="submit" class="px-3 py-1.5 rounded-lg bg-red-100 text-red-800 hover:bg-red-600 hover:text-white transition text-sm font-medium">Reject</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-gray-600">No pending bookings.</p>
+                {% endfor %}
+            </section>
+
+            <section class="bg-white rounded-xl shadow p-5">
+                <h3 class="text-lg font-semibold mb-4">All Appointments</h3>
+                {% for b in bookings %}
+                <div class="border border-gray-200 rounded-lg p-4 mb-3">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <p class="font-semibold">{{ b.user.get_username }}</p>
+                            <p class="text-gray-600 text-sm">{{ b.date|date:"l, M d, Y" }} at {{ b.time_slot|time:"H:i" }}</p>
+                            <span class="inline-block mt-2 px-2 py-1 rounded text-xs
+                                {% if b.status == 'confirmed' %}bg-green-100 text-green-800
+                                {% elif b.status == 'pending' %}bg-amber-100 text-amber-800
+                                {% elif b.status == 'completed' %}bg-gray-100 text-gray-800
+                                {% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ b.status|title }}
+                            </span>
+                            {% if b.review %}
+                            <div class="mt-2 text-sm">
+                                <p class="font-medium text-amber-700">Feedback: ★ {{ b.review.rating }}/5</p>
+                                {% if b.review.review_text %}
+                                <p class="text-gray-700 mt-1">{{ b.review.review_text }}</p>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="flex gap-2">
+                            {% if b.status == 'confirmed' or b.status == 'completed' %}
+                            <a href="{% url 'counsellor_chat' b.id %}" class="px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition text-sm font-medium">Open Chat</a>
+                            {% endif %}
+                            {% if b.status == 'confirmed' %}
+                            <form method="post" action="{% url 'doctor_booking_action' b.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="action" value="complete">
+                                <button type="submit" class="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-800 hover:bg-gray-700 hover:text-white transition text-sm font-medium">Mark Complete</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-gray-600">No bookings found.</p>
+                {% endfor %}
+            </section>
+        </div>
+
+        <aside class="bg-white rounded-xl shadow p-5 h-fit">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-lg font-semibold">Live Notifications</h3>
+                <div class="flex items-center gap-2">
+                    <span id="doctorUnreadBadge" class="px-2 py-1 rounded-full bg-red-100 text-red-700 text-xs font-semibold">{{ unread_count }}</span>
+                    <button id="markReadBtn" class="text-xs text-primary hover:underline">Mark all read</button>
+                </div>
+            </div>
+            <div id="doctorNotifications" class="space-y-3 max-h-[520px] overflow-y-auto">
+                {% for n in notifications %}
+                <div class="border rounded-lg p-3 {% if not n.is_read %}border-primary/40 bg-primary/5{% else %}border-gray-200{% endif %}">
+                    <p class="font-medium text-sm">{{ n.title }}</p>
+                    {% if n.body %}<p class="text-sm text-gray-600">{{ n.body }}</p>{% endif %}
+                    <p class="text-xs text-gray-500 mt-1">{{ n.created_at|date:"M d, H:i" }}</p>
+                </div>
+                {% empty %}
+                <p class="text-gray-600 text-sm">No notifications yet.</p>
+                {% endfor %}
+            </div>
+        </aside>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    function getCookie(name) {
+        const value = `; ${document.cookie}`;
+        const parts = value.split(`; ${name}=`);
+        if (parts.length === 2) return parts.pop().split(';').shift();
+        return '';
+    }
+
+    var listEl = document.getElementById('doctorNotifications');
+    var badgeEl = document.getElementById('doctorUnreadBadge');
+    var markReadBtn = document.getElementById('markReadBtn');
+
+    function updateUnread(delta) {
+        var current = parseInt(badgeEl.textContent || '0', 10) || 0;
+        var next = Math.max(0, current + delta);
+        badgeEl.textContent = String(next);
+    }
+
+    function prependNotification(n) {
+        if (!listEl) return;
+        var card = document.createElement('div');
+        card.className = 'border rounded-lg p-3 border-primary/40 bg-primary/5';
+        var body = n.body ? '<p class="text-sm text-gray-600">' + n.body.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</p>' : '';
+        card.innerHTML = '<p class="font-medium text-sm">' + (n.title || 'Notification') + '</p>' + body +
+            '<p class="text-xs text-gray-500 mt-1">Just now</p>';
+        listEl.prepend(card);
+        updateUnread(1);
+    }
+
+    if (markReadBtn) {
+        markReadBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            fetch('{% url "doctor_notifications_mark_read_api" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({})
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                badgeEl.textContent = String(data.unread_count || 0);
+                listEl.querySelectorAll('.border-primary\\/40').forEach(function(el) {
+                    el.classList.remove('border-primary/40', 'bg-primary/5');
+                    el.classList.add('border-gray-200');
+                });
+            }).catch(function() {});
+        });
+    }
+
+    var protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    var socket = new WebSocket(protocol + window.location.host + '/ws/doctor/notifications/');
+    socket.onmessage = function(event) {
+        try {
+            var data = JSON.parse(event.data);
+            if (data.type === 'doctor_notification' && data.notification) {
+                prependNotification(data.notification);
+            }
+        } catch (err) {}
+    };
+})();
+</script>
+{% endblock %}

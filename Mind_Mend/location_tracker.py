@@ -84,12 +84,37 @@ def log_access(request, page_path=None):
     Throttles: same IP logged at most once per hour.
     """
     from .models import UserAccessLocation
+    from django.utils import timezone
+    from datetime import timedelta
     ip = get_client_ip(request)
+    session_id = getattr(request.session, 'session_key', '') or ''
+    if not session_id:
+        try:
+            request.session.save()
+            session_id = getattr(request.session, 'session_key', '') or ''
+        except Exception:
+            session_id = ''
+    user = request.user if getattr(request, 'user', None) and request.user.is_authenticated else None
+
+    cutoff = timezone.now() - timedelta(hours=1)
+
     if _is_local_ip(ip):
-        # For local dev: store a placeholder (real location comes from browser share)
+        # For local dev: store a placeholder once per hour per visitor identity.
+        local_qs = UserAccessLocation.objects.filter(
+            created_at__gte=cutoff,
+            country='Local',
+            state='Development',
+            location_source='ip',
+        )
+        if user:
+            local_qs = local_qs.filter(user=user)
+        elif session_id:
+            local_qs = local_qs.filter(user__isnull=True, session_id=session_id)
+        if local_qs.exists():
+            return
         UserAccessLocation.objects.create(
-            user=request.user if getattr(request, 'user', None) and request.user.is_authenticated else None,
-            session_id=getattr(request.session, 'session_key', '') or '',
+            user=user,
+            session_id=session_id,
             ip_address=None,
             country='Local',
             state='Development',
@@ -103,15 +128,17 @@ def log_access(request, page_path=None):
     geo = geolocate_ip(ip)
     if not geo:
         return
-    # Throttle: don't log same IP more than once per hour
-    from django.utils import timezone
-    from datetime import timedelta
-    cutoff = timezone.now() - timedelta(hours=1)
-    if UserAccessLocation.objects.filter(ip_address=ip, created_at__gte=cutoff).exists():
+    # Throttle per visitor identity (user/session) + IP for 1 hour.
+    recent_qs = UserAccessLocation.objects.filter(ip_address=ip, created_at__gte=cutoff)
+    if user:
+        recent_qs = recent_qs.filter(user=user)
+    elif session_id:
+        recent_qs = recent_qs.filter(user__isnull=True, session_id=session_id)
+    if recent_qs.exists():
         return
     UserAccessLocation.objects.create(
-        user=request.user if request.user.is_authenticated else None,
-        session_id=getattr(request.session, 'session_key', '') or '',
+        user=user,
+        session_id=session_id,
         ip_address=ip,
         country=geo.get('country', ''),
         state=geo.get('state', ''),

@@ -1,118 +1,106 @@
-# MindMend — AI-Enabled Health Awareness & Support Platform
+# MindMend — AI-Enabled Mental Health Support Platform
 
-A web-based mental health support platform that combines awareness, self-assessment, emotional support, and access to national helplines into a single, stigma-free digital environment.
+MindMend is a Django-based web platform for mental health awareness, self-assessment, peer support, counsellor booking, and guided recovery support.
 
-## Features
+## Core Features
 
-- **AI Chatbot** — LLM-powered (Gemini/OpenAI) or rule-based; sentiment analysis, distress detection, personalized recommendations
-- **Self-Assessment Modules** — PHQ-9 (depression), GAD-7 (anxiety), PSS-10 (stress)
-- **Community Forum** — Moderated, anonymous peer support
-- **Counsellor Booking** — Schedule professional mental health consultations
-- **Mood Tracking** — Monitor emotional patterns over time
-- **Helplines & Resources** — KIRAN (1800-599-0019), Tele-MANAS (14416) — 24/7
-- **Analytical Dashboard** — Mood trends, assessment history, engagement metrics
+- AI chatbot with rule-based mode and optional Gemini/OpenAI integration
+- Assessments: PHQ-9, GAD-7, PSS-10
+- Anonymous community forum and recovery stories
+- Counsellor booking and live chat
+- Doctor/counsellor dashboard with:
+- appointment management (accept/reject/complete)
+- live notifications for bookings and messages
+- Mood tracking and user dashboard analytics
+- Location analytics and mental health heatmap
+- Contact Us submissions stored in database and visible in admin
+- Session review/feedback flow (user -> counsellor)
+- Finish Session flow for both user and counsellor
 
 ## Tech Stack
 
-- **Backend:** Django 6
-- **Database:** SQLite (dev)
-- **Frontend:** Bootstrap 5, vanilla JS
+- Backend: Django 6, Django Channels (WebSocket support)
+- Frontend: Django templates, Tailwind CSS (CDN), vanilla JavaScript
+- Database: SQLite (development), PostgreSQL-ready for deployment
+- Static serving: WhiteNoise
 
 ## Quick Start
 
-### 1. Create virtual environment
+1. Create and activate virtual environment
 
 ```bash
 python -m venv .venv
-.venv\Scripts\activate   
-
+.venv\Scripts\activate
 ```
 
-### 2. Install dependencies
+2. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. Run migrations
+3. Apply migrations
 
 ```bash
 python manage.py migrate
 ```
 
-### 4. Create superuser (optional)
+4. Create admin user
 
 ```bash
 python manage.py createsuperuser
 ```
 
-### 5. Seed sample counsellors
+5. (Optional) Seed sample counsellors
 
 ```bash
 python manage.py seed_counsellors
 ```
 
-### 6. Run development server
+6. Run development server
 
 ```bash
 python manage.py runserver
 ```
 
-Open http://127.0.0.1:8000
+Open: `http://127.0.0.1:8000`
 
-### 7. (Optional) Enable LLM-powered chat
+## Optional LLM Setup
 
-For more natural, human-like responses, configure an LLM provider:
+Set environment variables to enable LLM chat:
 
-1. **Gemini (Google AI):** Get an API key from [Google AI Studio](https://aistudio.google.com/apikey).
-2. **OpenAI:** Use your OpenAI API key.
-
-Set environment variables before running the server:
-
-**Windows (PowerShell):**
 ```powershell
-$env:MINDMEND_LLM_PROVIDER = "gemini"
-$env:MINDMEND_GEMINI_API_KEY = "your-api-key"
-python manage.py runserver
+$env:MINDMEND_LLM_PROVIDER="gemini"
+$env:MINDMEND_GEMINI_API_KEY="your-api-key"
 ```
 
-**Linux/Mac:**
-```bash
-export MINDMEND_LLM_PROVIDER=gemini
-export MINDMEND_GEMINI_API_KEY=your-api-key
-python manage.py runserver
+Or for OpenAI:
+
+```powershell
+$env:MINDMEND_LLM_PROVIDER="openai"
+$env:MINDMEND_OPENAI_API_KEY="your-api-key"
 ```
 
-Or copy `.env.example` to `.env`, add your keys, and load with `python-dotenv` if you use it.  
-If not configured, the chatbot uses rule-based responses with full feature parity.
+If no provider is configured, chatbot falls back to rule-based responses.
 
-## Project Structure
+## Doctor Workflow
 
-```
-MindMend/
-├── Mind_Mend/          # Main app
-│   ├── models.py       # User, Assessment, Mood, Forum, Counsellor
-│   ├── views.py        # All views
-│   ├── services.py     # AI chatbot logic
-│   ├── assessment_data.py  # PHQ-9, GAD-7, PSS questions
-│   └── forms.py
-├── MindMend/           # Project settings
-├── templates/
-├── static/
-└── manage.py
-```
+Doctors currently do not self-register through public UI.
 
-## Admin
+Admin onboarding steps:
 
-- URL: `/admin/`
-- Create superuser with `python manage.py createsuperuser`
-- Manage counsellors, forum posts, and view data
+1. Create user in `/admin/auth/user/`
+2. Create counsellor in `/admin/Mind_Mend/counsellor/`
+3. Link `Counsellor.user` to that user account
+4. Doctor logs in at `/doctor/login/`
+
+## Admin Access
+
+- Admin URL: `/admin/`
+- Contact messages: `Mind_Mend -> Contact messages`
+- Counsellor reviews: `Mind_Mend -> Counsellor reviews`
 
 ## Helplines (India)
 
-- **KIRAN:** 1800-599-0019 — 24/7, 13 languages
-- **Tele-MANAS:** 14416 or 1-800-891-4416 — 24/7, 20+ languages
-
----
-
-*MindMend — Empowering users to understand their mental well-being and seek timely help.*
+- KIRAN: `1800-599-0019`
+- Tele-MANAS: `14416` / `1-800-891-4416`

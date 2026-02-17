@@ -67,7 +67,7 @@
             {% endfor %}
         </ul>
         {% else %}
-        <p class="text-gray-600">Keep logging mood and activities to discover patterns. <a href="{% url 'mood_tracker' %}" class="text-primary font-medium hover:underline">Track mood</a></p>
+        <p class="text-gray-600">Insufficient data yet to detect patterns. Log mood and activities for at least 2 days. <a href="{% url 'mood_tracker' %}" class="text-primary font-medium hover:underline">Track mood</a></p>
         {% endif %}
     </div>
 </div>

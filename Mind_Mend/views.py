@@ -9,6 +9,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
+from django.urls import reverse
 from django.db import IntegrityError
 from django.db.models import Count, Avg
 from django.core.paginator import Paginator
@@ -378,7 +379,7 @@ def forum_create(request):
             post = form.save(commit=False)
             post.author = request.user
             post.save()
-            return redirect('forum_detail', pk=post.pk)
+            return redirect(f"{reverse('forum_list')}?category={post.category}")
     else:
         initial = {}
         if request.GET.get('category') in dict(ForumPost.CATEGORY_CHOICES):
@@ -390,10 +391,14 @@ def forum_create(request):
 def forum_detail(request, pk):
     post = get_object_or_404(ForumPost, pk=pk)
     replies = post.forumreply_set.all().order_by('created_at')
+    focus = request.GET.get('focus', '').strip().lower()
+    if focus not in ('replies', 'reply'):
+        focus = ''
     return render(request, 'Mind_Mend/forum_detail.html', {
         'post': post,
         'replies': replies,
-        'reply_form': ForumReplyForm()
+        'reply_form': ForumReplyForm(),
+        'focus': focus,
     })
 
 
@@ -675,16 +680,53 @@ def doctor_notifications_mark_read_api(request):
     return JsonResponse({'updated': updated, 'unread_count': unread_count})
 
 
-@require_http_methods(['GET'])
+@require_http_methods(['GET', 'POST'])
 @login_required
 def booking_messages_api(request, booking_id):
-    """JSON list of chat messages for polling (e.g. live chat)."""
+    """JSON chat API for polling and fallback message send."""
     booking = get_object_or_404(CounsellorBooking, pk=booking_id)
     if not _user_can_access_booking(request.user, booking):
         return JsonResponse({'error': 'Forbidden'}, status=403)
+    if request.method == 'POST':
+        if booking.status in ('completed', 'cancelled'):
+            return JsonResponse({'error': f'Chat is disabled because this session is {booking.status}.'}, status=409)
+        try:
+            payload = json.loads(request.body or '{}')
+        except json.JSONDecodeError:
+            payload = {}
+        content = (payload.get('content') or request.POST.get('content') or '').strip()
+        if not content:
+            return JsonResponse({'error': 'Empty message'}, status=400)
+        is_first_message = not CounsellorChatMessage.objects.filter(booking=booking).exists()
+        msg = CounsellorChatMessage.objects.create(booking=booking, sender=request.user, content=content)
+        if request.user.id != booking.counsellor.user_id:
+            _notify_counsellor(
+                booking.counsellor,
+                'chat_started' if is_first_message else 'message_received',
+                'Patient started chat' if is_first_message else 'New patient message',
+                f'{request.user.get_username()}: {content[:120]}',
+                booking=booking,
+                actor=request.user
+            )
+        return JsonResponse({
+            'message': {
+                'id': msg.id,
+                'sender': msg.sender.get_username(),
+                'sender_id': msg.sender_id,
+                'content': msg.content,
+                'created_at': msg.created_at.isoformat(),
+            }
+        }, status=201)
+
     since = request.GET.get('since')
-    qs = CounsellorChatMessage.objects.filter(booking=booking).select_related('sender').order_by('created_at')
-    if since:
+    after_id = request.GET.get('after_id')
+    qs = CounsellorChatMessage.objects.filter(booking=booking).select_related('sender').order_by('id')
+    if after_id:
+        try:
+            qs = qs.filter(id__gt=int(after_id))
+        except (TypeError, ValueError):
+            pass
+    elif since:
         try:
             from django.utils.dateparse import parse_datetime
             dt = parse_datetime(since)
@@ -693,7 +735,13 @@ def booking_messages_api(request, booking_id):
         except Exception:
             pass
     messages_list = [
-        {'id': m.id, 'sender': m.sender.get_username(), 'content': m.content, 'created_at': m.created_at.isoformat()}
+        {
+            'id': m.id,
+            'sender': m.sender.get_username(),
+            'sender_id': m.sender_id,
+            'content': m.content,
+            'created_at': m.created_at.isoformat(),
+        }
         for m in qs[:100]
     ]
     return JsonResponse({'messages': messages_list})
@@ -1022,8 +1070,39 @@ def _emotional_patterns(user):
     from collections import defaultdict
     patterns = []
     entries = list(MoodEntry.objects.filter(user=user).order_by('-date')[:90])
-    if len(entries) < 5:
-        return patterns
+    if not entries:
+        return ['Insufficient data yet: log your mood for at least 2 days to unlock trends.']
+    if len(entries) < 2:
+        return ['Insufficient data yet: add one more day of logs to start seeing trends.']
+
+    # Day-by-day trend (works with 2+ entries)
+    entries_asc = sorted(entries, key=lambda e: e.date)
+    prev_entry = entries_asc[-2]
+    latest_entry = entries_asc[-1]
+    delta = latest_entry.mood - prev_entry.mood
+    if delta > 0:
+        patterns.append('Compared with %s, your mood improved on %s.' % (
+            prev_entry.date.strftime('%b %d'),
+            latest_entry.date.strftime('%b %d'),
+        ))
+    elif delta < 0:
+        patterns.append('Compared with %s, your mood was lower on %s.' % (
+            prev_entry.date.strftime('%b %d'),
+            latest_entry.date.strftime('%b %d'),
+        ))
+    else:
+        patterns.append('Your mood stayed steady between %s and %s.' % (
+            prev_entry.date.strftime('%b %d'),
+            latest_entry.date.strftime('%b %d'),
+        ))
+
+    if len(entries_asc) >= 3:
+        recent = entries_asc[-3:]
+        if recent[0].mood < recent[1].mood < recent[2].mood:
+            patterns.append('Your last 3 entries show an upward mood trend.')
+        elif recent[0].mood > recent[1].mood > recent[2].mood:
+            patterns.append('Your last 3 entries show a downward mood trend.')
+
     # By weekday (0=Monday, 6=Sunday)
     by_weekday = defaultdict(list)
     for e in entries:
@@ -1033,10 +1112,10 @@ def _emotional_patterns(user):
     for w in range(7):
         if by_weekday[w]:
             weekday_avgs.append((w, sum(by_weekday[w]) / len(by_weekday[w])))
-    if len(weekday_avgs) >= 3:
+    if len(weekday_avgs) >= 2:
         best_day = max(weekday_avgs, key=lambda x: x[1])
         worst_day = min(weekday_avgs, key=lambda x: x[1])
-        if best_day[1] - worst_day[1] >= 0.5:
+        if best_day[1] - worst_day[1] >= 0.3:
             patterns.append('Your mood tends to be higher on ' + weekday_names[best_day[0]] + 's.')
             if worst_day[0] != best_day[0]:
                 patterns.append('You often feel lower on ' + weekday_names[worst_day[0]] + 's.')
@@ -1048,11 +1127,11 @@ def _emotional_patterns(user):
                 activity_mood[tag].append(e.mood)
     overall_avg = sum(e.mood for e in entries) / len(entries)
     for tag, moods in activity_mood.items():
-        if len(moods) >= 3:
+        if len(moods) >= 2:
             tag_avg = sum(moods) / len(moods)
-            if tag_avg - overall_avg >= 0.5:
+            if tag_avg - overall_avg >= 0.4:
                 patterns.append("When you log '%s', your mood is often better." % tag.capitalize())
-            elif overall_avg - tag_avg >= 0.5:
+            elif overall_avg - tag_avg >= 0.4:
                 patterns.append("Days with '%s' logged tend to be tougher—consider support." % tag.capitalize())
     return patterns[:5]
 

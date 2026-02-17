@@ -6,8 +6,8 @@
     <p class="text-gray-600 mb-4">Peer-to-peer discussion and support. Share experiences and connect with others—all posts can be anonymous.</p>
     <div class="flex flex-wrap gap-2 mb-4">
         <a href="{% url 'forum_list' %}" class="px-3 py-1.5 rounded-lg text-sm font-medium {% if not current_category %}bg-primary text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">All</a>
-        <a href="?category=support" class="px-3 py-1.5 rounded-lg text-sm font-medium {% if current_category == 'support' %}bg-primary text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">Support</a>
-        <a href="?category=discussion" class="px-3 py-1.5 rounded-lg text-sm font-medium {% if current_category == 'discussion' %}bg-primary text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">Discussion</a>
+        <a href="?category=support" class="px-3 py-1.5 rounded-lg text-sm font-medium {% if current_category == 'support' %}bg-amber-500 text-white{% else %}bg-amber-500/20 text-amber-800 hover:bg-amber-500 hover:text-white{% endif %}">Support</a>
+        <a href="?category=discussion" class="px-3 py-1.5 rounded-lg text-sm font-medium {% if current_category == 'discussion' %}bg-amber-500 text-white{% else %}bg-amber-500/20 text-amber-800 hover:bg-amber-500 hover:text-white{% endif %}">Discussion</a>
         <a href="{% url 'recovery_stories' %}" class="px-3 py-1.5 rounded-lg text-sm font-medium bg-amber-500/20 text-amber-800 hover:bg-amber-500 hover:text-white">Recovery Stories</a>
     </div>
     {% if user.is_authenticated %}
@@ -16,12 +16,16 @@
     {% for post in posts %}
     <div class="forum-post bg-white rounded-xl shadow p-4 mb-4">
         <span class="text-xs font-medium text-gray-500 uppercase">{{ post.get_category_display }}</span>
-        <h5 class="font-semibold text-lg mt-1"><a href="{% url 'forum_detail' post.pk %}" class="text-primary hover:underline">{{ post.title }}</a></h5>
+        <h5 class="font-semibold text-lg mt-1"><a href="{% url 'forum_detail' post.pk %}?focus=replies" class="text-primary hover:underline">{{ post.title }}</a></h5>
         <p class="text-gray-500 text-sm mb-2">
-            {% if post.is_anonymous %}Anonymous{% else %}{{ post.author.username }}{% endif %} · {{ post.created_at|date:"M d, Y" }}
+            {% if post.is_anonymous %}Anonymous{% else %}{{ post.author.username }}{% endif %} · {{ post.created_at|date:"M d, Y" }} [{{ post.created_at|date:"H:i" }}]
             · {{ post.reply_count }} repl{{ post.reply_count|pluralize:"y,ies" }}
         </p>
         <p class="text-gray-700">{{ post.content|truncatewords:30 }}</p>
+        <div class="mt-4 flex items-center gap-3">
+            <a href="{% url 'forum_detail' post.pk %}?focus=replies" class="text-primary font-medium hover:underline">View details</a>
+            <a href="{% url 'forum_detail' post.pk %}?focus=reply#reply-form" class="inline-block px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary-dark transition">Reply</a>
+        </div>
     </div>
     {% empty %}
     <p class="text-gray-600">No posts yet. Be the first to share!</p>

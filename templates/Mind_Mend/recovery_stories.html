@@ -10,12 +10,16 @@
     </div>
     {% for post in posts %}
     <div class="forum-post bg-white rounded-xl shadow p-6 mb-4">
-        <h5 class="font-semibold text-lg"><a href="{% url 'forum_detail' post.pk %}" class="text-primary hover:underline">{{ post.title }}</a></h5>
+        <h5 class="font-semibold text-lg"><a href="{% url 'forum_detail' post.pk %}?focus=replies" class="text-primary hover:underline">{{ post.title }}</a></h5>
         <p class="text-gray-500 text-sm mb-2">
-            {% if post.is_anonymous %}Anonymous{% else %}{{ post.author.username }}{% endif %} · {{ post.created_at|date:"M d, Y" }}
+            {% if post.is_anonymous %}Anonymous{% else %}{{ post.author.username }}{% endif %} · {{ post.created_at|date:"M d, Y" }} [{{ post.created_at|date:"H:i" }}]
             · {{ post.reply_count }} repl{{ post.reply_count|pluralize:"y,ies" }}
         </p>
         <p class="text-gray-700">{{ post.content|truncatewords:40 }}</p>
+        <div class="mt-4 flex items-center gap-3">
+            <a href="{% url 'forum_detail' post.pk %}?focus=replies" class="text-primary font-medium hover:underline">View details</a>
+            <a href="{% url 'forum_detail' post.pk %}?focus=reply#reply-form" class="inline-block px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary-dark transition">Reply</a>
+        </div>
     </div>
     {% empty %}
     <p class="text-gray-600">No recovery stories yet. <a href="{% url 'forum_create' %}?category=recovery" class="text-primary font-medium hover:underline">Share yours</a>.</p>

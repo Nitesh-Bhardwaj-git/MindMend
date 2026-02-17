@@ -5,33 +5,37 @@
 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <div class="forum-post mb-8">
         <h3 class="text-2xl font-semibold mb-2">{{ post.title }}</h3>
-        <p class="text-gray-500 text-sm mb-4">{% if post.is_anonymous %}Anonymous{% else %}{{ post.author.username }}{% endif %} · {{ post.created_at|date:"M d, Y H:i" }}</p>
+        <p class="text-gray-500 text-sm mb-4">{% if post.is_anonymous %}Anonymous{% else %}{{ post.author.username }}{% endif %} · {{ post.created_at|date:"M d, Y" }} [{{ post.created_at|date:"H:i" }}]</p>
         <p class="text-gray-700">{{ post.content }}</p>
     </div>
+    {% if focus != 'reply' %}
     <h5 class="text-lg font-semibold mb-4">Replies</h5>
     {% for reply in replies %}
     <div class="forum-post ml-4 mb-4">
-        <p class="text-sm mb-1"><strong>{% if reply.is_anonymous %}Anonymous{% else %}{{ reply.author.username }}{% endif %}</strong> · {{ reply.created_at|date:"M d, Y" }}</p>
+        <p class="text-sm mb-1"><strong>{% if reply.is_anonymous %}Anonymous{% else %}{{ reply.author.username }}{% endif %}</strong> · {{ reply.created_at|date:"M d, Y" }} [{{ reply.created_at|date:"H:i" }}]</p>
         <p class="text-gray-700">{{ reply.content }}</p>
     </div>
     {% empty %}
     <p class="text-gray-600">No replies yet.</p>
     {% endfor %}
-    {% if user.is_authenticated %}
-    <div class="bg-white rounded-2xl shadow-lg p-6 mt-8">
-        <h6 class="font-semibold mb-4">Add a reply</h6>
-        <form method="post" action="{% url 'forum_reply' post.pk %}">
-            {% csrf_token %}
-            {{ reply_form.content|add_class:"form-control mb-4" }}
-            <div class="flex items-center gap-2 mb-4">
-                {{ reply_form.is_anonymous }}
-                <label for="{{ reply_form.is_anonymous.id_for_label }}" class="cursor-pointer">Post anonymously</label>
-            </div>
-            <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition">Reply</button>
-        </form>
-    </div>
-    {% else %}
-    <p class="mt-6"><a href="{% url 'login' %}" class="text-primary font-medium hover:underline">Login</a> to reply.</p>
+    {% endif %}
+    {% if focus != 'replies' %}
+        {% if user.is_authenticated %}
+        <div id="reply-form" class="bg-white rounded-2xl shadow-lg p-6 mt-8">
+            <h6 class="font-semibold mb-4">Add a reply</h6>
+            <form method="post" action="{% url 'forum_reply' post.pk %}">
+                {% csrf_token %}
+                {{ reply_form.content|add_class:"form-control mb-4" }}
+                <div class="flex items-center gap-2 mb-4">
+                    {{ reply_form.is_anonymous }}
+                    <label for="{{ reply_form.is_anonymous.id_for_label }}" class="cursor-pointer">Post anonymously</label>
+                </div>
+                <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition">Reply</button>
+            </form>
+        </div>
+        {% else %}
+        <p class="mt-6"><a href="{% url 'login' %}" class="text-primary font-medium hover:underline">Login</a> to reply.</p>
+        {% endif %}
     {% endif %}
 </div>
 {% endblock %}

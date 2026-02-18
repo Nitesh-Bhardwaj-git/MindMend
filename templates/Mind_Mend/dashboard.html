@@ -26,7 +26,7 @@
             {% for a in assessments %}
             <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 border-b border-gray-100 py-3">
                 <span class="font-medium">{{ a.get_assessment_type_display|default:a.assessment_type }}</span>
-                <span class="text-sm text-gray-700">Score: {{ a.total_score }} — {{ a.result_level }}</span>
+                <span class="text-sm text-rose-700">Score: {{ a.total_score }} — {{ a.result_level }}</span>
                 <span class="text-gray-500 text-sm">{{ a.created_at|date:"M d" }}</span>
             </div>
             {% empty %}
@@ -37,12 +37,12 @@
 
     <!-- Wellness suggestions -->
     <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
-        <h5 class="font-semibold mb-4">🧘 Wellness suggestions</h5>
-        <p class="text-xs text-gray-500 mb-3">Personalised tips from your data.</p>
+        <h5 class="font-semibold mb-4 text-rose-700">🧘 Wellness suggestions</h5>
+        <p class="text-xs text-rose-500 mb-3">Personalised tips from your data.</p>
         {% if wellness_suggestions %}
         <ul class="space-y-2">
             {% for tip in wellness_suggestions %}
-            <li class="flex items-start gap-2 text-gray-700 text-sm">
+            <li class="flex items-start gap-2 text-rose-700 text-sm">
                 <span class="text-primary mt-0.5">•</span>
                 <span>{{ tip }}</span>
             </li>
@@ -168,3 +168,4 @@
 
 </script>
 {% endblock %}
+

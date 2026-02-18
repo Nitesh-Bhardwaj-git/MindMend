@@ -279,10 +279,15 @@ def assessment_phq9(request):
                 'result_level': result_level,
                 'next_url': 'assessments',
             })
-    return render(request, 'Mind_Mend/assessment_phq9.html', {
+    scale = list(range(4))
+    labels = ['Not at all', 'Several days', 'More than half the days', 'Nearly every day']
+    return render(request, 'Mind_Mend/assessment_form.html', {
+        'assessment_title': 'PHQ-9',
+        'assessment_heading': 'PHQ-9 Depression Assessment',
+        'assessment_intro': 'Over the last 2 weeks, how often have you been bothered by the following? (0 = Not at all, 3 = Nearly every day)',
         'questions': PHQ9_QUESTIONS,
-        'scale': list(range(4)),
-        'labels': ['Not at all', 'Several days', 'More than half the days', 'Nearly every day']
+        'options': list(zip(scale, labels)),
+        'input_prefix': 'phq9',
     })
 
 
@@ -320,10 +325,15 @@ def assessment_gad7(request):
                 'result_level': result_level,
                 'next_url': 'assessments',
             })
-    return render(request, 'Mind_Mend/assessment_gad7.html', {
+    scale = list(range(4))
+    labels = ['Not at all', 'Several days', 'Over half the days', 'Nearly every day']
+    return render(request, 'Mind_Mend/assessment_form.html', {
+        'assessment_title': 'GAD-7',
+        'assessment_heading': 'GAD-7 Anxiety Assessment',
+        'assessment_intro': 'Over the last 2 weeks, how often have you been bothered by the following? (0 = Not at all, 3 = Nearly every day)',
         'questions': GAD7_QUESTIONS,
-        'scale': list(range(4)),
-        'labels': ['Not at all', 'Several days', 'Over half the days', 'Nearly every day']
+        'options': list(zip(scale, labels)),
+        'input_prefix': 'gad7',
     })
 
 
@@ -363,10 +373,15 @@ def assessment_pss(request):
                 'result_level': result_level,
                 'next_url': 'assessments',
             })
-    return render(request, 'Mind_Mend/assessment_pss.html', {
+    scale = list(range(5))
+    labels = ['Never', 'Almost Never', 'Sometimes', 'Fairly Often', 'Very Often']
+    return render(request, 'Mind_Mend/assessment_form.html', {
+        'assessment_title': 'PSS-10',
+        'assessment_heading': 'PSS-10 Perceived Stress Scale',
+        'assessment_intro': 'In the last month, how often have you felt/thought the following? (0 = Never, 4 = Very Often)',
         'questions': PSS_QUESTIONS,
-        'scale': list(range(5)),
-        'labels': ['Never', 'Almost Never', 'Sometimes', 'Fairly Often', 'Very Often']
+        'options': list(zip(scale, labels)),
+        'input_prefix': 'pss',
     })
 
 
@@ -382,12 +397,12 @@ def forum_list(request):
 
 
 def recovery_stories(request):
-    """Recovery stories — forum posts with category=recovery."""
+    """Recovery stories routed through the unified forum list template."""
     posts = ForumPost.objects.filter(category='recovery').annotate(reply_count=Count('forumreply')).order_by('-created_at')
     paginator = Paginator(posts, 10)
     page = request.GET.get('page', 1)
     posts = paginator.get_page(page)
-    return render(request, 'Mind_Mend/recovery_stories.html', {'posts': posts})
+    return render(request, 'Mind_Mend/forum_list.html', {'posts': posts, 'current_category': 'recovery'})
 
 
 @login_required

@@ -88,7 +88,7 @@
                     <a href="{% url 'location_map' %}" class="text-white/90 hover:text-white py-2">Location Map</a>
                     <a href="{% url 'mental_health_heatmap' %}" class="text-white/90 hover:text-white py-2">Heatmap</a>
                     <a href="{% url 'survey_analytics' %}" class="text-white/90 hover:text-white py-2">Survey Analytics</a>
-                    <a href="{% url 'recovery_stories' %}" class="text-white/90 hover:text-white py-2">Recovery Stories</a>
+                    {% comment %} <a href="{% url 'recovery_stories' %}" class="text-white/90 hover:text-white py-2">Recovery Stories</a> {% endcomment %}
                     <a href="{% url 'logout' %}" class="text-white/90 hover:text-white py-2">Logout</a>
                 {% else %}
                     <a href="{% url 'forum_list' %}" class="text-white/90 hover:text-white py-2">Support Forum</a>

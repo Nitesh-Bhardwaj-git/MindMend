@@ -53,7 +53,10 @@ urlpatterns = [
 
     # Dashboard
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('my-progress/', views.my_progress, name='my_progress'),
     path('survey-analytics/', views.survey_analytics, name='survey_analytics'),
+    path('survey-sentiment/', views.survey_sentiment_dashboard, name='survey_sentiment_dashboard'),
+    path('my-progress/report.pdf', views.download_progress_report_pdf, name='download_progress_report_pdf'),
 
     # Location Map (staff only)
     path('location-map/', views.location_map, name='location_map'),

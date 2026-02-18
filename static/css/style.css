@@ -20,6 +20,46 @@ iframe {
   display: block;
 }
 
+/* Global form field visibility */
+.form-control,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="date"],
+input[type="time"],
+input[type="number"],
+textarea,
+select {
+  width: 100%;
+  display: block;
+  background: #ffffff !important;
+  color: #111827;
+  border: 1.5px solid #111827 !important;
+  border-radius: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  outline: none;
+}
+
+.form-control::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: #6b7280;
+  opacity: 1;
+}
+
+.form-control:focus,
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="date"]:focus,
+input[type="time"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus {
+  border-color: #2d6a4f !important;
+  box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.18);
+}
+
 /* Animated mood emojis */
 @keyframes mood-float {
   0%, 100% { transform: translateY(0) scale(1); }

@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}Survey Sentiment{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex flex-wrap justify-between items-center gap-3 mb-6">
+        <div>
+            <h2 class="text-2xl font-semibold">Survey Sentiment Dashboard</h2>
+            <p class="text-sm text-gray-600">Top stress causes over time with demographic filters.</p>
+        </div>
+        <a href="{% url 'survey_analytics' %}" class="inline-flex items-center px-4 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition font-medium">View Survey Analytics</a>
+    </div>
+
+    <form method="get" class="bg-white rounded-2xl shadow p-4 mb-6 grid grid-cols-1 md:grid-cols-4 gap-3">
+        <select name="age" class="rounded-lg border border-gray-300 px-3 py-2">
+            <option value="">All Age Groups</option>
+            {% for val in age_options %}
+            <option value="{{ val }}" {% if age_filter == val %}selected{% endif %}>{{ val }}</option>
+            {% endfor %}
+        </select>
+        <select name="gender" class="rounded-lg border border-gray-300 px-3 py-2">
+            <option value="">All Genders</option>
+            {% for val in gender_options %}
+            <option value="{{ val }}" {% if gender_filter == val %}selected{% endif %}>{{ val }}</option>
+            {% endfor %}
+        </select>
+        <select name="occupation" class="rounded-lg border border-gray-300 px-3 py-2">
+            <option value="">All Occupations</option>
+            {% for val in occupation_options %}
+            <option value="{{ val }}" {% if occupation_filter == val %}selected{% endif %}>{{ val }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="rounded-lg bg-primary text-white px-4 py-2 hover:bg-primary-dark transition">Apply Filters</button>
+    </form>
+
+    {% if error %}
+    <p class="mb-6 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{{ error }}</p>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow p-5">
+            <p class="text-sm text-gray-500">Filtered Responses</p>
+            <p class="text-3xl font-bold text-primary">{{ total_filtered }}</p>
+        </div>
+        {% for c in monthly_cards %}
+        <div class="bg-white rounded-xl shadow p-5">
+            <p class="text-sm text-gray-500">{{ c.label }} ({{ c.month }})</p>
+            <p class="text-sm mt-2">Responses: <span class="font-semibold">{{ c.responses }}</span></p>
+            <p class="text-sm">Avg stress score: <span class="font-semibold">{{ c.avg_stress|default:"—" }}</span></p>
+            <p class="text-sm">Top cause: <span class="font-semibold">{{ c.top_cause }}</span></p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <section class="bg-white rounded-2xl shadow p-6">
+        <h3 class="font-semibold mb-3">Top Stress Causes Over Time</h3>
+        <div class="h-80"><canvas id="causes-over-time-chart"></canvas></div>
+    </section>
+</div>
+
+{{ month_labels|json_script:"sentiment-month-labels" }}
+{{ top_causes|json_script:"sentiment-top-causes" }}
+{{ cause_series|json_script:"sentiment-cause-series" }}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    (function () {
+        function parse(id, fallback) {
+            const node = document.getElementById(id);
+            if (!node) return fallback;
+            try { return JSON.parse(node.textContent || 'null') || fallback; } catch (e) { return fallback; }
+        }
+        const labels = parse('sentiment-month-labels', []);
+        const series = parse('sentiment-cause-series', []);
+        const canvas = document.getElementById('causes-over-time-chart');
+        if (!canvas) return;
+
+        const palette = ['#2563eb', '#7c3aed', '#059669', '#ea580c', '#dc2626'];
+        const datasets = series.map(function (s, idx) {
+            return {
+                label: s.name,
+                data: s.data || [],
+                borderColor: palette[idx % palette.length],
+                backgroundColor: palette[idx % palette.length] + '55',
+                fill: false,
+                tension: 0.3,
+                pointRadius: 3
+            };
+        });
+        new Chart(canvas, {
+            type: 'line',
+            data: { labels: labels, datasets: datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { position: window.matchMedia('(max-width:640px)').matches ? 'bottom' : 'right' }
+                },
+                scales: {
+                    y: { beginAtZero: true, ticks: { precision: 0 } },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Month, Year'
+                        }
+                    }
+                }
+            }
+        });
+    })();
+</script>
+{% endblock %}

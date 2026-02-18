@@ -29,6 +29,7 @@ class MoodEntryForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['energy_level'].required = False
+        self.fields['activities'].required = True
 
     class Meta:
         model = MoodEntry
@@ -36,7 +37,7 @@ class MoodEntryForm(forms.ModelForm):
         widgets = {
             'mood': forms.RadioSelect(),
             'energy_level': forms.RadioSelect(),
-            'activities': forms.TextInput(attrs={'placeholder': 'e.g. work, sleep, exercise (optional)'}),
+            'activities': forms.TextInput(attrs={'placeholder': 'e.g. work, sleep, exercise'}),
             'notes': forms.Textarea(attrs={'rows': 3, 'placeholder': 'What\'s on your mind? (optional)'}),
             'date': forms.DateInput(attrs={'type': 'date'}),
         }
@@ -66,6 +67,40 @@ class CounsellorBookingForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['counsellor'].queryset = Counsellor.objects.filter(is_active=True)
+
+    def clean(self):
+        cleaned = super().clean()
+        counsellor = cleaned.get('counsellor')
+        booking_date = cleaned.get('date')
+        time_slot = cleaned.get('time_slot')
+
+        if not counsellor or not booking_date or not time_slot:
+            return cleaned
+
+        day_name = booking_date.strftime('%a').lower()  # mon, tue, ...
+        available_tokens = [
+            t.strip().lower()
+            for t in (counsellor.available_days or '').replace('/', ',').replace(' ', ',').split(',')
+            if t.strip()
+        ]
+        # Normalize common full weekday names to 3-letter form.
+        full_to_short = {
+            'monday': 'mon', 'tuesday': 'tue', 'wednesday': 'wed',
+            'thursday': 'thu', 'friday': 'fri', 'saturday': 'sat', 'sunday': 'sun'
+        }
+        normalized = set()
+        for token in available_tokens:
+            normalized.add(full_to_short.get(token, token[:3]))
+
+        day_available = day_name in normalized
+        time_available = (
+            counsellor.available_time_start <= time_slot <= counsellor.available_time_end
+        )
+
+        if not (day_available and time_available):
+            raise forms.ValidationError('The counsellor is not available on this day or time.')
+
+        return cleaned
 
     class Meta:
         model = CounsellorBooking

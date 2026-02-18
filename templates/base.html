@@ -41,7 +41,9 @@
                     <a href="{% url 'chat' %}" class="text-white/90 hover:text-white font-medium transition">AI Chat</a>
                     <a href="{% url 'assessments' %}" class="text-white/90 hover:text-white font-medium transition">Assessments</a>
                     <a href="{% url 'counsellor_booking' %}" class="text-white/90 hover:text-white font-medium transition">Book Counsellor</a>
+                    {% if user.is_authenticated %}
                     <a href="{% url 'mood_tracker' %}" class="text-white/90 hover:text-white font-medium transition">Mood</a>
+                    {% endif %}
                     <a href="{% url 'contact_us' %}" class="text-white/90 hover:text-white font-medium transition">Contact</a>
                     {% if user.is_authenticated %}
                         <div class="relative group" id="dashboardDropdown">
@@ -51,18 +53,18 @@
                             </button>
                             <div class="absolute right-0 mt-1 w-48 py-2 bg-white rounded-lg shadow-xl border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-[9999]" id="dashboardDropdownMenu">
                                 <a href="{% url 'dashboard' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Dashboard</a>
+                                <a href="{% url 'my_progress' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">My Progress</a>
                                 <a href="{% url 'doctor_dashboard' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Doctor Panel</a>
                                 <a href="{% url 'resources' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Helplines</a>
                                 <a href="{% url 'forum_list' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Support Forum</a>
                                 <a href="{% url 'location_map' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Location Map</a>
                                 <a href="{% url 'mental_health_heatmap' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Heatmap</a>
                                 <a href="{% url 'survey_analytics' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Survey Analytics</a>
-                                {% comment %} <a href="{% url 'recovery_stories' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Recovery Stories</a> {% endcomment %}
+                                <a href="{% url 'survey_sentiment_dashboard' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Survey Sentiment</a>
                                 <a href="{% url 'logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600">Logout</a>
                             </div>
                         </div>
                     {% else %}
-                        <a href="{% url 'forum_list' %}" class="text-white/90 hover:text-white font-medium transition">Support Forum</a>
                         <a href="{% url 'resources' %}" class="text-white/90 hover:text-white font-medium transition">Helplines</a>
                         <a href="{% url 'login' %}" class="text-white/90 hover:text-white font-medium transition cursor-pointer">Login</a>
                         <a href="{% url 'doctor_login' %}" class="text-white/90 hover:text-white font-medium transition cursor-pointer">Doctor Login</a>
@@ -77,18 +79,21 @@
                 <a href="{% url 'chat' %}" class="text-white/90 hover:text-white py-2">AI Chat</a>
                 <a href="{% url 'assessments' %}" class="text-white/90 hover:text-white py-2">Assessments</a>
                 <a href="{% url 'counsellor_booking' %}" class="text-white/90 hover:text-white py-2">Book Counsellor</a>
+                {% if user.is_authenticated %}
                 <a href="{% url 'mood_tracker' %}" class="text-white/90 hover:text-white py-2">Mood</a>
+                {% endif %}
                 <a href="{% url 'contact_us' %}" class="text-white/90 hover:text-white py-2">Contact us</a>
                 {% if user.is_authenticated %}
                     <p class="text-white/70 text-sm uppercase pt-2">Dashboard menu</p>
                     <a href="{% url 'dashboard' %}" class="text-white/90 hover:text-white py-2">Dashboard</a>
+                    <a href="{% url 'my_progress' %}" class="text-white/90 hover:text-white py-2">My Progress</a>
                     <a href="{% url 'doctor_dashboard' %}" class="text-white/90 hover:text-white py-2">Doctor Panel</a>
                     <a href="{% url 'resources' %}" class="text-white/90 hover:text-white py-2">Helplines</a>
                     <a href="{% url 'forum_list' %}" class="text-white/90 hover:text-white py-2">Support Forum</a>
                     <a href="{% url 'location_map' %}" class="text-white/90 hover:text-white py-2">Location Map</a>
                     <a href="{% url 'mental_health_heatmap' %}" class="text-white/90 hover:text-white py-2">Heatmap</a>
                     <a href="{% url 'survey_analytics' %}" class="text-white/90 hover:text-white py-2">Survey Analytics</a>
-                    {% comment %} <a href="{% url 'recovery_stories' %}" class="text-white/90 hover:text-white py-2">Recovery Stories</a> {% endcomment %}
+                    <a href="{% url 'survey_sentiment_dashboard' %}" class="text-white/90 hover:text-white py-2">Survey Sentiment</a>
                     <a href="{% url 'logout' %}" class="text-white/90 hover:text-white py-2">Logout</a>
                 {% else %}
                     <a href="{% url 'forum_list' %}" class="text-white/90 hover:text-white py-2">Support Forum</a>

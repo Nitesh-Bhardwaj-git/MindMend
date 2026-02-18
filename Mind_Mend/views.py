@@ -2,7 +2,8 @@ import json
 import csv
 import io
 import re
-from collections import Counter
+from collections import Counter, defaultdict
+from datetime import timedelta, datetime
 from urllib.error import URLError, HTTPError
 from urllib.request import Request, urlopen
 from django.shortcuts import render, redirect, get_object_or_404
@@ -11,7 +12,7 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
@@ -34,6 +35,13 @@ try:
 except ModuleNotFoundError:
     Credentials = None
     build = None
+
+try:
+    from reportlab.lib.pagesizes import A4
+    from reportlab.pdfgen import canvas
+except ModuleNotFoundError:
+    A4 = None
+    canvas = None
 
 from .models import (
     MoodEntry, ForumPost, ForumReply, Counsellor, CounsellorBooking,
@@ -842,11 +850,34 @@ def mood_tracker(request):
         else:
             break
 
+    # Crisis-aware alert: 2+ consecutive recent days with Very Low mood.
+    recent_for_alert = list(MoodEntry.objects.filter(user=request.user).order_by('-date')[:10])
+    very_low_streak = 0
+    prev_date = None
+    for e in recent_for_alert:
+        if e.mood != 1:
+            break
+        if very_low_streak == 0:
+            very_low_streak = 1
+            prev_date = e.date
+            continue
+        if prev_date and e.date == (prev_date - timedelta(days=1)):
+            very_low_streak += 1
+            prev_date = e.date
+        else:
+            break
+    crisis_alert = very_low_streak >= 2
+
+    activity_chips = ['work', 'sleep', 'exercise', 'family', 'social', 'study', 'music', 'gaming']
+
     return render(request, 'Mind_Mend/mood_tracker.html', {
         'form': form, 'entries': entries,
         'avg_mood_7': round(avg_mood_7, 1) if avg_mood_7 else None,
         'mood_data': mood_data,
         'streak': streak,
+        'crisis_alert': crisis_alert,
+        'very_low_streak': very_low_streak,
+        'activity_chips': activity_chips,
     })
 
 
@@ -1402,6 +1433,369 @@ def survey_analytics(request):
         'survey': analytics,
         'survey_form_url': settings.MINDMEND_GOOGLE_FORM_URL,
     })
+
+
+def _trend_status(current_avg, previous_avg, lower_is_better=False):
+    if current_avg is None or previous_avg is None:
+        return 'stable'
+    delta = (previous_avg - current_avg) if lower_is_better else (current_avg - previous_avg)
+    if delta >= 0.25:
+        return 'improving'
+    if delta <= -0.25:
+        return 'worsening'
+    return 'stable'
+
+
+def _weekly_assessment_series(user, assessment_type, weeks=12):
+    cutoff = timezone.now() - timedelta(days=weeks * 7)
+    qs = AssessmentResult.objects.filter(
+        user=user,
+        assessment_type=assessment_type,
+        created_at__gte=cutoff
+    ).order_by('created_at')
+    buckets = defaultdict(list)
+    for item in qs:
+        d = item.created_at.date()
+        week_start = d - timedelta(days=d.weekday())
+        buckets[week_start].append(item.total_score)
+    labels = []
+    values = []
+    for week_start in sorted(buckets.keys()):
+        labels.append(week_start.strftime('%d %b'))
+        avg_score = sum(buckets[week_start]) / len(buckets[week_start])
+        values.append(round(avg_score, 1))
+    return labels, values
+
+
+def _weekly_mood_series(user, weeks=12):
+    cutoff_date = (timezone.now() - timedelta(days=weeks * 7)).date()
+    qs = MoodEntry.objects.filter(user=user, date__gte=cutoff_date).order_by('date')
+    buckets = defaultdict(list)
+    for item in qs:
+        week_start = item.date - timedelta(days=item.date.weekday())
+        buckets[week_start].append(item.mood)
+    labels = []
+    values = []
+    for week_start in sorted(buckets.keys()):
+        labels.append(week_start.strftime('%d %b'))
+        avg_mood = sum(buckets[week_start]) / len(buckets[week_start])
+        values.append(round(avg_mood, 2))
+    return labels, values
+
+
+def _assessment_recent_pair_avg(user, assessment_type, days=14):
+    now = timezone.now()
+    current_from = now - timedelta(days=days)
+    prev_from = now - timedelta(days=2 * days)
+    current = AssessmentResult.objects.filter(
+        user=user,
+        assessment_type=assessment_type,
+        created_at__gte=current_from
+    ).aggregate(avg=Avg('total_score'))['avg']
+    previous = AssessmentResult.objects.filter(
+        user=user,
+        assessment_type=assessment_type,
+        created_at__gte=prev_from,
+        created_at__lt=current_from
+    ).aggregate(avg=Avg('total_score'))['avg']
+    return current, previous
+
+
+def _mood_recent_pair_avg(user, days=14):
+    today = timezone.now().date()
+    current_from = today - timedelta(days=days)
+    prev_from = today - timedelta(days=2 * days)
+    current = MoodEntry.objects.filter(
+        user=user,
+        date__gte=current_from
+    ).aggregate(avg=Avg('mood'))['avg']
+    previous = MoodEntry.objects.filter(
+        user=user,
+        date__gte=prev_from,
+        date__lt=current_from
+    ).aggregate(avg=Avg('mood'))['avg']
+    return current, previous
+
+
+def _streak_days(user):
+    streak = 0
+    check_date = timezone.now().date()
+    for _ in range(60):
+        if MoodEntry.objects.filter(user=user, date=check_date).exists():
+            streak += 1
+            check_date -= timedelta(days=1)
+        else:
+            break
+    return streak
+
+
+def _survey_rows():
+    rows, err = _rows_from_google_sheets_api()
+    if rows is None and (settings.MINDMEND_GOOGLE_FORM_RESPONSES_CSV_URL or '').strip():
+        rows, csv_err = _rows_from_public_csv()
+        if rows is None:
+            err = f'{err} | {csv_err}' if err else csv_err
+        else:
+            err = ''
+    return rows, err or ''
+
+
+def _find_column_name(fieldnames, keywords):
+    for name in fieldnames:
+        lower = (name or '').strip().lower()
+        if all(k in lower for k in keywords):
+            return name
+    for name in fieldnames:
+        lower = (name or '').strip().lower()
+        if any(k in lower for k in keywords):
+            return name
+    return ''
+
+
+def _month_key_from_timestamp(ts):
+    value = (ts or '').strip()
+    if not value:
+        return ''
+    patterns = [
+        '%m/%d/%Y %H:%M:%S',
+        '%m/%d/%Y %H:%M',
+        '%d/%m/%Y %H:%M:%S',
+        '%d/%m/%Y %H:%M',
+        '%Y-%m-%d %H:%M:%S',
+        '%Y-%m-%d %H:%M',
+    ]
+    for fmt in patterns:
+        try:
+            dt = datetime.strptime(value, fmt)
+            return dt.strftime('%Y-%m')
+        except ValueError:
+            continue
+    return ''
+
+
+def _stress_score(value):
+    v = (value or '').strip().lower()
+    if not v:
+        return None
+    if 'rarely' in v:
+        return 1
+    if 'sometimes' in v:
+        return 2
+    if 'moderate' in v:
+        return 3
+    if 'often' in v:
+        return 4
+    if 'very often' in v:
+        return 5
+    as_num = _try_float(v)
+    if as_num is None:
+        return None
+    return float(as_num)
+
+
+@login_required
+def my_progress(request):
+    phq_labels, phq_values = _weekly_assessment_series(request.user, 'phq9')
+    gad_labels, gad_values = _weekly_assessment_series(request.user, 'gad7')
+    pss_labels, pss_values = _weekly_assessment_series(request.user, 'pss')
+    mood_labels, mood_values = _weekly_mood_series(request.user)
+
+    phq_current, phq_previous = _assessment_recent_pair_avg(request.user, 'phq9')
+    gad_current, gad_previous = _assessment_recent_pair_avg(request.user, 'gad7')
+    pss_current, pss_previous = _assessment_recent_pair_avg(request.user, 'pss')
+    mood_current, mood_previous = _mood_recent_pair_avg(request.user)
+
+    badges = {
+        'phq9': _trend_status(phq_current, phq_previous, lower_is_better=True),
+        'gad7': _trend_status(gad_current, gad_previous, lower_is_better=True),
+        'pss': _trend_status(pss_current, pss_previous, lower_is_better=True),
+        'mood': _trend_status(mood_current, mood_previous, lower_is_better=False),
+    }
+
+    return render(request, 'Mind_Mend/my_progress.html', {
+        'phq_chart': {'labels': phq_labels, 'values': phq_values},
+        'gad_chart': {'labels': gad_labels, 'values': gad_values},
+        'pss_chart': {'labels': pss_labels, 'values': pss_values},
+        'mood_chart': {'labels': mood_labels, 'values': mood_values},
+        'badges': badges,
+        'streak': _streak_days(request.user),
+        'mental_health_score': _mental_health_score(request.user),
+    })
+
+
+@login_required
+def survey_sentiment_dashboard(request):
+    rows, err = _survey_rows()
+    if rows is None:
+        rows = []
+    fieldnames = list(rows[0].keys()) if rows else []
+    age_col = _find_column_name(fieldnames, ['age'])
+    gender_col = _find_column_name(fieldnames, ['gender'])
+    occupation_col = _find_column_name(fieldnames, ['occupation'])
+    stress_causes_col = _find_column_name(fieldnames, ['stress', 'cause'])
+    stress_freq_col = _find_column_name(fieldnames, ['feel', 'stressed'])
+    ts_col = _find_column_name(fieldnames, ['timestamp'])
+
+    age_filter = (request.GET.get('age') or '').strip()
+    gender_filter = (request.GET.get('gender') or '').strip()
+    occupation_filter = (request.GET.get('occupation') or '').strip()
+
+    age_options = sorted({(r.get(age_col) or '').strip() for r in rows if age_col and (r.get(age_col) or '').strip()})
+    gender_options = sorted({(r.get(gender_col) or '').strip() for r in rows if gender_col and (r.get(gender_col) or '').strip()})
+    occupation_options = sorted({(r.get(occupation_col) or '').strip() for r in rows if occupation_col and (r.get(occupation_col) or '').strip()})
+
+    filtered = []
+    for r in rows:
+        if age_filter and (r.get(age_col) or '').strip() != age_filter:
+            continue
+        if gender_filter and (r.get(gender_col) or '').strip() != gender_filter:
+            continue
+        if occupation_filter and (r.get(occupation_col) or '').strip() != occupation_filter:
+            continue
+        filtered.append(r)
+
+    overall_cause_counts = Counter()
+    month_cause_counts = defaultdict(Counter)
+    month_stress_scores = defaultdict(list)
+    month_response_counts = Counter()
+    for r in filtered:
+        month_key = _month_key_from_timestamp(r.get(ts_col, '')) if ts_col else ''
+        if month_key:
+            month_response_counts[month_key] += 1
+        if stress_causes_col:
+            tokens = _parse_choice_values([(r.get(stress_causes_col) or '').strip()])
+            for token in tokens:
+                overall_cause_counts[token] += 1
+                if month_key:
+                    month_cause_counts[month_key][token] += 1
+        if stress_freq_col and month_key:
+            score = _stress_score(r.get(stress_freq_col))
+            if score is not None:
+                month_stress_scores[month_key].append(score)
+
+    top_causes = [k for k, _ in overall_cause_counts.most_common(5)]
+    month_keys = sorted(month_cause_counts.keys())
+    month_labels = []
+    for key in month_keys:
+        try:
+            month_labels.append(datetime.strptime(key, '%Y-%m').strftime('%b %Y'))
+        except ValueError:
+            month_labels.append(key)
+    cause_series = []
+    for cause in top_causes:
+        cause_series.append({
+            'name': cause,
+            'data': [month_cause_counts[m].get(cause, 0) for m in month_keys]
+        })
+
+    monthly_cards = []
+    if month_keys:
+        current_month = month_keys[-1]
+        previous_month = month_keys[-2] if len(month_keys) > 1 else ''
+        try:
+            current_month_label = datetime.strptime(current_month, '%Y-%m').strftime('%b %Y')
+        except ValueError:
+            current_month_label = current_month
+        try:
+            previous_month_label = datetime.strptime(previous_month, '%Y-%m').strftime('%b %Y') if previous_month else 'N/A'
+        except ValueError:
+            previous_month_label = previous_month or 'N/A'
+        current_avg_stress = None
+        previous_avg_stress = None
+        if month_stress_scores.get(current_month):
+            current_avg_stress = round(sum(month_stress_scores[current_month]) / len(month_stress_scores[current_month]), 2)
+        if previous_month and month_stress_scores.get(previous_month):
+            previous_avg_stress = round(sum(month_stress_scores[previous_month]) / len(month_stress_scores[previous_month]), 2)
+        current_top_cause = month_cause_counts[current_month].most_common(1)[0][0] if month_cause_counts.get(current_month) else 'N/A'
+        previous_top_cause = month_cause_counts[previous_month].most_common(1)[0][0] if previous_month and month_cause_counts.get(previous_month) else 'N/A'
+        monthly_cards = [
+            {
+                'label': 'Current Month',
+                'month': current_month_label,
+                'responses': month_response_counts.get(current_month, 0),
+                'avg_stress': current_avg_stress,
+                'top_cause': current_top_cause,
+            },
+            {
+                'label': 'Previous Month',
+                'month': previous_month_label,
+                'responses': month_response_counts.get(previous_month, 0) if previous_month else 0,
+                'avg_stress': previous_avg_stress,
+                'top_cause': previous_top_cause,
+            }
+        ]
+
+    return render(request, 'Mind_Mend/survey_sentiment_dashboard.html', {
+        'error': err,
+        'total_filtered': len(filtered),
+        'age_options': age_options,
+        'gender_options': gender_options,
+        'occupation_options': occupation_options,
+        'age_filter': age_filter,
+        'gender_filter': gender_filter,
+        'occupation_filter': occupation_filter,
+        'month_labels': month_labels,
+        'top_causes': top_causes,
+        'cause_series': cause_series,
+        'monthly_cards': monthly_cards,
+    })
+
+
+@login_required
+def download_progress_report_pdf(request):
+    if not canvas or not A4:
+        messages.error(request, 'PDF dependency is missing. Install reportlab to use report export.')
+        return redirect('my_progress')
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="mindmend-progress-report.pdf"'
+    p = canvas.Canvas(response, pagesize=A4)
+    page_width, page_height = A4
+    y = page_height - 50
+
+    def write_line(text, size=11, gap=16):
+        nonlocal y
+        if y < 50:
+            p.showPage()
+            y = page_height - 50
+        p.setFont('Helvetica', size)
+        p.drawString(45, y, str(text)[:120])
+        y -= gap
+
+    p.setFont('Helvetica-Bold', 16)
+    p.drawString(45, y, 'MindMend Progress Report')
+    y -= 24
+    write_line(f'User: {request.user.get_username()}', 11, 16)
+    write_line(f'Generated: {timezone.now().strftime("%Y-%m-%d %H:%M")}', 11, 22)
+
+    write_line('Assessment Summary', 13, 18)
+    for t, label in [('phq9', 'PHQ-9'), ('gad7', 'GAD-7'), ('pss', 'PSS')]:
+        latest = AssessmentResult.objects.filter(user=request.user, assessment_type=t).order_by('-created_at').first()
+        if latest:
+            write_line(f'{label}: latest={latest.total_score}, level={latest.result_level}, date={latest.created_at.strftime("%Y-%m-%d")}')
+        else:
+            write_line(f'{label}: no records')
+    y -= 6
+
+    write_line('Mood History (Last 30 Entries)', 13, 18)
+    mood_entries = MoodEntry.objects.filter(user=request.user).order_by('-date')[:30]
+    if mood_entries:
+        for m in mood_entries:
+            write_line(f'{m.date.strftime("%Y-%m-%d")} | Mood {m.mood}/5 | Energy {m.energy_level or "-"} | Activities: {m.activities or "-"}', 10, 14)
+    else:
+        write_line('No mood entries found.', 11, 16)
+    y -= 6
+
+    score = _mental_health_score(request.user)
+    tips = _wellness_suggestions(request.user, score)
+    write_line('Recommendations', 13, 18)
+    write_line(f'Current Mental Health Score: {score}/100', 11, 16)
+    for idx, tip in enumerate(tips, start=1):
+        write_line(f'{idx}. {tip}', 10, 14)
+
+    p.showPage()
+    p.save()
+    return response
 
 
 @login_required

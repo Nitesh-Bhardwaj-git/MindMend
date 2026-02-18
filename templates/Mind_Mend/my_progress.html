@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% block title %}My Progress{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex flex-wrap justify-between items-center gap-3 mb-6">
+        <div>
+            <h2 class="text-2xl font-semibold">My Progress</h2>
+            <p class="text-sm text-gray-600">Weekly trends from mood and assessments.</p>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+            <a href="{% url 'download_progress_report_pdf' %}" class="inline-flex items-center px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary-dark transition font-medium">Download PDF Report</a>
+            <a href="{% url 'survey_sentiment_dashboard' %}" class="inline-flex items-center px-4 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition font-medium">Survey Sentiment</a>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow p-5">
+            <p class="text-sm text-gray-500">Mood Streak</p>
+            <p class="text-3xl font-bold text-primary">{{ streak }} day{{ streak|pluralize }}</p>
+        </div>
+        <div class="bg-white rounded-xl shadow p-5">
+            <p class="text-sm text-gray-500">Mental Health Score</p>
+            <p class="text-3xl font-bold text-primary">{{ mental_health_score|default:"—" }}/100</p>
+        </div>
+        <div class="bg-white rounded-xl shadow p-5">
+            <p class="text-sm text-gray-500">Overall Trend</p>
+            <div class="mt-2 flex flex-wrap gap-2">
+                {% for metric, status in badges.items %}
+                <span class="px-3 py-1 rounded-full text-sm font-medium
+                    {% if status == 'improving' %}bg-green-100 text-green-800
+                    {% elif status == 'worsening' %}bg-red-100 text-red-800
+                    {% else %}bg-gray-100 text-gray-700{% endif %}">
+                    {{ metric|upper }}: {{ status|title }}
+                </span>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <section class="bg-white rounded-2xl shadow p-6">
+            <h3 class="font-semibold mb-3">PHQ-9 Weekly Trend</h3>
+            <div class="h-64"><canvas id="chart-phq9"></canvas></div>
+        </section>
+        <section class="bg-white rounded-2xl shadow p-6">
+            <h3 class="font-semibold mb-3">GAD-7 Weekly Trend</h3>
+            <div class="h-64"><canvas id="chart-gad7"></canvas></div>
+        </section>
+        <section class="bg-white rounded-2xl shadow p-6">
+            <h3 class="font-semibold mb-3">PSS Weekly Trend</h3>
+            <div class="h-64"><canvas id="chart-pss"></canvas></div>
+        </section>
+        <section class="bg-white rounded-2xl shadow p-6">
+            <h3 class="font-semibold mb-3">Mood Weekly Trend</h3>
+            <div class="h-64"><canvas id="chart-mood"></canvas></div>
+        </section>
+    </div>
+</div>
+
+{{ phq_chart|json_script:"phq-chart-data" }}
+{{ gad_chart|json_script:"gad-chart-data" }}
+{{ pss_chart|json_script:"pss-chart-data" }}
+{{ mood_chart|json_script:"mood-chart-data" }}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    (function () {
+        function parse(id) {
+            const node = document.getElementById(id);
+            if (!node) return {labels: [], values: []};
+            try { return JSON.parse(node.textContent || '{}'); } catch (e) { return {labels: [], values: []}; }
+        }
+        function draw(canvasId, data, color, minY, maxY) {
+            const el = document.getElementById(canvasId);
+            if (!el) return;
+            new Chart(el, {
+                type: 'line',
+                data: {
+                    labels: data.labels || [],
+                    datasets: [{
+                        data: data.values || [],
+                        borderColor: color,
+                        backgroundColor: color + '22',
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {legend: {display: false}},
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date, Month'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            min: minY,
+                            max: maxY
+                        }
+                    }
+                }
+            });
+        }
+        draw('chart-phq9', parse('phq-chart-data'), '#2563eb', 0, 27);
+        draw('chart-gad7', parse('gad-chart-data'), '#7c3aed', 0, 21);
+        draw('chart-pss', parse('pss-chart-data'), '#ea580c', 0, 40);
+        draw('chart-mood', parse('mood-chart-data'), '#059669', 1, 5);
+    })();
+</script>
+{% endblock %}

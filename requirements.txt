@@ -10,3 +10,4 @@ gunicorn>=21.2
 psycopg2-binary>=2.9
 dj-database-url>=2.0
 Pillow>=10.0
+reportlab>=4.0

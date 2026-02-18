@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% block title %}Survey Analytics{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="flex flex-wrap justify-between items-start gap-4 mb-8">
+        <div>
+            <h2 class="text-2xl font-semibold">Live Survey Analytics</h2>
+            <p class="text-sm text-gray-600 mt-1">Google Form responses with automatic chart updates.</p>
+        </div>
+        <div class="text-left sm:text-right">
+            <p class="text-xs uppercase tracking-wide text-gray-500">Responses</p>
+            <p class="text-2xl font-bold text-primary">{{ survey.total_responses|default:0 }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white rounded-2xl shadow-lg p-6">
+            <h3 class="font-semibold mb-2">Survey Form</h3>
+            <p class="text-sm text-gray-600 mb-4">Share this form and collect responses directly from participants.</p>
+            {% if survey_form_url %}
+            <div class="rounded-xl overflow-hidden border border-gray-200">
+                <iframe
+                    src="{{ survey_form_url|add:'?embedded=true' }}"
+                    class="w-full h-[440px] sm:h-[520px]"
+                    width="100%"
+                    height="440"
+                    frameborder="0"
+                    marginheight="0"
+                    marginwidth="0"
+                    title="Google Form"
+                >Loading…</iframe>
+            </div>
+            {% else %}
+            <p class="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                Set <code>MINDMEND_GOOGLE_FORM_URL</code> in your environment to embed the form here.
+            </p>
+            {% endif %}
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-lg p-6 flex flex-col h-full">
+            <h3 class="font-semibold mb-2">Auto-update</h3>
+            <p class="text-sm text-gray-600 mb-4">
+                This page fetches fresh response data from Google Sheets and refreshes every 60 seconds.
+            </p>
+            <ul class="space-y-2 text-sm text-gray-700">
+                <li class="flex items-start gap-2"><span class="text-primary mt-0.5">•</span><span>Each question is analyzed separately.</span></li>
+                <li class="flex items-start gap-2"><span class="text-primary mt-0.5">•</span><span>Pie charts are used for small choice sets.</span></li>
+                <li class="flex items-start gap-2"><span class="text-primary mt-0.5">•</span><span>Bar charts are used for numeric and larger option sets.</span></li>
+            </ul>
+            <p id="survey-motivation-text" class="mt-10 min-h-[180px] text-base font-sans font-bold text-red-700 leading-relaxed" data-full-text="Every response helps MindMend understand real challenges and improve support for people facing stress, anxiety, and depression. Your voice matters. Please take a minute to fill the survey and help build a stronger, more supportive mental health community.">
+            </p>
+            <p class="mt-6 text-sm font-medium text-gray-700">
+                For more detail, see the summary of the responses below.
+            </p>
+            <div class="mt-auto pt-8 grid grid-cols-3 gap-3 max-w-md mx-auto w-full">
+                <button type="button" class="survey-emoji-btn flex flex-col items-center justify-center text-2xl px-3 py-3 rounded-lg border border-gray-200 hover:bg-gray-100 transition" data-emoji="😊" aria-label="Happy reaction">
+                    <span>😊</span>
+                    <span class="mt-1 text-sm font-medium text-gray-700">Happy</span>
+                </button>
+                <button type="button" class="survey-emoji-btn flex flex-col items-center justify-center text-2xl px-3 py-3 rounded-lg border border-gray-200 hover:bg-gray-100 transition" data-emoji="😐" aria-label="Neutral reaction">
+                    <span>😐</span>
+                    <span class="mt-1 text-sm font-medium text-gray-700">Neutral</span>
+                </button>
+                <button type="button" class="survey-emoji-btn flex flex-col items-center justify-center text-2xl px-3 py-3 rounded-lg border border-gray-200 hover:bg-gray-100 transition" data-emoji="😔" aria-label="Sad reaction">
+                    <span>😔</span>
+                    <span class="mt-1 text-sm font-medium text-gray-700">Sad</span>
+                </button>
+            </div>
+            <p id="survey-emoji-status" class="mt-2 text-sm text-gray-600 hidden"></p>
+            {% if not survey.ok and survey.error %}
+            <p class="mt-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                {{ survey.error }}
+            </p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="space-y-6">
+        {% for q in survey.questions %}
+        <section class="bg-white rounded-2xl shadow-lg p-6">
+            <div class="flex flex-wrap justify-between items-center gap-3 mb-4">
+                <h4 class="font-semibold break-words">{{ q.question }}</h4>
+                <span class="text-xs text-gray-500">{{ q.responses }} responses</span>
+            </div>
+            <div class="h-72">
+                <canvas id="survey-chart-{{ forloop.counter0 }}"></canvas>
+            </div>
+        </section>
+        {% empty %}
+        <section class="bg-white rounded-2xl shadow-lg p-6">
+            <p class="text-gray-600">No survey response data available yet.</p>
+        </section>
+        {% endfor %}
+    </div>
+</div>
+
+{{ survey.questions|json_script:"survey-charts-data" }}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2"></script>
+<script>
+    (function () {
+        const dataEl = document.getElementById('survey-charts-data');
+        if (!dataEl) return;
+        let charts = [];
+        try {
+            charts = JSON.parse(dataEl.textContent || '[]');
+        } catch (e) {
+            charts = [];
+        }
+
+        const palette = [
+            '#2d6a4f', '#40916c', '#74c69d', '#95d5b2', '#d8f3dc',
+            '#22577a', '#38a3a5', '#57cc99', '#80ed99', '#c7f9cc'
+        ];
+
+        charts.forEach((item, idx) => {
+            const canvas = document.getElementById('survey-chart-' + idx);
+            if (!canvas) return;
+            const colors = item.labels.map((_, i) => palette[i % palette.length]);
+            const total = (item.data || []).reduce((a, b) => a + Number(b || 0), 0);
+            const isMobile = window.matchMedia('(max-width: 640px)').matches;
+            new Chart(canvas, {
+                type: item.type || 'bar',
+                data: {
+                    labels: item.labels || [],
+                    datasets: [{
+                        label: 'Responses',
+                        data: item.data || [],
+                        backgroundColor: item.type === 'bar' ? '#74c69d' : colors,
+                        borderColor: item.type === 'bar' ? '#2d6a4f' : '#ffffff',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        datalabels: item.type === 'pie' ? {
+                            color: '#ffffff',
+                            font: { weight: 'bold', size: 12 },
+                            formatter: function (value) {
+                                if (!total) return '';
+                                const pct = (Number(value) * 100) / total;
+                                return pct >= 3 ? pct.toFixed(1) + '%' : '';
+                            }
+                        } : {
+                            display: false
+                        },
+                        legend: {
+                            display: true,
+                            position: isMobile ? 'bottom' : 'right'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (ctx) {
+                                    const value = Number(ctx.raw || 0);
+                                    if (!total) return String(value);
+                                    const pct = (value * 100) / total;
+                                    return ctx.label + ': ' + value + ' (' + pct.toFixed(1) + '%)';
+                                }
+                            }
+                        }
+                    },
+                    scales: item.type === 'bar' ? {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { precision: 0 }
+                        }
+                    } : {}
+                },
+                plugins: [ChartDataLabels]
+            });
+        });
+
+        setTimeout(function () { window.location.reload(); }, 60000);
+    })();
+
+    (function () {
+        const el = document.getElementById('survey-motivation-text');
+        if (!el) return;
+        const fullText = el.getAttribute('data-full-text') || '';
+        let i = 0;
+        const speed = 18;
+        function typeStep() {
+            el.textContent = fullText.slice(0, i);
+            if (i < fullText.length) {
+                i += 1;
+                setTimeout(typeStep, speed);
+            }
+        }
+        typeStep();
+    })();
+
+    (function () {
+        const buttons = document.querySelectorAll('.survey-emoji-btn');
+        const status = document.getElementById('survey-emoji-status');
+        if (!buttons.length || !status) return;
+        buttons.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                buttons.forEach(function (b) {
+                    b.classList.remove('ring-2', 'ring-primary', 'bg-primary/10');
+                });
+                btn.classList.add('ring-2', 'ring-primary', 'bg-primary/10');
+                status.textContent = 'Thanks for your feedback ' + (btn.dataset.emoji || '');
+                status.classList.remove('hidden');
+            });
+        });
+    })();
+</script>
+{% endblock %}

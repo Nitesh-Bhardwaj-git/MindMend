@@ -12,6 +12,14 @@ body {
   color: var(--text-primary);
 }
 
+img, video, iframe, canvas, svg {
+  max-width: 100%;
+}
+
+iframe {
+  display: block;
+}
+
 /* Animated mood emojis */
 @keyframes mood-float {
   0%, 100% { transform: translateY(0) scale(1); }
@@ -174,4 +182,42 @@ body {
 @keyframes chat-typing-bounce {
   0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
   40% { transform: scale(1); opacity: 1; }
+}
+
+@media (max-width: 640px) {
+  .chat-row,
+  .chat-typing,
+  #chatMessages .msg-bot:not(.chat-row),
+  #chatMessages .msg-user:not(.chat-row) {
+    max-width: 100%;
+  }
+
+  /* Mobile accessibility: improve readability and touch targets */
+  .text-xs {
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+  }
+
+  .text-sm {
+    font-size: 0.9375rem;
+    line-height: 1.4rem;
+  }
+
+  button,
+  a.inline-flex,
+  input[type="button"],
+  input[type="submit"],
+  select {
+    min-height: 44px;
+  }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="date"],
+  input[type="time"],
+  textarea {
+    min-height: 44px;
+    font-size: 16px; /* Prevent mobile browser zoom-on-focus */
+  }
 }

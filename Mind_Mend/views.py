@@ -1,4 +1,10 @@
 import json
+import csv
+import io
+import re
+from collections import Counter
+from urllib.error import URLError, HTTPError
+from urllib.request import Request, urlopen
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import login, logout
@@ -13,8 +19,21 @@ from django.urls import reverse
 from django.db import IntegrityError
 from django.db.models import Count, Avg
 from django.core.paginator import Paginator
+from django.core.cache import cache
+from django.conf import settings
 from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
+try:
+    from channels.layers import get_channel_layer
+except ModuleNotFoundError:
+    def get_channel_layer():
+        return None
+
+try:
+    from google.oauth2.service_account import Credentials
+    from googleapiclient.discovery import build
+except ModuleNotFoundError:
+    Credentials = None
+    build = None
 
 from .models import (
     MoodEntry, ForumPost, ForumReply, Counsellor, CounsellorBooking,
@@ -1134,6 +1153,240 @@ def _emotional_patterns(user):
             elif overall_avg - tag_avg >= 0.4:
                 patterns.append("Days with '%s' logged tend to be tougher—consider support." % tag.capitalize())
     return patterns[:5]
+
+
+def _parse_choice_values(values):
+    """Parse categorical responses, handling multi-select CSV values."""
+    delimiter_hits = sum(1 for v in values if ',' in v or ';' in v)
+    split_multi = len(values) > 0 and (delimiter_hits / len(values)) >= 0.35
+    tokens = []
+    for raw in values:
+        if split_multi:
+            parts = re.split(r'[;,]', raw)
+            tokens.extend([p.strip() for p in parts if p.strip()])
+        else:
+            token = raw.strip()
+            if token:
+                tokens.append(token)
+    return tokens
+
+
+def _try_float(value):
+    try:
+        return float(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+
+
+def _build_question_chart(question, values):
+    numeric_values = [_try_float(v) for v in values]
+    numeric_count = sum(1 for v in numeric_values if v is not None)
+    is_numeric = len(values) > 0 and (numeric_count / len(values)) >= 0.85
+
+    if is_numeric:
+        counts = Counter()
+        for n in numeric_values:
+            if n is None:
+                continue
+            label = str(int(n)) if float(n).is_integer() else str(round(n, 2))
+            counts[label] += 1
+        labels = sorted(
+            counts.keys(),
+            key=lambda x: float(x)
+        )
+        data = [counts[lbl] for lbl in labels]
+        chart_type = 'bar'
+    else:
+        choices = _parse_choice_values(values)
+        counts = Counter(choices)
+        ordered = sorted(counts.items(), key=lambda kv: kv[1], reverse=True)
+        labels = [k for k, _ in ordered]
+        data = [v for _, v in ordered]
+        chart_type = 'pie' if len(labels) <= 6 else 'bar'
+
+    return {
+        'question': question,
+        'labels': labels,
+        'data': data,
+        'type': chart_type,
+        'responses': len(values),
+    }
+
+
+def _extract_sheet_id_from_url(url):
+    m = re.search(r'/spreadsheets/d/([^/]+)', url or '')
+    return m.group(1) if m else ''
+
+
+def _rows_from_google_sheets_api():
+    if not Credentials or not build:
+        return None, 'Google Sheets client libraries are not installed.'
+
+    sheet_id = (settings.MINDMEND_GOOGLE_SURVEY_SHEET_ID or '').strip()
+    if not sheet_id:
+        sheet_id = _extract_sheet_id_from_url(settings.MINDMEND_GOOGLE_FORM_RESPONSES_CSV_URL or '')
+    if not sheet_id:
+        return None, 'Survey sheet id is missing. Set MINDMEND_GOOGLE_SURVEY_SHEET_ID.'
+
+    creds = None
+    service_account_file = (settings.MINDMEND_GOOGLE_SERVICE_ACCOUNT_FILE or '').strip()
+    service_account_json = (settings.MINDMEND_GOOGLE_SERVICE_ACCOUNT_JSON or '').strip()
+
+    try:
+        if service_account_json:
+            info = json.loads(service_account_json)
+            creds = Credentials.from_service_account_info(
+                info,
+                scopes=['https://www.googleapis.com/auth/spreadsheets.readonly']
+            )
+        elif service_account_file:
+            creds = Credentials.from_service_account_file(
+                service_account_file,
+                scopes=['https://www.googleapis.com/auth/spreadsheets.readonly']
+            )
+        else:
+            return None, 'Service account credentials are missing. Set MINDMEND_GOOGLE_SERVICE_ACCOUNT_FILE or MINDMEND_GOOGLE_SERVICE_ACCOUNT_JSON.'
+
+        worksheet = (settings.MINDMEND_GOOGLE_SURVEY_WORKSHEET or 'Form Responses 1').strip()
+        service = build('sheets', 'v4', credentials=creds, cache_discovery=False)
+        result = service.spreadsheets().values().get(
+            spreadsheetId=sheet_id,
+            range=worksheet,
+            majorDimension='ROWS'
+        ).execute()
+    except Exception as ex:
+        return None, f'Private Google Sheets API fetch failed: {ex}'
+
+    values = result.get('values', [])
+    if not values:
+        return [], ''
+
+    header = values[0]
+    rows = []
+    for raw_row in values[1:]:
+        row = {}
+        for idx, col in enumerate(header):
+            row[col] = raw_row[idx] if idx < len(raw_row) else ''
+        rows.append(row)
+    return rows, ''
+
+
+def _rows_from_public_csv():
+    source_url = (settings.MINDMEND_GOOGLE_FORM_RESPONSES_CSV_URL or '').strip()
+    if not source_url:
+        return None, 'Survey responses source URL is not configured.'
+
+    candidates = []
+    if 'spreadsheets/d/' in source_url:
+        if 'tqx=out:csv' in source_url:
+            candidates.append(source_url)
+        else:
+            m = re.search(r'/spreadsheets/d/([^/]+)', source_url)
+            if m:
+                sid = m.group(1)
+                candidates.append(f'https://docs.google.com/spreadsheets/d/{sid}/gviz/tq?tqx=out:csv')
+            candidates.append(source_url)
+    elif 'forms/d/' in source_url:
+        m = re.search(r'/forms/d/([^/]+)', source_url)
+        if m:
+            fid = m.group(1)
+            candidates.append(f'https://docs.google.com/forms/d/{fid}/export?format=csv')
+        candidates.append(source_url)
+    else:
+        candidates.append(source_url)
+
+    raw = ''
+    last_error = None
+    for csv_url in candidates:
+        try:
+            req = Request(
+                csv_url,
+                headers={'User-Agent': 'MindMend Survey Analytics'},
+            )
+            with urlopen(req, timeout=12) as response:
+                body = response.read().decode('utf-8-sig', errors='replace')
+            first_line = body.splitlines()[0].strip() if body and body.splitlines() else ''
+            if first_line.lower().startswith('<!doctype html') or '<html' in first_line.lower():
+                last_error = 'Received HTML page instead of CSV.'
+                continue
+            preview_rows = list(csv.reader(io.StringIO(body[:4000])))
+            if preview_rows and len(preview_rows[0]) >= 2:
+                raw = body
+                break
+            last_error = 'Received non-CSV content.'
+        except (HTTPError, URLError, TimeoutError, ValueError) as ex:
+            last_error = str(ex)
+
+    if not raw:
+        return None, f'Could not fetch public CSV response source. Last error: {last_error or "unavailable"}'
+    return list(csv.DictReader(io.StringIO(raw))), ''
+
+
+def _fetch_google_form_analytics():
+    cache_key = 'mindmend_google_form_analytics_v1'
+    cached = cache.get(cache_key)
+    if cached:
+        return cached
+
+    rows, private_error = _rows_from_google_sheets_api()
+    # Optional fallback for users who still rely on published CSV links.
+    if rows is None and (settings.MINDMEND_GOOGLE_FORM_RESPONSES_CSV_URL or '').strip():
+        rows, csv_error = _rows_from_public_csv()
+        if rows is None:
+            private_error = f'{private_error} | {csv_error}' if private_error else csv_error
+
+    if rows is None:
+        payload = {
+            'ok': False,
+            'error': private_error or 'Survey response source is not configured.',
+            'total_responses': 0,
+            'questions': [],
+        }
+        cache.set(cache_key, payload, 45)
+        return payload
+
+    if not rows:
+        payload = {
+            'ok': True,
+            'error': '',
+            'total_responses': 0,
+            'questions': [],
+        }
+        cache.set(cache_key, payload, 60)
+        return payload
+
+    fieldnames = rows[0].keys()
+    skip_columns = {'timestamp', 'email address', 'score'}
+    questions = []
+    for field in fieldnames:
+        if (field or '').strip().lower() in skip_columns:
+            continue
+        values = []
+        for row in rows:
+            val = (row.get(field) or '').strip()
+            if val:
+                values.append(val)
+        if not values:
+            continue
+        questions.append(_build_question_chart(field, values))
+
+    payload = {
+        'ok': True,
+        'error': '',
+        'total_responses': len(rows),
+        'questions': questions,
+    }
+    cache.set(cache_key, payload, 120)
+    return payload
+
+
+@login_required
+def survey_analytics(request):
+    analytics = _fetch_google_form_analytics()
+    return render(request, 'Mind_Mend/survey_analytics.html', {
+        'survey': analytics,
+        'survey_form_url': settings.MINDMEND_GOOGLE_FORM_URL,
+    })
 
 
 @login_required

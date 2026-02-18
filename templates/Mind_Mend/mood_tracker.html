@@ -6,7 +6,7 @@
     <h2 class="text-2xl font-semibold mb-6">Mood Tracker</h2>
 
     {% if avg_mood_7 or streak %}
-    <div class="flex gap-4 mb-6 flex-wrap">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
         {% if avg_mood_7 %}
         <div class="bg-white rounded-xl shadow px-5 py-3">
             <p class="text-xs text-gray-500">Avg mood (7 days)</p>
@@ -20,7 +20,7 @@
         </div>
         {% endif %}
         {% if mood_data %}
-        <div class="bg-white rounded-xl shadow px-5 py-3 flex-1 min-w-[200px]">
+        <div class="bg-white rounded-xl shadow px-5 py-3 sm:col-span-2">
             <p class="text-xs text-gray-500 mb-2">Last 7 days</p>
             <div class="flex items-end gap-1 h-10">
                 {% for d in mood_data %}
@@ -80,14 +80,15 @@
     <div class="mood-entries-list">
     {% for e in entries %}
     <div class="bg-white rounded-xl shadow p-4 mb-3">
-        <div class="flex justify-between items-start">
+        <div class="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-start">
             <div class="flex items-center gap-2">
                 <span class="recent-entry-emoji text-xl">{% if e.mood == 1 %}😢{% elif e.mood == 2 %}😔{% elif e.mood == 3 %}😐{% elif e.mood == 4 %}🙂{% else %}😊{% endif %}</span>
                 <span class="font-medium">{{ e.get_mood_display }}</span>
-                {% if e.energy_level %}<span class="text-xs text-gray-500">• Energy: {{ e.get_energy_level_display }}</span>{% endif %}
+                {% if e.energy_level %}<span class="text-xs text-gray-500 hidden sm:inline">• Energy: {{ e.get_energy_level_display }}</span>{% endif %}
             </div>
             <span class="text-gray-500 text-sm">{{ e.date|date:"M d, Y" }}</span>
         </div>
+        {% if e.energy_level %}<p class="text-xs text-gray-500 sm:hidden mt-1">Energy: {{ e.get_energy_level_display }}</p>{% endif %}
         {% if e.activities %}<p class="text-sm text-gray-600 mt-1"><span class="text-gray-500">Activities:</span> {{ e.activities }}</p>{% endif %}
         {% if e.notes %}<p class="text-sm text-gray-600 mt-1">{{ e.notes }}</p>{% endif %}
     </div>

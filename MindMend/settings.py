@@ -11,14 +11,20 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 import os
+import importlib.util
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Load .env from the MindMend config folder (same folder as this file)
-from dotenv import load_dotenv
-load_dotenv(BASE_DIR / 'MindMend' / '.env')
+# Load .env from the MindMend config folder when python-dotenv is available.
+try:
+    from dotenv import load_dotenv
+except ModuleNotFoundError:
+    load_dotenv = None
+
+if load_dotenv:
+    load_dotenv(BASE_DIR / 'MindMend' / '.env')
 
 # Production detection.
 # Treat as Render production only when both Render flag and DATABASE_URL are present.
@@ -41,6 +47,9 @@ if os.environ.get('ALLOWED_HOSTS'):
 
 # Application definition
 
+_HAS_CHANNELS = importlib.util.find_spec('channels') is not None
+_HAS_WIDGET_TWEAKS = importlib.util.find_spec('widget_tweaks') is not None
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -48,10 +57,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'channels',
     'Mind_Mend',
-    'widget_tweaks',
 ]
+if _HAS_CHANNELS:
+    INSTALLED_APPS.append('channels')
+if _HAS_WIDGET_TWEAKS:
+    INSTALLED_APPS.append('widget_tweaks')
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -85,11 +96,12 @@ TEMPLATES = [
 WSGI_APPLICATION = 'MindMend.wsgi.application'
 ASGI_APPLICATION = 'MindMend.asgi.application'
 
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
-    },
-}
+if _HAS_CHANNELS:
+    CHANNEL_LAYERS = {
+        'default': {
+            'BACKEND': 'channels.layers.InMemoryChannelLayer',
+        },
+    }
 
 
 # Database
@@ -183,3 +195,14 @@ LOGIN_URL = 'login'
 MINDMEND_LLM_PROVIDER = os.environ.get('MINDMEND_LLM_PROVIDER', '')
 MINDMEND_GEMINI_API_KEY = os.environ.get('MINDMEND_GEMINI_API_KEY', '') or os.environ.get('GEMINI_API_KEY', '')
 MINDMEND_OPENAI_API_KEY = os.environ.get('MINDMEND_OPENAI_API_KEY', '') or os.environ.get('OPENAI_API_KEY', '')
+
+# Google Form survey integration
+MINDMEND_GOOGLE_FORM_URL = os.environ.get('MINDMEND_GOOGLE_FORM_URL', '')
+# Private Google Sheets API settings (recommended for sensitive survey data)
+MINDMEND_GOOGLE_SURVEY_SHEET_ID = os.environ.get('MINDMEND_GOOGLE_SURVEY_SHEET_ID', '')
+MINDMEND_GOOGLE_SURVEY_WORKSHEET = os.environ.get('MINDMEND_GOOGLE_SURVEY_WORKSHEET', 'Form Responses 1')
+MINDMEND_GOOGLE_SERVICE_ACCOUNT_FILE = os.environ.get('MINDMEND_GOOGLE_SERVICE_ACCOUNT_FILE', '')
+MINDMEND_GOOGLE_SERVICE_ACCOUNT_JSON = os.environ.get('MINDMEND_GOOGLE_SERVICE_ACCOUNT_JSON', '')
+
+# Optional public CSV fallback (less secure; keep empty if using private API)
+MINDMEND_GOOGLE_FORM_RESPONSES_CSV_URL = os.environ.get('MINDMEND_GOOGLE_FORM_RESPONSES_CSV_URL', '')

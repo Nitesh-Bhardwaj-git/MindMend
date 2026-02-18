@@ -25,7 +25,7 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
-<body class="min-h-screen flex flex-col bg-gray-50 text-gray-900 pt-[70px] font-sans">
+<body class="min-h-screen flex flex-col bg-gray-50 text-gray-900 pt-[70px] font-sans overflow-x-hidden">
     <nav class="fixed top-0 left-0 right-0 z-[9999] bg-gradient-to-r from-primary-dark to-primary shadow-lg">
         <div class="w-full px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
@@ -56,6 +56,7 @@
                                 <a href="{% url 'forum_list' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Support Forum</a>
                                 <a href="{% url 'location_map' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Location Map</a>
                                 <a href="{% url 'mental_health_heatmap' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Heatmap</a>
+                                <a href="{% url 'survey_analytics' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Survey Analytics</a>
                                 {% comment %} <a href="{% url 'recovery_stories' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Recovery Stories</a> {% endcomment %}
                                 <a href="{% url 'logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600">Logout</a>
                             </div>
@@ -79,13 +80,14 @@
                 <a href="{% url 'mood_tracker' %}" class="text-white/90 hover:text-white py-2">Mood</a>
                 <a href="{% url 'contact_us' %}" class="text-white/90 hover:text-white py-2">Contact us</a>
                 {% if user.is_authenticated %}
-                    <p class="text-white/70 text-xs uppercase pt-2">Dashboard menu</p>
+                    <p class="text-white/70 text-sm uppercase pt-2">Dashboard menu</p>
                     <a href="{% url 'dashboard' %}" class="text-white/90 hover:text-white py-2">Dashboard</a>
                     <a href="{% url 'doctor_dashboard' %}" class="text-white/90 hover:text-white py-2">Doctor Panel</a>
                     <a href="{% url 'resources' %}" class="text-white/90 hover:text-white py-2">Helplines</a>
                     <a href="{% url 'forum_list' %}" class="text-white/90 hover:text-white py-2">Support Forum</a>
                     <a href="{% url 'location_map' %}" class="text-white/90 hover:text-white py-2">Location Map</a>
                     <a href="{% url 'mental_health_heatmap' %}" class="text-white/90 hover:text-white py-2">Heatmap</a>
+                    <a href="{% url 'survey_analytics' %}" class="text-white/90 hover:text-white py-2">Survey Analytics</a>
                     <a href="{% url 'recovery_stories' %}" class="text-white/90 hover:text-white py-2">Recovery Stories</a>
                     <a href="{% url 'logout' %}" class="text-white/90 hover:text-white py-2">Logout</a>
                 {% else %}

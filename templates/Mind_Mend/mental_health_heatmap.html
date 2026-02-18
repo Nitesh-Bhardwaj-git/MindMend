@@ -35,7 +35,7 @@
             {% if stress_by_region %}
             <div class="space-y-2 max-h-48 overflow-y-auto">
                 {% for r in stress_by_region %}
-                <div class="flex justify-between items-center text-sm">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 text-sm">
                     <span>{{ r.state|default:"" }}{% if r.state and r.country %}, {% endif %}{{ r.country }}</span>
                     <span class="px-2 py-0.5 rounded font-medium {% if r.avg >= 20 %}bg-red-100 text-red-800{% elif r.avg >= 14 %}bg-amber-100 text-amber-800{% else %}bg-green-100 text-green-800{% endif %}">{{ r.avg }} (n={{ r.n }})</span>
                 </div>
@@ -51,7 +51,7 @@
             {% if depression_by_region %}
             <div class="space-y-2 max-h-48 overflow-y-auto">
                 {% for r in depression_by_region %}
-                <div class="flex justify-between items-center text-sm">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 text-sm">
                     <span>{{ r.state|default:"" }}{% if r.state and r.country %}, {% endif %}{{ r.country }}</span>
                     <span class="px-2 py-0.5 rounded font-medium {% if r.avg >= 15 %}bg-red-100 text-red-800{% elif r.avg >= 10 %}bg-amber-100 text-amber-800{% else %}bg-green-100 text-green-800{% endif %}">{{ r.avg }} (n={{ r.n }})</span>
                 </div>
@@ -67,7 +67,7 @@
             {% if mood_by_region %}
             <div class="space-y-2 max-h-48 overflow-y-auto">
                 {% for r in mood_by_region %}
-                <div class="flex justify-between items-center text-sm">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 text-sm">
                     <span>{{ r.state|default:"" }}{% if r.state and r.country %}, {% endif %}{{ r.country }}</span>
                     <span class="px-2 py-0.5 rounded font-medium {% if r.avg <= 2 %}bg-red-100 text-red-800{% elif r.avg <= 3 %}bg-amber-100 text-amber-800{% else %}bg-green-100 text-green-800{% endif %}">{{ r.avg }}/5 (n={{ r.n }})</span>
                 </div>
@@ -80,15 +80,15 @@
     </div>
 
     <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
-        <div class="p-4 border-b bg-gray-50 flex items-center gap-2">
+        <div class="p-4 border-b bg-gray-50 flex flex-col sm:flex-row sm:items-center gap-2">
             <span class="text-sm font-medium text-gray-600">Map:</span>
-            <span class="flex gap-2">
+            <span class="flex flex-wrap gap-2">
                 <span class="px-2 py-1 bg-red-100 text-red-800 rounded text-xs">High stress / Low mood</span>
                 <span class="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs">Moderate</span>
                 <span class="px-2 py-1 bg-green-100 text-green-800 rounded text-xs">Low stress / High mood</span>
             </span>
         </div>
-        <div id="map" class="w-full h-[450px]"></div>
+        <div id="map" class="w-full h-[320px] sm:h-[390px] lg:h-[450px]"></div>
     </div>
 
     <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">

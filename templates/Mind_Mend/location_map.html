@@ -7,10 +7,10 @@
             <h2 class="text-2xl font-semibold mb-1">User Location Map</h2>
             <p class="text-gray-600">Where users are accessing MindMend from — Country, State, City</p>
         </div>
-        <a href="{% url 'mental_health_heatmap' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/90 hover:bg-amber-500 text-white rounded-lg font-medium transition">
+        <a href="{% url 'mental_health_heatmap' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-800 hover:bg-amber-900 text-white rounded-lg font-medium transition">
             🧠 Heatmap
         </a>
-        <div class="flex items-center gap-4">
+        <div class="flex flex-wrap items-center gap-4">
             <form method="get" class="flex items-center gap-2">
                 <label class="text-sm text-gray-600">Last</label>
                 <select name="days" onchange="this.form.submit()" class="rounded-lg border border-gray-300 px-3 py-2 text-sm">
@@ -20,7 +20,7 @@
                     <option value="90" {% if days == 90 %}selected{% endif %}>90 days</option>
                 </select>
             </form>
-            <div class="flex gap-4 text-sm">
+            <div class="flex flex-wrap gap-2 text-sm">
                 <span class="px-3 py-1 bg-primary/10 text-primary rounded-lg">{{ stats.total|default:0 }} accesses</span>
                 <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg">{{ stats.gps_shared|default:0 }} GPS shared</span>
                 <span class="px-3 py-1 bg-sky-100 text-sky-700 rounded-lg">{{ stats.visitors|default:0 }} visitors</span>
@@ -51,7 +51,7 @@
             {% if users_per_country %}
             <div class="space-y-2 max-h-64 overflow-y-auto">
                 {% for row in users_per_country %}
-                <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 py-2 border-b border-gray-100 last:border-0">
                     <span class="font-medium">{{ row.country|default:"Unknown" }}</span>
                     <span class="px-2 py-0.5 bg-primary/10 text-primary rounded font-medium">{{ row.count }}</span>
                 </div>
@@ -66,7 +66,7 @@
             {% if users_per_state %}
             <div class="space-y-2 max-h-64 overflow-y-auto">
                 {% for row in users_per_state %}
-                <div class="flex justify-between items-center py-2 border-b border-gray-100 last:border-0">
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 py-2 border-b border-gray-100 last:border-0">
                     <span class="font-medium">{{ row.state|default:"Unknown" }}{% if row.country %}, {{ row.country }}{% endif %}</span>
                     <span class="px-2 py-0.5 bg-primary/10 text-primary rounded font-medium">{{ row.count }}</span>
                 </div>
@@ -79,7 +79,7 @@
     </div>
 
     <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
-        <div id="map" class="w-full h-[500px]"></div>
+        <div id="map" class="w-full h-[340px] sm:h-[420px] lg:h-[500px]"></div>
     </div>
 
     <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">

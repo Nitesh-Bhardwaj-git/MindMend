@@ -22,16 +22,16 @@
                             <p class="text-gray-600 text-sm">{{ b.date|date:"l, M d, Y" }} at {{ b.time_slot|time:"H:i" }}</p>
                             {% if b.notes %}<p class="text-gray-600 text-sm mt-1">Notes: {{ b.notes }}</p>{% endif %}
                         </div>
-                        <div class="flex gap-2">
+                        <div class="flex flex-wrap gap-2">
                             <form method="post" action="{% url 'doctor_booking_action' b.id %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="action" value="accept">
-                                <button type="submit" class="px-3 py-1.5 rounded-lg bg-green-100 text-green-800 hover:bg-green-600 hover:text-white transition text-sm font-medium">Accept</button>
+                                <button type="submit" class="px-3 py-1.5 rounded-lg bg-green-100 text-green-800 hover:bg-green-800 hover:text-white transition text-sm font-medium">Accept</button>
                             </form>
                             <form method="post" action="{% url 'doctor_booking_action' b.id %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="action" value="reject">
-                                <button type="submit" class="px-3 py-1.5 rounded-lg bg-red-100 text-red-800 hover:bg-red-600 hover:text-white transition text-sm font-medium">Reject</button>
+                                <button type="submit" class="px-3 py-1.5 rounded-lg bg-red-100 text-red-800 hover:bg-red-800 hover:text-white transition text-sm font-medium">Reject</button>
                             </form>
                         </div>
                     </div>
@@ -65,7 +65,7 @@
                             </div>
                             {% endif %}
                         </div>
-                        <div class="flex gap-2">
+                        <div class="flex flex-wrap gap-2">
                             {% if b.status == 'confirmed' or b.status == 'completed' %}
                             <a href="{% url 'counsellor_chat' b.id %}" class="px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition text-sm font-medium">Open Chat</a>
                             {% endif %}

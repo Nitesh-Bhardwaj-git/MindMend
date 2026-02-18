@@ -2,7 +2,7 @@
 {% block title %}Chat with Counsellor{% endblock %}
 {% block content %}
 <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="flex items-center justify-between mb-4">
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
         <h2 class="text-2xl font-semibold">Live Chat</h2>
         {% if request.user.id == booking.counsellor.user_id %}
         <a href="{% url 'doctor_dashboard' %}" class="text-primary font-medium hover:underline">← Doctor Dashboard</a>
@@ -30,7 +30,7 @@
         <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-3" style="max-height: 360px;">
             {% for m in chat_messages %}
             <div class="flex {% if m.sender_id == request.user.id %}justify-end{% else %}justify-start{% endif %}" data-message-id="{{ m.id }}">
-                <div class="max-w-[85%] rounded-2xl px-4 py-2 {% if m.sender_id == request.user.id %}bg-primary text-white{% else %}bg-gray-100 text-gray-900{% endif %}">
+                <div class="max-w-full sm:max-w-[85%] rounded-2xl px-4 py-2 {% if m.sender_id == request.user.id %}bg-primary text-white{% else %}bg-gray-100 text-gray-900{% endif %}">
                     <p class="text-xs opacity-80 mb-0.5">
                         {{ m.sender.get_username }}
                         {% if m.sender_id == booking.counsellor.user_id %} (Counsellor){% else %} (Patient){% endif %}
@@ -47,10 +47,10 @@
         {% if booking.status == 'completed' or booking.status == 'cancelled' %}
         <div class="p-4 border-t border-gray-200 bg-gray-50 text-sm text-gray-600">Chat is disabled because this session is {{ booking.status }}.</div>
         {% else %}
-        <form method="post" class="p-4 border-t border-gray-200 flex gap-2" id="chatForm">
+        <form method="post" class="p-4 border-t border-gray-200 flex flex-col sm:flex-row gap-2" id="chatForm">
             {% csrf_token %}
             <input type="text" name="content" id="chatInput" placeholder="Type a message..." class="flex-1 rounded-xl border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-primary focus:border-primary" autocomplete="off">
-            <button type="submit" class="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary-dark transition font-medium">Send</button>
+            <button type="submit" class="px-4 py-2 bg-primary text-white rounded-xl hover:bg-primary-dark transition font-medium sm:w-auto w-full">Send</button>
         </form>
         {% endif %}
     </div>
@@ -107,7 +107,7 @@
         var div = document.createElement('div');
         div.className = 'flex ' + (isMe ? 'justify-end' : 'justify-start');
         if (msgId) div.setAttribute('data-message-id', String(msgId));
-        div.innerHTML = '<div class="max-w-[85%] rounded-2xl px-4 py-2 ' + (isMe ? 'bg-primary text-white' : 'bg-gray-100 text-gray-900') + '">' +
+        div.innerHTML = '<div class="max-w-full sm:max-w-[85%] rounded-2xl px-4 py-2 ' + (isMe ? 'bg-primary text-white' : 'bg-gray-100 text-gray-900') + '">' +
             '<p class="text-xs opacity-80 mb-0.5">' + escapeHtml(m.sender) + role + '</p>' +
             '<p class="whitespace-pre-wrap break-words">' + escapeHtml(m.content) + '</p>' +
             '<p class="text-xs opacity-70 mt-1">' + new Date(m.created_at).toLocaleString() + '</p></div>';

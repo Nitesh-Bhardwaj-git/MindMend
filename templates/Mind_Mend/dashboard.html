@@ -7,7 +7,7 @@
         <div class="flex gap-2 flex-wrap">
             <a href="{% url 'mood_tracker' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition font-medium">Mood</a>
             <a href="{% url 'location_map' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition font-medium">Map</a>
-            <a href="{% url 'mental_health_heatmap' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-500/20 text-amber-800 rounded-lg hover:bg-amber-500 hover:text-white transition font-medium">🧠 Heatmap</a>
+            <a href="{% url 'mental_health_heatmap' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-900 rounded-lg hover:bg-amber-800 hover:text-white transition font-medium">🧠 Heatmap</a>
             {% if is_counsellor %}
             <a href="{% url 'doctor_dashboard' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-lg hover:bg-primary hover:text-white transition font-medium">Doctor Panel</a>
             {% endif %}
@@ -24,9 +24,9 @@
         <div class="md:col-span-2 bg-white rounded-2xl shadow-lg p-6">
             <h5 class="font-semibold mb-4">Recent Assessments</h5>
             {% for a in assessments %}
-            <div class="flex justify-between items-center border-b border-gray-100 py-3">
-                <span>{{ a.get_assessment_type_display|default:a.assessment_type }}</span>
-                <span>Score: {{ a.total_score }} — {{ a.result_level }}</span>
+            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 border-b border-gray-100 py-3">
+                <span class="font-medium">{{ a.get_assessment_type_display|default:a.assessment_type }}</span>
+                <span class="text-sm text-gray-700">Score: {{ a.total_score }} — {{ a.result_level }}</span>
                 <span class="text-gray-500 text-sm">{{ a.created_at|date:"M d" }}</span>
             </div>
             {% empty %}
@@ -53,22 +53,116 @@
         {% endif %}
     </div>
 
-    <!-- Emotional patterns (kept) -->
+    <!-- Emotional patterns (with right-side graph) -->
     <div class="bg-white rounded-2xl shadow-lg p-6 mb-8">
-        <h5 class="font-semibold mb-4">Emotional pattern detection</h5>
-        <p class="text-sm text-gray-600 mb-4">Insights from your mood and activity logs (last 90 days).</p>
-        {% if emotional_patterns %}
-        <ul class="space-y-2">
-            {% for p in emotional_patterns %}
-            <li class="flex items-start gap-2 text-gray-700">
-                <span class="text-primary mt-0.5">•</span>
-                <span>{{ p }}</span>
-            </li>
-            {% endfor %}
-        </ul>
-        {% else %}
-        <p class="text-gray-600">Insufficient data yet to detect patterns. Log mood and activities for at least 2 days. <a href="{% url 'mood_tracker' %}" class="text-primary font-medium hover:underline">Track mood</a></p>
-        {% endif %}
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            <div class="lg:col-span-2">
+                <h5 class="font-semibold mb-4">Emotional pattern detection</h5>
+                <p class="text-sm text-gray-600 mb-4">Insights from your mood and activity logs (last 90 days).</p>
+                {% if emotional_patterns %}
+                <ul class="space-y-2">
+                    {% for p in emotional_patterns %}
+                    <li class="flex items-start gap-2 text-gray-700">
+                        <span class="text-primary mt-0.5">•</span>
+                        <span>{{ p }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-gray-600">Insufficient data yet to detect patterns. Log mood and activities for at least 2 days. <a href="{% url 'mood_tracker' %}" class="text-primary font-medium hover:underline">Track mood</a></p>
+                {% endif %}
+            </div>
+            <div class="lg:col-span-1">
+                <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                    <p class="text-xs font-medium text-gray-500 mb-2">Mood trend (last 7 days)</p>
+                    <div class="h-44">
+                        <canvas id="mood-trend-chart" aria-label="Mood trend graph"></canvas>
+                    </div>
+                    <p id="mood-trend-empty" class="hidden text-xs text-gray-500 mt-2">Add mood entries to see a dated trend chart.</p>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+{{ mood_data|json_script:"mood-trend-data" }}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    (function () {
+        const dataNode = document.getElementById('mood-trend-data');
+        const canvas = document.getElementById('mood-trend-chart');
+        const emptyNote = document.getElementById('mood-trend-empty');
+        if (!dataNode || !canvas) return;
+
+        let series = [];
+        try {
+            series = JSON.parse(dataNode.textContent || '[]');
+        } catch (e) {
+            series = [];
+        }
+        series = series.slice(-7);
+        if (!series.length) {
+            if (emptyNote) emptyNote.classList.remove('hidden');
+            return;
+        }
+
+        const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const labels = series.map(function (item) {
+            const parts = String(item.date || '').split('-');
+            if (parts.length !== 3) return item.date || '';
+            const year = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10);
+            const day = parseInt(parts[2], 10);
+            const dt = new Date(year, month - 1, day);
+            return weekdays[dt.getDay()] + ', ' + day + ' ' + months[month - 1];
+        });
+        const values = series.map(function (item) { return item.mood; });
+
+        const ctx = canvas.getContext('2d');
+        const gradient = ctx.createLinearGradient(0, 0, 0, 220);
+        gradient.addColorStop(0, 'rgba(21, 184, 166, 0.32)');
+        gradient.addColorStop(1, 'rgba(21, 184, 166, 0)');
+
+        new Chart(canvas, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    borderColor: '#15b8a6',
+                    backgroundColor: gradient,
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#15b8a6'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: {
+                        min: 1,
+                        max: 5,
+                        ticks: { stepSize: 1 },
+                        grid: { color: '#e5e7eb' }
+                    },
+                    x: {
+                        ticks: {
+                            maxRotation: 0,
+                            minRotation: 0,
+                            autoSkip: true,
+                            maxTicksLimit: 7
+                        },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    })();
+</script>
 {% endblock %}

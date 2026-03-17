@@ -5,11 +5,34 @@
     <div class="flex flex-wrap justify-between items-center gap-3 mb-6">
         <div>
             <h2 class="text-2xl font-semibold">My Progress</h2>
-            <p class="text-sm text-gray-600">Weekly trends from mood and assessments.</p>
+            <p class="text-sm text-gray-600">View 1-year analytics in daily, weekly, or monthly trend.</p>
         </div>
         <div class="flex gap-2 flex-wrap">
             <a href="{% url 'download_progress_report_pdf' %}" class="inline-flex items-center px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary-dark transition font-medium">Download PDF Report</a>
             <a href="{% url 'survey_sentiment_dashboard' %}" class="inline-flex items-center px-4 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition font-medium">Survey Sentiment</a>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow p-4 mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div class="relative">
+                <button id="trend-mode-btn" type="button" class="px-4 py-2 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition font-medium min-w-40 text-left">
+                    Daily Trend
+                </button>
+                <div id="trend-mode-menu" class="hidden absolute z-20 mt-2 w-44 bg-white border border-gray-200 rounded-lg shadow-lg">
+                    <button type="button" data-mode="daily" class="w-full text-left px-3 py-2 hover:bg-gray-50">Daily Trend</button>
+                    <button type="button" data-mode="weekly" class="w-full text-left px-3 py-2 hover:bg-gray-50">Weekly Trend</button>
+                    <button type="button" data-mode="monthly" class="w-full text-left px-3 py-2 hover:bg-gray-50">Monthly Trend</button>
+                </div>
+            </div>
+            <div class="w-full sm:max-w-xl">
+                <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
+                    <span id="window-start">-</span>
+                    <span>Slide timeline</span>
+                    <span id="window-end">-</span>
+                </div>
+                <input id="trend-slider" type="range" min="0" max="0" value="0" class="w-full">
+            </div>
         </div>
     </div>
 
@@ -39,53 +62,89 @@
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <section class="bg-white rounded-2xl shadow p-6">
-            <h3 class="font-semibold mb-3">PHQ-9 Weekly Trend</h3>
+            <h3 id="title-phq9" class="font-semibold mb-3">PHQ-9 Daily Trend</h3>
             <div class="h-64"><canvas id="chart-phq9"></canvas></div>
         </section>
         <section class="bg-white rounded-2xl shadow p-6">
-            <h3 class="font-semibold mb-3">GAD-7 Weekly Trend</h3>
+            <h3 id="title-gad7" class="font-semibold mb-3">GAD-7 Daily Trend</h3>
             <div class="h-64"><canvas id="chart-gad7"></canvas></div>
         </section>
         <section class="bg-white rounded-2xl shadow p-6">
-            <h3 class="font-semibold mb-3">PSS Weekly Trend</h3>
+            <h3 id="title-pss" class="font-semibold mb-3">PSS Daily Trend</h3>
             <div class="h-64"><canvas id="chart-pss"></canvas></div>
         </section>
         <section class="bg-white rounded-2xl shadow p-6">
-            <h3 class="font-semibold mb-3">Mood Weekly Trend</h3>
+            <h3 id="title-mood" class="font-semibold mb-3">Mood Daily Trend</h3>
             <div class="h-64"><canvas id="chart-mood"></canvas></div>
         </section>
     </div>
 </div>
 
-{{ phq_chart|json_script:"phq-chart-data" }}
-{{ gad_chart|json_script:"gad-chart-data" }}
-{{ pss_chart|json_script:"pss-chart-data" }}
-{{ mood_chart|json_script:"mood-chart-data" }}
+{{ trend_charts|json_script:"trend-charts-data" }}
 {% endblock %}
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     (function () {
-        function parse(id) {
-            const node = document.getElementById(id);
-            if (!node) return {labels: [], values: []};
-            try { return JSON.parse(node.textContent || '{}'); } catch (e) { return {labels: [], values: []}; }
+        function parseTrendData() {
+            const node = document.getElementById('trend-charts-data');
+            if (!node) return {};
+            try { return JSON.parse(node.textContent || '{}'); } catch (e) { return {}; }
         }
-        function draw(canvasId, data, color, minY, maxY) {
+
+        const trendData = parseTrendData();
+        const slider = document.getElementById('trend-slider');
+        const modeBtn = document.getElementById('trend-mode-btn');
+        const modeMenu = document.getElementById('trend-mode-menu');
+        const startEl = document.getElementById('window-start');
+        const endEl = document.getElementById('window-end');
+        if (!slider || !modeBtn || !modeMenu) return;
+
+        const state = {
+            mode: 'daily',
+            windowByMode: {
+                daily: 30,
+                weekly: 16,
+                monthly: 12,
+            }
+        };
+
+        function carryForward(values) {
+            const out = [];
+            let lastSeen = null;
+            for (let i = 0; i < values.length; i++) {
+                const v = values[i];
+                if (v === null || typeof v === 'undefined') {
+                    out.push(lastSeen);
+                } else {
+                    const n = Number(v);
+                    if (Number.isFinite(n)) {
+                        lastSeen = n;
+                        out.push(n);
+                    } else {
+                        out.push(lastSeen);
+                    }
+                }
+            }
+            return out;
+        }
+
+        function draw(canvasId, color, minY, maxY) {
             const el = document.getElementById(canvasId);
-            if (!el) return;
-            new Chart(el, {
+            if (!el) return null;
+            return new Chart(el, {
                 type: 'line',
                 data: {
-                    labels: data.labels || [],
+                    labels: [],
                     datasets: [{
-                        data: data.values || [],
+                        data: [],
                         borderColor: color,
-                        backgroundColor: color + '22',
-                        fill: true,
+                        fill: false,
+                        spanGaps: true,
                         tension: 0.35,
-                        pointRadius: 3
+                        pointRadius: 0,
+                        pointHoverRadius: 0
                     }]
                 },
                 options: {
@@ -108,10 +167,104 @@
                 }
             });
         }
-        draw('chart-phq9', parse('phq-chart-data'), '#2563eb', 0, 27);
-        draw('chart-gad7', parse('gad-chart-data'), '#7c3aed', 0, 21);
-        draw('chart-pss', parse('pss-chart-data'), '#ea580c', 0, 40);
-        draw('chart-mood', parse('mood-chart-data'), '#059669', 1, 5);
+
+        const charts = {
+            phq9: draw('chart-phq9', '#2563eb', 0, 27),
+            gad7: draw('chart-gad7', '#7c3aed', 0, 21),
+            pss: draw('chart-pss', '#ea580c', 0, 40),
+            mood: draw('chart-mood', '#059669', 1, 5),
+        };
+
+        function modeLabel(mode) {
+            if (mode === 'weekly') return 'Weekly Trend';
+            if (mode === 'monthly') return 'Monthly Trend';
+            return 'Daily Trend';
+        }
+
+        function updateTitles() {
+            const suffix = modeLabel(state.mode);
+            const titlePhq = document.getElementById('title-phq9');
+            const titleGad = document.getElementById('title-gad7');
+            const titlePss = document.getElementById('title-pss');
+            const titleMood = document.getElementById('title-mood');
+            if (titlePhq) titlePhq.textContent = 'PHQ-9 ' + suffix;
+            if (titleGad) titleGad.textContent = 'GAD-7 ' + suffix;
+            if (titlePss) titlePss.textContent = 'PSS ' + suffix;
+            if (titleMood) titleMood.textContent = 'Mood ' + suffix;
+        }
+
+        function getModeData(mode) {
+            const md = trendData[mode] || {};
+            return {
+                labels: Array.isArray(md.labels) ? md.labels : [],
+                phq9: Array.isArray(md.phq9) ? md.phq9 : [],
+                gad7: Array.isArray(md.gad7) ? md.gad7 : [],
+                pss: Array.isArray(md.pss) ? md.pss : [],
+                mood: Array.isArray(md.mood) ? md.mood : [],
+            };
+        }
+
+        function updateSliderBounds() {
+            const md = getModeData(state.mode);
+            const total = md.labels.length;
+            const windowSize = Math.min(state.windowByMode[state.mode] || total, total);
+            slider.max = String(Math.max(0, total - windowSize));
+            slider.value = slider.max;
+        }
+
+        function updateCharts() {
+            const md = getModeData(state.mode);
+            const total = md.labels.length;
+            const windowSize = Math.min(state.windowByMode[state.mode] || total, total);
+            const start = Math.min(parseInt(slider.value || '0', 10), Math.max(0, total - windowSize));
+            const end = Math.min(total, start + windowSize);
+            const labels = md.labels.slice(start, end);
+
+            if (startEl) startEl.textContent = labels.length ? labels[0] : '-';
+            if (endEl) endEl.textContent = labels.length ? labels[labels.length - 1] : '-';
+
+            const series = {
+                phq9: carryForward(md.phq9).slice(start, end),
+                gad7: carryForward(md.gad7).slice(start, end),
+                pss: carryForward(md.pss).slice(start, end),
+                mood: carryForward(md.mood).slice(start, end),
+            };
+
+            Object.keys(charts).forEach(function (metric) {
+                const c = charts[metric];
+                if (!c) return;
+                c.data.labels = labels;
+                c.data.datasets[0].data = series[metric];
+                c.update();
+            });
+        }
+
+        modeBtn.addEventListener('click', function () {
+            modeMenu.classList.toggle('hidden');
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!modeMenu.contains(e.target) && e.target !== modeBtn) {
+                modeMenu.classList.add('hidden');
+            }
+        });
+
+        modeMenu.querySelectorAll('[data-mode]').forEach(function (item) {
+            item.addEventListener('click', function () {
+                state.mode = item.getAttribute('data-mode') || 'daily';
+                modeBtn.textContent = modeLabel(state.mode);
+                modeMenu.classList.add('hidden');
+                updateSliderBounds();
+                updateTitles();
+                updateCharts();
+            });
+        });
+
+        slider.addEventListener('input', updateCharts);
+
+        updateSliderBounds();
+        updateTitles();
+        updateCharts();
     })();
 </script>
 {% endblock %}

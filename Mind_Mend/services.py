@@ -4,11 +4,50 @@ AI Chatbot service with sentiment analysis, distress detection, and optional LLM
 import random
 import re
 import uuid
+from datetime import datetime, timedelta
 
 from django.conf import settings
 
 
-def _call_llm(user_message, conversation_history, lang):
+def _format_context_for_prompt(context, lang):
+    if not context:
+        return ""
+    situation = context.get('situation')
+    emotion = context.get('emotion')
+    context_label = context.get('context_label')
+    memory = context.get('memory') or {}
+    memory_topics = memory.get('topics') or []
+    memory_activities = memory.get('activities') or []
+    preferred_name = memory.get('preferred_name') or ''
+    if not (situation or emotion or context_label or memory_topics or memory_activities or preferred_name):
+        return ""
+    parts = []
+    if emotion:
+        parts.append(f"emotion={emotion}")
+    if context_label:
+        parts.append(f"context={context_label}")
+    if situation:
+        parts.append(f"situation={situation}")
+    if memory_topics:
+        parts.append(f"memory_topics={','.join(memory_topics[:5])}")
+    if memory_activities:
+        parts.append(f"memory_helpful={','.join(memory_activities[:5])}")
+    if preferred_name:
+        parts.append(f"user_name={preferred_name}")
+    if lang == 'hi':
+        return (
+            "Context (user-mentioned or inferred): "
+            f"{', '.join(parts)}. "
+            "Reference this only if helpful and keep it practical.\n"
+        )
+    return (
+        "Context (user-mentioned or inferred): "
+        f"{', '.join(parts)}. "
+        "Reference this only if helpful and keep it practical.\n"
+    )
+
+
+def _call_llm(user_message, conversation_history, lang, context=None):
     """
     Call Gemini or OpenAI for human-like response. Returns response text or None on failure.
     """
@@ -27,17 +66,35 @@ def _call_llm(user_message, conversation_history, lang):
     is_hindi = lang == 'hi'
     lang_instruction = "Respond in Hindi (हिन्दी)." if is_hindi else "Respond in English."
 
-    system_prompt = f"""You are a warm, empathetic mental health support assistant. Talk like a caring friend—natural, conversational, human. Never sound robotic or like a bot.
+    context_block = _format_context_for_prompt(context or {}, lang)
+    system_prompt = f"""You are MindMend, a supportive mental wellness assistant. Respond like a real therapist: calm, empathetic, and practical.
+
+Therapist Response Pattern (use this order):
+1. Empathy
+2. Validation
+3. Suggestion
+4. Gentle question
+
+Example structure:
+- Empathy: "That sounds really difficult."
+- Validation: "It's understandable to feel that way."
+- Suggestion: "You could try..."
+- Follow-up: "Would you like to talk more about it?"
 
 Guidelines:
-- Listen, validate feelings, and respond as a real person would
-- If they're happy: celebrate with them, ask what's going well
-- If they're sad/stressed: show empathy, suggest simple distractions (music, walk, calling a friend)
-- For crisis (suicide, self-harm): be compassionate, emphasize they matter, share helplines: KIRAN 1800-599-0019, Tele-MANAS 14416 (24/7 India)
-- Keep replies concise—1-3 short paragraphs. Match their energy
-- Ask follow-up questions naturally. Reference what they said
-- Never say you're an AI. You're just someone who listens
+1. Always respond with empathy and understanding.
+2. Validate the user’s feelings before giving suggestions.
+3. Provide simple and practical coping techniques when appropriate.
+4. Ask gentle follow-up questions to understand the user's situation.
+5. If the user asks for suggestions, give 3–5 helpful techniques.
+6. Avoid sounding robotic or overly clinical.
+7. Never diagnose medical conditions.
+8. If the user shows severe distress or self-harm thoughts, encourage seeking professional help or contacting trusted people.
 
+Tone:
+Warm, supportive, calm, non-judgmental.
+
+{context_block}
 {lang_instruction}"""
 
     messages = [{"role": "user" if m["role"] == "user" else "assistant", "content": m["content"]} for m in conversation_history]
@@ -54,21 +111,18 @@ Guidelines:
 
             genai.configure(api_key=api_key)
 
-            # Build single prompt with conversation history
-            parts = [system_prompt, "\n\n---\nConversation:\n"]
-            for m in messages[:-1]:
-                role = "User" if m["role"] == "user" else "Assistant"
-                parts.append(f"{role}: {m['content']}\n")
-            parts.append(f"User: {user_message}\nAssistant:")
-            prompt = "".join(parts)
-
             # Try models in order (gemini-flash-lite-latest has best free-tier quota)
             model_names = ['gemini-flash-lite-latest', 'gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-flash-latest', 'gemma-3n-e2b-it']
             resp = None
             for model_name in model_names:
                 try:
                     model = genai.GenerativeModel(model_name)
-                    resp = model.generate_content(prompt)
+                    history_parts = []
+                    for m in messages[:-1]:
+                        role = "user" if m["role"] == "user" else "model"
+                        history_parts.append({"role": role, "parts": [m["content"]]})
+                    chat = model.start_chat(history=history_parts)
+                    resp = chat.send_message(system_prompt + "\nUser message: " + user_message)
                     if resp and resp.text:
                         return resp.text.strip()
                 except google_exceptions.NotFound:
@@ -87,7 +141,12 @@ Guidelines:
                     time.sleep(retry_secs)
                     try:
                         model = genai.GenerativeModel(model_name)
-                        resp = model.generate_content(prompt)
+                        history_parts = []
+                        for m in messages[:-1]:
+                            role = "user" if m["role"] == "user" else "model"
+                            history_parts.append({"role": role, "parts": [m["content"]]})
+                        chat = model.start_chat(history=history_parts)
+                        resp = chat.send_message(system_prompt + "\nUser message: " + user_message)
                         if resp and resp.text:
                             return resp.text.strip()
                     except Exception:
@@ -158,7 +217,7 @@ POSITIVE_WORDS = {
 NEGATIVE_WORDS = {
     'sad', 'bad', 'terrible', 'awful', 'horrible', 'worst', 'angry',
     'frustrated', 'anxious', 'nervous', 'scared', 'worried', 'stressed',
-    'tired', 'exhausted', 'lonely', 'confused', 'lost', 'helpless',
+    'tired', 'exhausted', 'lonely', 'confused', 'lost', 'helpless', 'low', 'down',
     'hopeless', 'overwhelmed', 'depressed', 'miserable', 'upset',
     'udaas', 'dukhi', 'bura', 'bekar', 'gussa', 'thaka', 'pareshan'
 }
@@ -191,7 +250,290 @@ def detect_distress(text):
     return len(matched) > 0, matched
 
 
-def get_recommendations(sentiment, distress_keywords, user_message, lang='en'):
+def detect_emotion(message):
+    """
+    Detect primary emotion. Uses Gemini when configured; falls back to heuristics.
+    """
+    text = (message or '').lower()
+    gemini_key = getattr(settings, 'MINDMEND_GEMINI_API_KEY', '') or ''
+    provider = (getattr(settings, 'MINDMEND_LLM_PROVIDER', '') or '').strip().lower()
+    if provider == 'gemini' and gemini_key:
+        try:
+            import google.generativeai as genai
+            genai.configure(api_key=gemini_key)
+            prompt = f"""
+Detect the user's primary emotion.
+Return ONLY one word.
+
+Options:
+happy
+sad
+anxious
+angry
+overwhelmed
+neutral
+
+Message:
+{message}
+"""
+            model = genai.GenerativeModel("gemini-2.0-flash")
+            resp = model.generate_content(prompt)
+            out = (resp.text or '').strip().lower()
+            if out in {'happy', 'sad', 'anxious', 'angry', 'overwhelmed', 'neutral'}:
+                return out
+        except Exception:
+            pass
+    if any(k in text for k in ['angry', 'mad', 'furious', 'irritated', 'gussa']):
+        return 'angry'
+    if any(k in text for k in ['anxiety', 'panic', 'bechain', 'ghabraya', 'chinta']):
+        return 'anxious'
+    if any(k in text for k in ['overwhelmed', 'cant cope', 'too much', 'pressure']):
+        return 'overwhelmed'
+    sentiment = analyze_sentiment(text)
+    if sentiment == 'positive':
+        return 'happy'
+    if sentiment == 'negative':
+        return 'sad'
+    return 'neutral'
+
+
+def detect_context_label(message):
+    contexts = {
+        "class": ["class", "lecture", "teacher", "exam", "tuition", "coaching", "library"],
+        "office": ["office", "meeting", "boss", "work", "deadline"],
+        "home": ["home", "room", "house", "hostel", "dorm"],
+        "public": ["bus", "train", "crowd", "metro", "park", "playground", "canteen", "gym"]
+    }
+    text = (message or '').lower()
+    for context, words in contexts.items():
+        for w in words:
+            if w in text:
+                return context
+    return "unknown"
+
+
+def extract_topics(message):
+    text = (message or '').lower()
+    topic_map = {
+        'exams': ['exam', 'exams', 'test', 'tests', 'study', 'studying', 'tuition', 'coaching', 'class'],
+        'work': ['work', 'office', 'boss', 'deadline', 'meeting', 'job'],
+        'family': ['family', 'parents', 'mother', 'father', 'mom', 'dad', 'sibling'],
+        'relationships': ['relationship', 'partner', 'boyfriend', 'girlfriend', 'breakup', 'love'],
+        'friends': ['friend', 'friends', 'social', 'lonely', 'alone'],
+        'health': ['health', 'sick', 'ill', 'pain', 'headache'],
+        'money': ['money', 'finance', 'financial', 'bills', 'rent'],
+        'sleep': ['sleep', 'insomnia', 'night', 'tired', 'exhausted'],
+    }
+    hits = []
+    for topic, words in topic_map.items():
+        if any(w in text for w in words):
+            hits.append(topic)
+    return hits
+
+
+def extract_activities(message, recommendations=None):
+    text = (message or '').lower()
+    activities = []
+    if any(w in text for w in ['music', 'song', 'songs']):
+        activities.append('music')
+    if any(w in text for w in ['walk', 'walking', 'stroll']):
+        activities.append('walk')
+    if any(w in text for w in ['breath', 'breathing']):
+        activities.append('breathing')
+    if any(w in text for w in ['journal', 'write down', 'writing']):
+        activities.append('journaling')
+    if any(w in text for w in ['meditation', 'meditate']):
+        activities.append('meditation')
+    if any(w in text for w in ['exercise', 'workout', 'gym']):
+        activities.append('exercise')
+    if any(w in text for w in ['talk', 'call', 'message', 'chat']):
+        activities.append('reach out')
+
+    if recommendations:
+        rec_map = {
+            'breathing': 'breathing',
+            'activity': 'movement',
+            'distract_music': 'music',
+            'distract_walk': 'walk',
+            'distract_call': 'reach out',
+            'distract_watch': 'watch',
+            'journal': 'journaling',
+        }
+        for r in recommendations:
+            act = rec_map.get(r.get('type'))
+            if act:
+                activities.append(act)
+    # Deduplicate preserving order
+    seen = set()
+    out = []
+    for a in activities:
+        if a not in seen:
+            out.append(a)
+            seen.add(a)
+    return out
+
+
+def extract_name(message):
+    text = (message or '').strip()
+    match = re.search(r"\bmy name is ([A-Za-z]+)\b", text, re.IGNORECASE)
+    if match:
+        return match.group(1)
+    match = re.search(r"\bI am ([A-Za-z]+)\b", text, re.IGNORECASE)
+    if match:
+        return match.group(1)
+    return ""
+
+def _infer_situation(msg):
+    text = (msg or '').lower()
+    if any(w in text for w in ['office', 'work', 'boss', 'deadline', 'meeting', 'shift']):
+        return 'work'
+    if any(w in text for w in ['school', 'college', 'class', 'exam', 'study', 'library', 'tuition', 'tution', 'coaching']):
+        return 'study'
+    if any(w in text for w in ['bus', 'train', 'metro', 'traffic', 'commute', 'commuting', 'ride']):
+        return 'commuting'
+    if any(w in text for w in ['crowd', 'crowded', 'public', 'outside', 'street', 'market', 'mall', 'gym', 'canteen', 'park', 'playground']):
+        return 'public'
+    if any(w in text for w in ['bed', 'sleeping', 'insomnia', 'night']):
+        return 'bed'
+    if any(w in text for w in ['home', 'house', 'room', 'kitchen', 'sofa', 'hostel', 'dorm']):
+        return 'home'
+    if any(w in text for w in ['alone', 'lonely', 'by myself']):
+        return 'alone'
+    if any(w in text for w in ['with family', 'parents', 'mom', 'dad', 'sibling']):
+        return 'family'
+    return None
+
+
+def _context_tip(situation, lang, explicit_place=None):
+    if lang == 'hi':
+        if situation in ('commuting', 'public'):
+            if explicit_place == 'bus':
+                return "बस में हैं तो हल्का सा रीसेट करें: कंधे ढीले करें, जबड़ा ढीला छोड़ें, और 4 धीमी सांसें लें।"
+            if explicit_place == 'library':
+                return "लाइब्रेरी में हैं तो धीरे-धीरे सांस लें और ध्यान एक पेज/लाइन पर टिकाएं—छोटे हिस्से से शुरू करें।"
+            if explicit_place == 'gym':
+                return "जिम में हैं तो थोड़ा धीमा करें: पानी पिएं, कंधे ढीले करें, और 4 शांत सांसें लें।"
+            if explicit_place == 'hostel':
+                return "होस्टल में हैं तो पानी पीकर 1–2 मिनट शांत बैठें—फिर छोटा सा काम चुनें।"
+            return "हल्का सा रीसेट करें: कंधे ढीले करें, 4 धीमी सांसें लें, और सामने किसी एक चीज़ पर ध्यान टिकाएं।"
+        if situation == 'work':
+            return "बहुत छोटे ब्रेक लें: 5 धीमी सांसें और कंधों को ढीला करना भी मदद करता है।"
+        if situation == 'study':
+            return "2 मिनट आंखें बंद करके सांस पर ध्यान दें—फिर छोटे टास्क से शुरू करें।"
+        if situation == 'bed':
+            return "धीरे-धीरे सांस लें और शरीर को ढीला छोड़ें—छोटी बॉडी-स्कैन मदद कर सकती है।"
+        if situation == 'home':
+            return "पानी पीकर खिड़की/बालकनी के पास 1-2 मिनट खड़े रहें।"
+        return "अभी एक छोटा कदम लें—धीमी सांसें या थोड़ा स्ट्रेचिंग भी मदद कर सकती है।"
+    if situation in ('commuting', 'public'):
+        if explicit_place == 'bus':
+            return "Keep it subtle on the bus: drop your shoulders, unclench your jaw, and take 4 slow breaths."
+        if explicit_place == 'library':
+            return "Since you're in the library, keep it quiet: slow breaths, and focus on one line at a time."
+        if explicit_place == 'gym':
+            return "At the gym, slow it down: sip water, relax your shoulders, and take 4 calm breaths."
+        if explicit_place == 'hostel':
+            return "In the hostel, take a 1–2 minute pause: drink water and pick one tiny next step."
+        if explicit_place == 'park':
+            return "In the park, slow your pace and take 4 steady breaths while you notice the air and sounds."
+        if explicit_place == 'playground':
+            return "At the playground, take a small pause: loosen your shoulders and take 4 calm breaths."
+        return "Keep it subtle: drop your shoulders, take 4 slow breaths, and focus on one steady point."
+    if situation == 'work':
+        return "Keep it low-key: 5 slow breaths and a shoulder drop can help reset."
+    if situation == 'study':
+        if explicit_place == 'tuition' or explicit_place == 'coaching':
+            return "In class, keep it quiet: slow breaths and focus on one small task or a single line."
+        return "Close your eyes for 60 seconds and just breathe, then start with a tiny task."
+    if situation == 'bed':
+        return "Keep it gentle: slow breathing and a quick body scan can calm things down."
+    if situation == 'home':
+        return "A small reset helps: drink water and stand by a window for a minute."
+    return "Try one small, doable step right now—slow breathing or a short stretch can help."
+
+def _explicit_place_label(msg, lang):
+    text = (msg or '').lower()
+    if 'bus' in text:
+        return 'bus', ('बस में' if lang == 'hi' else 'on the bus')
+    if 'train' in text or 'metro' in text:
+        return 'train', ('ट्रेन/मेट्रो में' if lang == 'hi' else 'on the train/metro')
+    if 'library' in text:
+        return 'library', ('लाइब्रेरी में' if lang == 'hi' else 'in the library')
+    if 'hostel' in text or 'dorm' in text:
+        return 'hostel', ('होस्टल में' if lang == 'hi' else 'in the hostel')
+    if 'gym' in text:
+        return 'gym', ('जिम में' if lang == 'hi' else 'at the gym')
+    if 'canteen' in text:
+        return 'canteen', ('कैंटीन में' if lang == 'hi' else 'in the canteen')
+    if 'park' in text:
+        return 'park', ('पार्क में' if lang == 'hi' else 'in the park')
+    if 'playground' in text:
+        return 'playground', ('प्लेग्राउंड में' if lang == 'hi' else 'at the playground')
+    if 'tuition' in text or 'tution' in text:
+        return 'tuition', ('ट्यूशन में' if lang == 'hi' else 'in tuition class')
+    if 'coaching' in text:
+        return 'coaching', ('कोचिंग में' if lang == 'hi' else 'in coaching class')
+    if 'class' in text or 'lecture' in text:
+        return 'class', ('क्लास में' if lang == 'hi' else 'in class')
+    if 'office' in text or 'work' in text:
+        return 'office', ('ऑफिस में' if lang == 'hi' else 'at work')
+    if 'home' in text or 'room' in text or 'house' in text:
+        return 'home', ('घर पर' if lang == 'hi' else 'at home')
+    return '', ''
+
+
+def _context_support_line(context, lang, explicit_place='', explicit_label=''):
+    if not context:
+        return ''
+    situation = context.get('situation')
+    parts = []
+    if situation:
+        if lang == 'hi':
+            situation_map = {
+                'work': 'काम पर',
+                'study': 'पढ़ाई के दौरान',
+                'commuting': 'यात्रा/आवागमन में',
+                'public': 'भीड़/बाहर',
+                'bed': 'बिस्तर पर',
+                'home': 'घर पर',
+                'alone': 'अकेले',
+                'family': 'परिवार के साथ',
+            }
+            if explicit_label:
+                parts.append(f"अगर आप {explicit_label} हैं")
+            else:
+                parts.append(f"अगर आप {situation_map.get(situation, situation)} हैं")
+        else:
+            situation_map = {
+                'work': 'at work',
+                'study': 'studying',
+                'commuting': 'commuting',
+                'public': 'somewhere public',
+                'bed': 'in bed',
+                'home': 'at home',
+                'alone': 'alone',
+                'family': 'with family',
+            }
+            if explicit_label:
+                parts.append(f"since you're {explicit_label}")
+            else:
+                parts.append(f"if you're {situation_map.get(situation, situation)}")
+    if not parts:
+        return ''
+    tip = _context_tip(situation, lang, explicit_place=explicit_place or None)
+    if lang == 'hi':
+        return (parts[0].strip() + ", " + tip) if tip else ""
+    return (parts[0].strip().capitalize() + ", " + tip) if tip else ""
+
+
+def _build_context(user_message, context, lang):
+    situation = _infer_situation(user_message)
+    return {
+        'situation': situation,
+    }
+
+
+def get_recommendations(sentiment, distress_keywords, user_message, lang='en', context=None):
     """Generate personalized self-help recommendations based on analysis. lang: 'en' or 'hi'."""
     is_hi = lang == 'hi'
     recommendations = []
@@ -257,10 +599,34 @@ def get_recommendations(sentiment, distress_keywords, user_message, lang='en'):
             'type': 'helpline', 'title': helpline_title, 'content': helpline_content, 'priority': 'high'
         })
 
+    def needs_breathing(msg, matched_distress):
+        text = (msg or '').lower()
+        breathing_distress = {
+            'anxiety', 'panic', 'overwhelmed', 'cant cope', 'scared', 'afraid', 'terrified'
+        }
+        if matched_distress and any(k in breathing_distress for k in matched_distress):
+            return True
+        keywords = [
+            'anxiety', 'panic', 'panicking', 'overwhelmed', 'stress', 'stressed',
+            'tight chest', 'heart racing', 'cant breathe', "can't breathe",
+            'bechain', 'ghabraya', 'chinta', 'dar', 'gabrahat'
+        ]
+        return any(k in text for k in keywords)
+
     if sentiment == 'negative' or distress_keywords:
         # Mix of grounding + distraction activities to shift focus from negative thoughts
+        if context:
+            tip = _context_tip(context.get('situation'), lang)
+            if tip:
+                recommendations.append({
+                    'type': 'context',
+                    'title': 'Right-now idea' if not is_hi else 'अभी के लिए सुझाव',
+                    'content': tip,
+                    'priority': 'medium'
+                })
+        if needs_breathing(user_message, distress_keywords):
+            recommendations.append({'type': 'breathing', 'title': breath_title, 'content': breath_content, 'priority': 'medium'})
         recommendations.extend([
-            {'type': 'breathing', 'title': breath_title, 'content': breath_content, 'priority': 'medium'},
             {'type': 'activity', 'title': activity_title, 'content': activity_content, 'priority': 'medium'},
             {'type': 'distract_music', 'title': distract_music_title, 'content': distract_music_content, 'priority': 'medium'},
             {'type': 'distract_walk', 'title': distract_walk_title, 'content': distract_walk_content, 'priority': 'medium'},
@@ -310,6 +676,82 @@ def _get_prior_context(history, lang):
     return None
 
 
+def _recently_asked_reason(history):
+    if not history:
+        return False
+    for i in range(len(history) - 1, -1, -1):
+        if history[i].get('role') == 'assistant':
+            text = (history[i].get('content') or '').lower()
+            if any(p in text for p in [
+                'what feels hardest', 'what feels most difficult', 'what happened just before',
+                'what do you need most', 'want to talk it through', 'tell me more', 'how are you feeling'
+            ]):
+                return True
+            # If assistant already asked a question recently, avoid repeating another probing question.
+            if '?' in text:
+                return True
+            return False
+    return False
+
+
+def _recently_asked_location(history):
+    if not history:
+        return False
+    for i in range(len(history) - 1, -1, -1):
+        if history[i].get('role') == 'assistant':
+            text = (history[i].get('content') or '').lower()
+            if any(p in text for p in [
+                'where are you', 'where are you right now', 'which place', 'where are you at',
+                'are you in class', 'are you at home', 'are you at work', 'are you in the office',
+                'आप अभी कहाँ हैं', 'आप अभी कहां हैं', 'आप अभी कहां पर हैं', 'आप किस जगह हैं'
+            ]):
+                return True
+            if '?' in text:
+                return True
+            return False
+    return False
+
+
+def _user_provided_reason(msg):
+    text = (msg or '').lower()
+    markers = [
+        'because', 'since', 'due to', 'as ', 'my teacher', 'my boss', 'my friend', 'my parents',
+        'scolded', 'scolded me', 'yelled', 'failed', 'missed', 'breakup', 'fight', 'argument',
+        'exam', 'test', 'pressure', 'workload', 'deadline', 'lonely', 'alone', 'bullied',
+        'relationship', 'family', 'money', 'financial', 'health', 'sick'
+    ]
+    if any(m in text for m in markers):
+        return True
+    return len(text.split()) >= 7
+
+
+def _recent_user_messages(history, limit=4):
+    if not history:
+        return []
+    user_msgs = [m for m in history if m.get('role') == 'user']
+    return user_msgs[-limit:]
+
+
+def _reason_in_history(history):
+    for m in _recent_user_messages(history, limit=4):
+        if _user_provided_reason(m.get('content') or ''):
+            return True
+    return False
+
+
+def _place_in_history(history, lang, limit=4):
+    for m in reversed(_recent_user_messages(history, limit=limit)):
+        place, label = _explicit_place_label(m.get('content') or '', lang)
+        if label:
+            return place, label
+    return '', ''
+
+
+def _location_in_history(history, lang):
+    place, label = _place_in_history(history, lang, limit=4)
+    return bool(label)
+
+
 def _extract_phrase(msg, min_len=4):
     """Pick a short phrase from user message to reference naturally."""
     words = msg.split()
@@ -324,7 +766,7 @@ def _extract_phrase(msg, min_len=4):
     return None
 
 
-def get_chat_response(user_message, session_id=None, lang='en', conversation_history=None):
+def get_chat_response(user_message, session_id=None, lang='en', conversation_history=None, context=None):
     """
     Main chatbot response logic - human-like, person-to-person style.
     Uses LLM (Gemini/OpenAI) when configured; otherwise falls back to rule-based responses.
@@ -333,8 +775,24 @@ def get_chat_response(user_message, session_id=None, lang='en', conversation_his
     sentiment = analyze_sentiment(user_message)
     has_distress, distress_keywords = detect_distress(user_message)
     has_violence_risk, violence_keywords = detect_violence_risk(user_message)
-    recommendations = get_recommendations(sentiment, distress_keywords, user_message, lang)
+    context_meta = _build_context(user_message, context, lang)
     history = conversation_history or []
+    msg = user_message.lower().strip()
+    msg_words = len(msg.split())
+
+    memory = (context or {}).get('memory') or {}
+    preferred_name = memory.get('preferred_name') or ''
+    if re.search(r"\bwhat is my name\b|\bdo you remember my name\b", msg):
+        if preferred_name:
+            response = f"Your name is {preferred_name}."
+        else:
+            response = "I don't think you've told me your name yet."
+        return {
+            'response': response,
+            'sentiment': 'neutral',
+            'is_distress': False,
+            'recommendations': []
+        }
 
     # Handle serious violence admissions before normal chat behavior.
     if has_violence_risk:
@@ -375,8 +833,88 @@ def get_chat_response(user_message, session_id=None, lang='en', conversation_his
             'recommendations': recommendations,
         }
 
+    explicit_place, explicit_label = _explicit_place_label(user_message, lang)
+    if not explicit_label:
+        explicit_place, explicit_label = _place_in_history(history, lang, limit=4)
+    if not context_meta.get('situation') and explicit_place:
+        if explicit_place in ('bus', 'train'):
+            context_meta['situation'] = 'commuting'
+        elif explicit_place == 'class':
+            context_meta['situation'] = 'study'
+        elif explicit_place == 'office':
+            context_meta['situation'] = 'work'
+        elif explicit_place == 'home':
+            context_meta['situation'] = 'home'
+
+    reason_present = _user_provided_reason(user_message) or _reason_in_history(history)
+    location_present = bool(explicit_label) or bool(context_meta.get('situation'))
+    asked_reason_recently = _recently_asked_reason(history)
+    asked_location_recently = _recently_asked_location(history)
+
+    suggestion_triggers = ['suggest', 'more', 'extra', 'other ideas', 'another way', 'any tips', 'any advice', 'help me']
+    wants_suggestions = any(t in msg for t in suggestion_triggers)
+
+    assessment_triggers = ['phq', 'gad', 'pss', 'assessment', 'test', 'questionnaire', 'screening', 'score']
+    user_asked_assessment = any(t in msg for t in assessment_triggers)
+    user_turns = len([m for m in history if m.get('role') == 'user']) + 1
+    allow_assessments = user_asked_assessment or user_turns >= 3
+
+    low_mood_markers = [
+        'feeling low', 'feel low', 'feeling down', 'feel down', 'not feeling well',
+        'not feeling good', 'not okay', 'not ok', 'sad', 'very sad'
+    ]
+    is_low_mood = any(m in msg for m in low_mood_markers)
+    should_ask_reason = (sentiment == 'negative' or has_distress or is_low_mood) and not reason_present and not asked_reason_recently
+    should_ask_location = (sentiment == 'negative' or has_distress) and reason_present and not location_present and not asked_location_recently
+
+    if wants_suggestions:
+        should_ask_reason = False
+        should_ask_location = False
+
+    if should_ask_reason:
+        if lang == 'hi':
+            response = "यह सुनकर दुख हुआ। क्या आप बता सकते हैं कि क्या वजह है?"
+        else:
+            response = "I'm really sorry you're feeling this way. Can you share what’s behind it?"
+        return {
+            'response': response,
+            'sentiment': sentiment,
+            'is_distress': has_distress,
+            'recommendations': []
+        }
+
+    if should_ask_location and not wants_suggestions:
+        if lang == 'hi':
+            response = "धन्यवाद साझा करने के लिए। आप अभी कहाँ हैं—क्लास/ट्यूशन, कोचिंग, ऑफिस, बस/ट्रेन, लाइब्रेरी, पार्क/प्लेग्राउंड, या घर पर?"
+        else:
+            response = "Thanks for sharing that. Where are you right now—class/tuition, coaching, office, on a bus/train, library, hostel, gym, park/playground, or at home?"
+        return {
+            'response': response,
+            'sentiment': sentiment,
+            'is_distress': has_distress,
+            'recommendations': []
+        }
+
+    # Skip recommendations for greetings/very short small-talk.
+    greeting_words = {'hi', 'hello', 'hey', 'hii', 'hiii', 'namaste', 'hola'}
+    is_greeting_only = msg_words <= 2 and any(w in msg for w in greeting_words)
+    recommendations = [] if is_greeting_only else get_recommendations(sentiment, distress_keywords, user_message, lang, context=context_meta)
+    if not allow_assessments and recommendations:
+        recommendations = [r for r in recommendations if r.get('type') != 'checkin']
+
+    emotion = detect_emotion(user_message)
+    context_label = detect_context_label(user_message)
+    llm_context = dict(context_meta)
+    memory = (context or {}).get('memory')
+    if memory:
+        llm_context['memory'] = memory
+    if emotion:
+        llm_context['emotion'] = emotion
+    if context_label and context_label != 'unknown':
+        llm_context['context_label'] = context_label
+
     # Try LLM first when provider and API key are set
-    llm_response = _call_llm(user_message, history, lang)
+    llm_response = _call_llm(user_message, history, lang, context=llm_context)
     if llm_response and llm_response.strip():
         return {
             'response': llm_response.strip(),
@@ -385,12 +923,11 @@ def get_chat_response(user_message, session_id=None, lang='en', conversation_his
             'recommendations': recommendations,
         }
 
-    msg = user_message.lower().strip()
-    msg_words = len(msg.split())
     is_hi = lang == 'hi'
     topic = _extract_topic(msg)
     prior = _get_prior_context(conversation_history or [], lang) if conversation_history else None
     phrase = _extract_phrase(user_message)
+    asked_recently = _recently_asked_reason(conversation_history or []) or _recently_asked_location(conversation_history or [])
 
     # Build conversational, human-like response (English)
     if not is_hi:
@@ -451,16 +988,23 @@ def get_chat_response(user_message, session_id=None, lang='en', conversation_his
                     "How are you feeling? ",
                 ])
             else:
-                if phrase:
-                    response = f"I hear you. When you say \"{phrase}\", what feels hardest about it right now? "
-                elif prior:
-                    response = "I remember what you shared earlier. What changed most since then? "
-                else:
+                if asked_recently:
                     response = random.choice([
-                        "I hear you. What part is feeling most difficult right now? ",
-                        "Thanks for sharing that. What happened just before you started feeling this way? ",
-                        "I'm with you. What do you need most right now: to vent, to calm down, or to plan next steps? ",
+                        "I hear you. I'm here with you. ",
+                        "That makes sense. Take your time—no rush. ",
+                        "I get it. We can go one small step at a time. ",
                     ])
+                else:
+                    if phrase:
+                        response = f"I hear you. When you say \"{phrase}\", what feels hardest about it right now? "
+                    elif prior:
+                        response = "I remember what you shared earlier. What changed most since then? "
+                    else:
+                        response = random.choice([
+                            "I hear you. What part is feeling most difficult right now? ",
+                            "Thanks for sharing that. What happened just before you started feeling this way? ",
+                            "I'm with you. What do you need most right now: to vent, to calm down, or to plan next steps? ",
+                        ])
     else:
         # Hindi responses - conversational, person-to-person
         if has_distress and any(kw in distress_keywords for kw in ['suicide', 'suicidal', 'kill', 'self harm', 'aatmahatya', 'khudkushi']):
@@ -500,20 +1044,32 @@ def get_chat_response(user_message, session_id=None, lang='en', conversation_his
                     "बताइए, सुन रहा हूं। ",
                 ]
             else:
-                if phrase:
-                    response = f"मैं समझ रहा हूं। जब आप \"{phrase}\" कहते हैं, अभी सबसे मुश्किल हिस्सा क्या लग रहा है? "
-                    fallbacks_hi = []
-                elif prior:
-                    response = "मैंने आपकी पिछली बात याद रखी है। तब से सबसे ज्यादा क्या बदला है? "
-                    fallbacks_hi = []
-                else:
+                if asked_recently:
                     fallbacks_hi = [
-                        "मैं सुन रहा हूं। अभी सबसे भारी क्या लग रहा है? ",
-                        "शेयर करने के लिए धन्यवाद। अभी आपको क्या चाहिए: बस vent करना, calm होना, या next step plan करना? ",
-                        "मैं आपके साथ हूं। यह भावना कब से ज्यादा बढ़ी है? ",
+                        "मैं समझ रहा हूं। मैं यहीं हूं। ",
+                        "ठीक है, धीरे-धीरे चलेंगे। ",
+                        "आप अकेले नहीं हैं। ",
                     ]
+                else:
+                    if phrase:
+                        response = f"मैं समझ रहा हूं। जब आप \"{phrase}\" कहते हैं, अभी सबसे मुश्किल हिस्सा क्या लग रहा है? "
+                        fallbacks_hi = []
+                    elif prior:
+                        response = "मैंने आपकी पिछली बात याद रखी है। तब से सबसे ज्यादा क्या बदला है? "
+                        fallbacks_hi = []
+                    else:
+                        fallbacks_hi = [
+                            "मैं सुन रहा हूं। अभी सबसे भारी क्या लग रहा है? ",
+                            "शेयर करने के लिए धन्यवाद। अभी आपको क्या चाहिए: बस vent करना, calm होना, या next step plan करना? ",
+                            "मैं आपके साथ हूं। यह भावना कब से ज्यादा बढ़ी है? ",
+                        ]
             if not response.strip() and fallbacks_hi:
                 response = random.choice(fallbacks_hi)
+
+    if not has_violence_risk and (sentiment in ('negative', 'neutral') or has_distress) and msg_words > 2:
+        context_line = _context_support_line(context_meta, lang, explicit_place=explicit_place, explicit_label=explicit_label)
+        if context_line:
+            response = (response + " " + context_line).strip()
 
     return {
         'response': response.strip(),

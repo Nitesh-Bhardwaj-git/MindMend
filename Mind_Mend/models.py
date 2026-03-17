@@ -194,6 +194,22 @@ class ChatMessage(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
 
+class UserMemory(models.Model):
+    """Lightweight long-term memory for chat personalization."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
+    session_id = models.CharField(max_length=100, blank=True)
+    stress_topics = models.JSONField(default=list, blank=True)
+    helpful_activities = models.JSONField(default=list, blank=True)
+    last_emotion = models.CharField(max_length=50, blank=True)
+    last_context = models.CharField(max_length=50, blank=True)
+    preferred_name = models.CharField(max_length=100, blank=True)
+    last_prompted_at = models.DateTimeField(null=True, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-updated_at']
+
+
 class UserAccessLocation(models.Model):
     """Track where users access the platform from (country, state, city)."""
     LOCATION_SOURCE = [('ip', 'IP geolocation'), ('browser', 'Browser GPS')]

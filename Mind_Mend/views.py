@@ -12,6 +12,7 @@ from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
+from django.contrib.sessions.models import Session
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
@@ -46,15 +47,40 @@ except ModuleNotFoundError:
 from .models import (
     MoodEntry, ForumPost, ForumReply, Counsellor, CounsellorBooking,
     CounsellorChatMessage, CounsellorNotification, CounsellorReview,
-    AssessmentResult, ChatMessage, ContactMessage, UserAccessLocation
+    AssessmentResult, ChatMessage, ContactMessage, UserAccessLocation, UserMemory
 )
 from .forms import SignUpForm, MoodEntryForm, ForumPostForm, ForumReplyForm, CounsellorBookingForm, ContactForm, CounsellorReviewForm
-from .services import get_chat_response, get_session_id
+from .services import (
+    get_chat_response, get_session_id,
+    detect_emotion, detect_context_label, extract_topics, extract_activities, extract_name
+)
 from .location_tracker import reverse_geocode, get_client_ip
 from .assessment_data import (
     PHQ9_QUESTIONS, GAD7_QUESTIONS, PSS_QUESTIONS,
     get_phq9_result, get_gad7_result, get_pss_result, PSS_REVERSE_ITEMS
 )
+
+
+def enforce_single_device_login(request, user):
+    """
+    Keep only the current session active for this user.
+    """
+    current_session_key = request.session.session_key
+    if not current_session_key:
+        request.session.save()
+        current_session_key = request.session.session_key
+
+    if not current_session_key:
+        return
+
+    sessions_to_delete = []
+    for session in Session.objects.all():
+        data = session.get_decoded()
+        if str(data.get('_auth_user_id')) == str(user.id) and session.session_key != current_session_key:
+            sessions_to_delete.append(session.session_key)
+
+    if sessions_to_delete:
+        Session.objects.filter(session_key__in=sessions_to_delete).delete()
 
 
 def home(request):
@@ -86,6 +112,7 @@ def register(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
+            enforce_single_device_login(request, user)
             return redirect('home')
     else:
         form = SignUpForm()
@@ -100,6 +127,7 @@ def login_view(request):
         if form.is_valid():
             user = form.get_user()
             login(request, user)
+            enforce_single_device_login(request, user)
             return redirect(request.GET.get('next', 'home'))
         else:
             username = request.POST.get('username', '').strip()
@@ -122,6 +150,7 @@ def doctor_login_view(request):
                 form.add_error(None, 'This account is not registered as a counsellor.')
             else:
                 login(request, user)
+                enforce_single_device_login(request, user)
                 return redirect('doctor_dashboard')
         username = request.POST.get('username', '').strip()
         username_not_found = username and not User.objects.filter(username=username).exists()
@@ -208,6 +237,40 @@ def chat(request):
     })
 
 
+def _chat_context_from_request(request, session_id, data):
+    context = {
+        'client_time': data.get('client_time') or request.POST.get('client_time'),
+        'client_tz_offset': data.get('client_tz_offset') or request.POST.get('client_tz_offset'),
+        'client_tz': data.get('client_tz') or request.POST.get('client_tz'),
+    }
+    location = None
+    if request.user.is_authenticated:
+        location = UserAccessLocation.objects.filter(user=request.user).order_by('-created_at').first()
+    else:
+        location = UserAccessLocation.objects.filter(user__isnull=True, session_id=session_id).order_by('-created_at').first()
+    if location:
+        context['location'] = {
+            'city': location.city,
+            'state': location.state,
+            'country': location.country,
+            'source': location.location_source,
+        }
+    memory = None
+    if request.user.is_authenticated:
+        memory = UserMemory.objects.filter(user=request.user).first()
+    else:
+        memory = UserMemory.objects.filter(user__isnull=True, session_id=session_id).first()
+    if memory and (memory.stress_topics or memory.helpful_activities or memory.last_emotion or memory.last_context):
+        context['memory'] = {
+            'topics': memory.stress_topics or [],
+            'activities': memory.helpful_activities or [],
+            'last_emotion': memory.last_emotion or '',
+            'last_context': memory.last_context or '',
+            'preferred_name': memory.preferred_name or '',
+        }
+    return context
+
+
 @csrf_exempt
 def chat_api(request):
     if request.method != 'POST':
@@ -230,7 +293,8 @@ def chat_api(request):
         recent = list(ChatMessage.objects.filter(session_id=session_id, user__isnull=True).order_by('-created_at')[:20])
     recent.reverse()  # chronological order
     history = [{'role': m.role, 'content': m.content} for m in recent]
-    result = get_chat_response(message, session_id, lang=lang, conversation_history=history)
+    context = _chat_context_from_request(request, session_id, data)
+    result = get_chat_response(message, session_id, lang=lang, conversation_history=history, context=context)
     # Save for all users (incl. anonymous) to enable conversation memory
     ChatMessage.objects.create(
         user=request.user if request.user.is_authenticated else None,
@@ -240,6 +304,31 @@ def chat_api(request):
         user=request.user if request.user.is_authenticated else None,
         session_id=session_id, role='assistant', content=result['response'], sentiment=result['sentiment']
     )
+    # Update long-term memory
+    memory = None
+    if request.user.is_authenticated:
+        memory, _ = UserMemory.objects.get_or_create(user=request.user, defaults={'session_id': ''})
+    else:
+        memory, _ = UserMemory.objects.get_or_create(user=None, session_id=session_id)
+    if memory:
+        emotion = detect_emotion(message)
+        context_label = detect_context_label(message)
+        topics = extract_topics(message)
+        activities = extract_activities(message, result.get('recommendations'))
+        if emotion:
+            memory.last_emotion = emotion
+        if context_label and context_label != 'unknown':
+            memory.last_context = context_label
+        name = extract_name(message)
+        if name:
+            memory.preferred_name = name
+        if topics:
+            merged = list(dict.fromkeys((topics + (memory.stress_topics or []))) )
+            memory.stress_topics = merged[:10]
+        if activities:
+            merged = list(dict.fromkeys((activities + (memory.helpful_activities or []))) )
+            memory.helpful_activities = merged[:10]
+        memory.save()
     return JsonResponse({
         'response': result['response'],
         'sentiment': result['sentiment'],
@@ -1446,41 +1535,87 @@ def _trend_status(current_avg, previous_avg, lower_is_better=False):
     return 'stable'
 
 
-def _weekly_assessment_series(user, assessment_type, weeks=12):
-    cutoff = timezone.now() - timedelta(days=weeks * 7)
+def _shift_month(first_of_month, delta_months):
+    base = first_of_month.year * 12 + (first_of_month.month - 1) + delta_months
+    year = base // 12
+    month = (base % 12) + 1
+    return first_of_month.replace(year=year, month=month, day=1)
+
+
+def _build_time_axis(mode):
+    today = timezone.localdate()
+    if mode == 'daily':
+        start = today - timedelta(days=364)
+        keys = [start + timedelta(days=i) for i in range(365)]
+        labels = [d.strftime('%d %b') for d in keys]
+        return keys, labels, start
+    if mode == 'weekly':
+        current_week_start = today - timedelta(days=today.weekday())
+        start = current_week_start - timedelta(days=51 * 7)
+        keys = [start + timedelta(days=i * 7) for i in range(52)]
+        labels = [d.strftime('%d %b') for d in keys]
+        return keys, labels, start
+    if mode == 'monthly':
+        current_month_start = today.replace(day=1)
+        start = _shift_month(current_month_start, -11)
+        keys = [_shift_month(start, i) for i in range(12)]
+        labels = [d.strftime('%b %Y') for d in keys]
+        return keys, labels, start
+    raise ValueError(f'Unsupported mode: {mode}')
+
+
+def _assessment_series_for_axis(user, assessment_type, mode, axis_keys, start_date):
+    key_set = set(axis_keys)
     qs = AssessmentResult.objects.filter(
         user=user,
         assessment_type=assessment_type,
-        created_at__gte=cutoff
+        created_at__date__gte=start_date
     ).order_by('created_at')
     buckets = defaultdict(list)
     for item in qs:
-        d = item.created_at.date()
-        week_start = d - timedelta(days=d.weekday())
-        buckets[week_start].append(item.total_score)
-    labels = []
+        d = timezone.localtime(item.created_at).date()
+        if mode == 'daily':
+            k = d
+        elif mode == 'weekly':
+            k = d - timedelta(days=d.weekday())
+        else:
+            k = d.replace(day=1)
+        if k in key_set:
+            buckets[k].append(item.total_score)
+
     values = []
-    for week_start in sorted(buckets.keys()):
-        labels.append(week_start.strftime('%d %b'))
-        avg_score = sum(buckets[week_start]) / len(buckets[week_start])
-        values.append(round(avg_score, 1))
-    return labels, values
+    for k in axis_keys:
+        if buckets.get(k):
+            avg_score = sum(buckets[k]) / len(buckets[k])
+            values.append(round(avg_score, 1))
+        else:
+            values.append(None)
+    return values
 
 
-def _weekly_mood_series(user, weeks=12):
-    cutoff_date = (timezone.now() - timedelta(days=weeks * 7)).date()
-    qs = MoodEntry.objects.filter(user=user, date__gte=cutoff_date).order_by('date')
+def _mood_series_for_axis(user, mode, axis_keys, start_date):
+    key_set = set(axis_keys)
+    qs = MoodEntry.objects.filter(user=user, date__gte=start_date).order_by('date')
     buckets = defaultdict(list)
     for item in qs:
-        week_start = item.date - timedelta(days=item.date.weekday())
-        buckets[week_start].append(item.mood)
-    labels = []
+        d = item.date
+        if mode == 'daily':
+            k = d
+        elif mode == 'weekly':
+            k = d - timedelta(days=d.weekday())
+        else:
+            k = d.replace(day=1)
+        if k in key_set:
+            buckets[k].append(item.mood)
+
     values = []
-    for week_start in sorted(buckets.keys()):
-        labels.append(week_start.strftime('%d %b'))
-        avg_mood = sum(buckets[week_start]) / len(buckets[week_start])
-        values.append(round(avg_mood, 2))
-    return labels, values
+    for k in axis_keys:
+        if buckets.get(k):
+            avg_mood = sum(buckets[k]) / len(buckets[k])
+            values.append(round(avg_mood, 2))
+        else:
+            values.append(None)
+    return values
 
 
 def _assessment_recent_pair_avg(user, assessment_type, days=14):
@@ -1595,10 +1730,16 @@ def _stress_score(value):
 
 @login_required
 def my_progress(request):
-    phq_labels, phq_values = _weekly_assessment_series(request.user, 'phq9')
-    gad_labels, gad_values = _weekly_assessment_series(request.user, 'gad7')
-    pss_labels, pss_values = _weekly_assessment_series(request.user, 'pss')
-    mood_labels, mood_values = _weekly_mood_series(request.user)
+    trend_charts = {}
+    for mode in ('daily', 'weekly', 'monthly'):
+        axis_keys, axis_labels, start_date = _build_time_axis(mode)
+        trend_charts[mode] = {
+            'labels': axis_labels,
+            'phq9': _assessment_series_for_axis(request.user, 'phq9', mode, axis_keys, start_date),
+            'gad7': _assessment_series_for_axis(request.user, 'gad7', mode, axis_keys, start_date),
+            'pss': _assessment_series_for_axis(request.user, 'pss', mode, axis_keys, start_date),
+            'mood': _mood_series_for_axis(request.user, mode, axis_keys, start_date),
+        }
 
     phq_current, phq_previous = _assessment_recent_pair_avg(request.user, 'phq9')
     gad_current, gad_previous = _assessment_recent_pair_avg(request.user, 'gad7')
@@ -1613,10 +1754,7 @@ def my_progress(request):
     }
 
     return render(request, 'Mind_Mend/my_progress.html', {
-        'phq_chart': {'labels': phq_labels, 'values': phq_values},
-        'gad_chart': {'labels': gad_labels, 'values': gad_values},
-        'pss_chart': {'labels': pss_labels, 'values': pss_values},
-        'mood_chart': {'labels': mood_labels, 'values': mood_values},
+        'trend_charts': trend_charts,
         'badges': badges,
         'streak': _streak_days(request.user),
         'mental_health_score': _mental_health_score(request.user),

@@ -231,3 +231,4 @@ class UserAccessLocation(models.Model):
     def __str__(self):
         loc = ', '.join(filter(None, [self.city, self.state, self.country]))
         return loc or self.ip_address or 'Unknown'
+

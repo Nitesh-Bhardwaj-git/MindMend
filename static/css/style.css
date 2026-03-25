@@ -12,8 +12,18 @@ body {
   color: var(--text-primary);
 }
 
-img, video, iframe, canvas, svg {
+img,
+video,
+iframe,
+canvas {
   max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+svg {
+  max-width: 100%;
+  height: auto;
 }
 
 iframe {
@@ -259,5 +269,218 @@ select:focus {
   textarea {
     min-height: 44px;
     font-size: 16px; /* Prevent mobile browser zoom-on-focus */
+  }
+}
+
+/* ========== Home: responsive (mobile-first) ========== */
+.home-page {
+  --home-section-gap: 4rem;
+}
+
+.home-page > :not([hidden]) ~ :not([hidden]) {
+  margin-top: var(--home-section-gap);
+}
+
+.home-hero-title {
+  font-size: clamp(2.75rem, 9vw, 4.5rem);
+  line-height: 1.05;
+}
+
+.home-hero-subtitle {
+  font-size: clamp(1.25rem, 4.5vw, 1.5rem);
+}
+
+.home-hero-lead {
+  font-size: 1rem;
+}
+
+.home-hero-pill {
+  letter-spacing: 0.18em;
+}
+
+.home-hero-actions {
+  gap: 1rem;
+  flex-direction: column;
+  width: 100%;
+}
+
+.home-cta {
+  width: 100%;
+  min-height: 2.75rem;
+  padding-inline: 2rem;
+  padding-block: 0.9rem;
+  text-align: center;
+}
+
+.home-hero-glow {
+  width: min(37.5rem, 80vw);
+  height: min(37.5rem, 80vw);
+  filter: blur(6.5rem);
+}
+
+.home-section-title {
+  font-size: clamp(1.75rem, 6vw, 2.5rem);
+  line-height: 1.2;
+}
+
+.home-section-lead {
+  font-size: 1rem;
+}
+
+.home-section-eyebrow {
+  font-size: 0.625rem;
+  letter-spacing: 0.25em;
+}
+
+.home-service-grid {
+  gap: 1.5rem;
+}
+
+.home-service-card {
+  padding: 1.5rem;
+}
+
+.home-journey-grid {
+  gap: 1.5rem;
+}
+
+.home-journey-step {
+  padding: 2rem 1.75rem;
+}
+
+.home-faq .faq-tab {
+  padding-inline: 1.25rem;
+  padding-block: 0.6rem;
+  min-height: 2.75rem;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.home-faq .faq-toggle {
+  padding-inline: 1.5rem;
+  padding-block: 1.25rem;
+}
+
+.home-faq .faq-answer {
+  padding-inline: 1.5rem;
+}
+
+.home-location-bar {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.home-location-actions {
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.home-location-actions button {
+  flex: 1 1 8rem;
+  min-height: 2.75rem;
+  text-align: center;
+}
+
+@media (min-width: 48rem) {
+  .home-page {
+    --home-section-gap: 5rem;
+  }
+
+  .home-hero-title {
+    font-size: 6rem;
+  }
+
+  .home-hero-subtitle {
+    font-size: 1.75rem;
+  }
+
+  .home-hero-lead {
+    font-size: 1.125rem;
+  }
+
+  .home-hero-actions {
+    flex-direction: row;
+    width: auto;
+  }
+
+  .home-cta {
+    width: auto;
+  }
+
+  .home-hero-glow {
+    width: min(37.5rem, 60vw);
+    height: min(37.5rem, 60vw);
+    filter: blur(7.5rem);
+  }
+
+  .home-section-title {
+    font-size: 2.5rem;
+  }
+
+  .home-section-lead {
+    font-size: 1.125rem;
+  }
+
+  .home-service-grid {
+    gap: 2rem;
+  }
+
+  .home-service-card {
+    padding: 2rem;
+  }
+
+  .home-journey-grid {
+    gap: 3rem;
+  }
+
+  .home-journey-step {
+    padding: 2.5rem;
+  }
+
+  .home-faq .faq-tab {
+    font-size: 0.8125rem;
+  }
+
+  .home-faq .faq-toggle {
+    padding-inline: 2rem;
+  }
+
+  .home-faq .faq-answer {
+    padding-inline: 2rem;
+  }
+
+  .home-location-bar {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .home-location-actions {
+    width: auto;
+  }
+}
+
+@media (min-width: 64.0625rem) {
+  .home-hero-title {
+    font-size: 8rem;
+  }
+
+  .home-hero-subtitle {
+    font-size: 1.875rem;
+  }
+
+  .home-hero-lead {
+    font-size: 1.25rem;
+  }
+
+  .home-section-title {
+    font-size: 3rem;
+  }
+
+  .home-service-card {
+    padding: 2rem;
+  }
+
+  .home-journey-step {
+    padding: 2.5rem;
   }
 }

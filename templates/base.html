@@ -30,7 +30,7 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 
-<body class="min-h-screen flex flex-col bg-[#050b1a] text-white font-sans overflow-x-hidden pt-[96px]">
+<body class="min-h-screen flex flex-col bg-[#050b1a] text-white font-sans overflow-x-hidden pt-[6rem]">
 
     <!-- ================= NAVBAR ================= -->
     <header class="fixed top-0 left-0 right-0 z-[9999] px-4 sm:px-6 pt-4">
@@ -50,7 +50,7 @@
             </a>
 
             <!-- MOBILE BUTTON -->
-            <button id="menu-btn" class="md:hidden p-2 rounded-lg text-white hover:bg-white/10 transition" aria-label="Toggle menu">
+            <button id="menu-btn" class="md:hidden p-2 rounded-lg text-white hover:bg-white/10 transition" aria-label="Toggle menu" aria-controls="mobile-menu" aria-expanded="false">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                 </svg>
@@ -181,7 +181,7 @@
                     </div>
                     <div class="text-left">
                         <h2 class="font-bold text-lg text-white leading-tight">MindMend</h2>
-                        <p class="text-[10px] font-bold tracking-[0.28em] text-[#00d1b2]">SAFE SPACE FOR HEALING</p>
+                        <p class="text-[0.625rem] font-bold tracking-[0.28em] text-[#00d1b2]">SAFE SPACE FOR HEALING</p>
                     </div>
                 </div>
                 <p class="text-gray-400 text-sm mt-2">
@@ -204,7 +204,15 @@
 
         if (btn && menu) {
             btn.addEventListener("click", () => {
-                menu.classList.toggle("hidden");
+                const isHidden = menu.classList.toggle("hidden");
+                btn.setAttribute("aria-expanded", (!isHidden).toString());
+            });
+
+            menu.querySelectorAll("a").forEach((link) => {
+                link.addEventListener("click", () => {
+                    menu.classList.add("hidden");
+                    btn.setAttribute("aria-expanded", "false");
+                });
             });
         }
 

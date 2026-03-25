@@ -196,6 +196,7 @@ MINDMEND_LLM_PROVIDER = os.environ.get('MINDMEND_LLM_PROVIDER', '')
 MINDMEND_GEMINI_API_KEY = os.environ.get('MINDMEND_GEMINI_API_KEY', '') or os.environ.get('GEMINI_API_KEY', '')
 MINDMEND_OPENAI_API_KEY = os.environ.get('MINDMEND_OPENAI_API_KEY', '') or os.environ.get('OPENAI_API_KEY', '')
 
+
 # Google Form survey integration
 MINDMEND_GOOGLE_FORM_URL = os.environ.get('MINDMEND_GOOGLE_FORM_URL', '')
 # Private Google Sheets API settings (recommended for sensitive survey data)

@@ -6,11 +6,12 @@
 
 <div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-6 md:pt-8 pb-20">
 
+  <!-- Background Glow -->
   <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] pointer-events-none"></div>
 
   <div class="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 space-y-10 relative z-10">
 
-    <!-- Header -->
+    <!-- HEADER -->
     <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
       <div>
         <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-[#00d1b2] mb-2">
@@ -20,98 +21,134 @@
       </div>
 
       <div class="flex gap-3 flex-wrap">
-        <a href="{% url 'mood_tracker' %}"
-           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-bold hover:bg-white/10 transition">
+        <a href="{% url 'mood_tracker' %}" class="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-bold hover:bg-white/10">
           Mood
         </a>
-
-        <a href="{% url 'location_map' %}"
-           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-bold hover:bg-white/10 transition">
+        <a href="{% url 'location_map' %}" class="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-bold hover:bg-white/10">
           Map
         </a>
-
-        <a href="{% url 'mental_health_heatmap' %}"
-           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500/20 border border-purple-500/30 text-purple-300 text-sm font-bold hover:bg-purple-500/30 transition">
+        <a href="{% url 'mental_health_heatmap' %}" class="px-4 py-2 rounded-xl bg-purple-500/20 border border-purple-500/30 text-purple-300 text-sm font-bold hover:bg-purple-500/30">
           🧠 Heatmap
         </a>
-
-        {% if is_counsellor %}
-        <a href="{% url 'doctor_dashboard' %}"
-           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00d1b2]/10 border border-[#00d1b2]/20 text-[#00d1b2] text-sm font-bold hover:bg-[#00d1b2] hover:text-[#04111d] transition">
-          Doctor Panel
-        </a>
-        {% endif %}
       </div>
     </div>
 
-    <!-- Top Section -->
+    <!-- DAILY AFFIRMATION -->
+    <div class="bg-gradient-to-r from-[#0a1428] to-[#0f1d3a] border border-[#00d1b2]/20 rounded-3xl p-6 flex items-center">
+      <div class="flex items-center gap-4">
+        <div class="text-[#00d1b2] text-2xl">✨</div>
+        <div>
+          <p class="text-xs uppercase tracking-widest text-[#00d1b2]">Daily Affirmation</p>
+          <h3 class="text-xl md:text-2xl font-semibold text-white italic">
+            "{{ daily_affirmation|default:"I am worthy of peace and happiness." }}"
+          </h3>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOP GRID -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-      <!-- Mental Health Score -->
-      <div class="bg-[#0a1428]/50 rounded-3xl border border-white/10 p-8 border-l-4 border-l-[#00d1b2] shadow-2xl">
-        <h5 class="text-gray-400 text-xs uppercase tracking-widest mb-4">
-          🧠 Mental Health Score
-        </h5>
-        <div class="flex items-baseline gap-2">
-          <span class="text-5xl md:text-6xl font-bold text-[#00d1b2]">
-            {{ mental_health_score|default_if_none:"—" }}
-          </span>
-          <span class="text-xl text-gray-500">/100</span>
+      <!-- LEFT -->
+      <div class="space-y-6">
+
+        <!-- SCORE -->
+        <div class="bg-[#0a1428]/50 border border-white/10 rounded-3xl p-6 shadow-xl">
+          <p class="text-xs text-gray-400 uppercase mb-2">🧠 Mental Health Score</p>
+          <div class="flex items-center gap-2">
+            <span class="text-5xl font-bold text-[#00d1b2]">
+              {{ mental_health_score|default:"72" }}
+            </span>
+            <span class="text-gray-500">/100</span>
+          </div>
+          <p class="text-xs text-gray-500 mt-2">
+            From mood + assessments. Higher = better.
+          </p>
         </div>
-        <p class="text-gray-500 text-sm mt-3">
-          From mood + assessments. Higher = better.
-        </p>
+
+        <!-- APPOINTMENTS -->
+        <div class="bg-[#0a1428]/50 border border-white/10 rounded-3xl p-6 shadow-xl">
+          <div class="flex justify-between items-center mb-4">
+            <h4 class="text-white font-semibold">📅 Upcoming Appointments</h4>
+            <a href="#" class="text-sm text-purple-400 hover:underline">Book New</a>
+          </div>
+
+          {% if upcoming_appointment %}
+          <div class="flex items-center justify-between bg-white/5 border border-white/10 p-4 rounded-2xl">
+            <div>
+              <p class="text-white font-medium">{{ upcoming_appointment.doctor_name }}</p>
+              <p class="text-xs text-gray-400">
+                Therapy Session • {{ upcoming_appointment.time }}
+              </p>
+            </div>
+            <button class="px-4 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-xl text-sm">
+              Join Session
+            </button>
+          </div>
+          {% else %}
+          <p class="text-gray-400 text-sm">No upcoming sessions.</p>
+          {% endif %}
+        </div>
+
       </div>
 
-      <!-- Recent Assessments -->
-      <div class="lg:col-span-2 bg-[#0a1428]/50 rounded-3xl border border-white/10 p-8 shadow-2xl">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-          <h5 class="text-xl font-bold text-white">Recent Assessments</h5>
-        </div>
+      <!-- RIGHT -->
+      <div class="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
 
-        <div class="space-y-3">
-          {% for a in assessments %}
-          <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 p-4 rounded-2xl bg-white/5 border border-white/10">
-            <span class="font-medium text-white">
-              {{ a.get_assessment_type_display|default:a.assessment_type }}
-            </span>
-            <span class="text-sm text-rose-300">
-              Score: {{ a.total_score }} — {{ a.result_level }}
-            </span>
-            <span class="text-gray-500 text-sm">
-              {{ a.created_at|date:"M d" }}
-            </span>
+        <!-- RECENT ASSESSMENTS -->
+        <div class="bg-[#0a1428]/50 border border-white/10 rounded-3xl p-6 shadow-xl">
+          <div class="flex justify-between mb-4">
+            <h4 class="text-white font-semibold">Recent Assessments</h4>
+            <a href="#" class="text-sm text-[#00d1b2] hover:underline">View All</a>
+          </div>
+
+          {% for a in assessments|slice:":2" %}
+          <div class="flex justify-between items-center bg-white/5 border border-white/10 p-3 rounded-xl mb-3">
+            <div>
+              <p class="text-white text-sm font-medium">
+                {{ a.get_assessment_type_display }}
+              </p>
+              <p class="text-xs text-gray-400">
+                {{ a.created_at|date:"d M" }}
+              </p>
+            </div>
+            <div class="text-right">
+              <p class="text-[#00d1b2] text-sm font-semibold">
+                Score: {{ a.total_score }}
+              </p>
+              <p class="text-xs text-gray-400">
+                {{ a.result_level }}
+              </p>
+            </div>
           </div>
           {% empty %}
-          <p class="text-gray-400">
-            No assessments yet.
-            <a href="{% url 'assessments' %}" class="text-[#00d1b2] font-medium hover:underline">Take one</a>.
-          </p>
+          <p class="text-gray-400 text-sm">No assessments yet.</p>
           {% endfor %}
         </div>
+
+        <!-- WELLNESS -->
+        <div class="bg-[#0a1428]/50 border border-white/10 rounded-3xl p-6 shadow-xl">
+          <h4 class="text-white font-semibold mb-2">📈 Wellness Suggestions</h4>
+          <p class="text-xs text-purple-400 mb-4">Personalised Tips</p>
+
+          {% if wellness_suggestions %}
+          <ul class="space-y-3">
+            {% for tip in wellness_suggestions %}
+            <li class="bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-gray-300">
+              • {{ tip }}
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="text-gray-400 text-sm">No suggestions yet.</p>
+          {% endif %}
+        </div>
+
       </div>
 
     </div>
 
-    <!-- Wellness Suggestions -->
-    <div class="bg-[#0a1428]/50 rounded-3xl border border-white/10 p-8 shadow-2xl">
-      <h5 class="font-semibold mb-2 text-rose-300 text-xl">🧘 Wellness Suggestions</h5>
-      <p class="text-xs text-rose-400 mb-4">Personalised tips from your data.</p>
-
-      {% if wellness_suggestions %}
-      <ul class="space-y-3">
-        {% for tip in wellness_suggestions %}
-        <li class="flex items-start gap-3 text-sm text-gray-300 bg-white/5 border border-white/10 rounded-2xl p-4">
-          <span class="text-[#00d1b2] mt-0.5">•</span>
-          <span>{{ tip }}</span>
-        </li>
-        {% endfor %}
-      </ul>
-      {% else %}
-      <p class="text-gray-400">Log mood regularly to get suggestions.</p>
-      {% endif %}
-    </div>
-
+    <!-- 🔥 KEEP THIS SECTION EXACTLY SAME -->
     <!-- Emotional Patterns + Chart -->
     <div class="bg-[#0a1428]/50 rounded-3xl border border-white/10 p-8 shadow-2xl">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
@@ -132,8 +169,7 @@
           </ul>
           {% else %}
           <p class="text-gray-400">
-            Insufficient data yet to detect patterns. Log mood and activities for at least 2 days.
-            <a href="{% url 'mood_tracker' %}" class="text-[#00d1b2] font-medium hover:underline">Track mood</a>
+            Insufficient data yet to detect patterns.
           </p>
           {% endif %}
         </div>
@@ -142,11 +178,8 @@
           <div class="rounded-2xl border border-white/10 bg-white/5 p-4">
             <p class="text-xs font-medium text-gray-400 mb-3">Mood trend (last 7 days)</p>
             <div class="h-44">
-              <canvas id="mood-trend-chart" aria-label="Mood trend graph"></canvas>
+              <canvas id="mood-trend-chart"></canvas>
             </div>
-            <p id="mood-trend-empty" class="hidden text-xs text-gray-500 mt-3">
-              Add mood entries to see a dated trend chart.
-            </p>
           </div>
         </div>
       </div>
@@ -156,100 +189,30 @@
 </div>
 
 {{ mood_data|json_script:"mood-trend-data" }}
+
 {% endblock %}
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  (function () {
-    const dataNode = document.getElementById('mood-trend-data');
-    const canvas = document.getElementById('mood-trend-chart');
-    const emptyNote = document.getElementById('mood-trend-empty');
-    if (!dataNode || !canvas) return;
+const data = JSON.parse(document.getElementById('mood-trend-data').textContent || "[]");
 
-    let series = [];
-    try {
-      series = JSON.parse(dataNode.textContent || '[]');
-    } catch (e) {
-      series = [];
-    }
+const labels = data.map(d => d.date);
+const values = data.map(d => d.mood);
 
-    series = series.slice(-7);
-
-    if (!series.length) {
-      if (emptyNote) emptyNote.classList.remove('hidden');
-      return;
-    }
-
-    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-
-    const labels = series.map(function (item) {
-      const parts = String(item.date || '').split('-');
-      if (parts.length !== 3) return item.date || '';
-      const year = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10);
-      const day = parseInt(parts[2], 10);
-      const dt = new Date(year, month - 1, day);
-      return weekdays[dt.getDay()] + ', ' + day + ' ' + months[month - 1];
-    });
-
-    const values = series.map(function (item) {
-      return item.mood;
-    });
-
-    const ctx = canvas.getContext('2d');
-    const gradient = ctx.createLinearGradient(0, 0, 0, 220);
-    gradient.addColorStop(0, 'rgba(0, 209, 178, 0.30)');
-    gradient.addColorStop(1, 'rgba(0, 209, 178, 0)');
-
-    new Chart(canvas, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [{
-          data: values,
-          borderColor: '#00d1b2',
-          backgroundColor: gradient,
-          fill: false,
-          tension: 0.35,
-          pointRadius: 3,
-          pointBackgroundColor: '#00d1b2'
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false }
-        },
-        scales: {
-          y: {
-            min: 1,
-            max: 5,
-            ticks: {
-              stepSize: 1,
-              color: '#9ca3af'
-            },
-            grid: {
-              color: 'rgba(255,255,255,0.08)'
-            }
-          },
-          x: {
-            ticks: {
-              maxRotation: 0,
-              minRotation: 0,
-              autoSkip: true,
-              maxTicksLimit: 7,
-              color: '#9ca3af'
-            },
-            grid: {
-              display: false
-            }
-          }
-        }
-      }
-    });
-  })();
+new Chart(document.getElementById('mood-trend-chart'), {
+  type: 'line',
+  data: {
+    labels: labels,
+    datasets: [{
+      data: values,
+      borderColor: '#00d1b2',
+      tension: 0.4
+    }]
+  },
+  options: {
+    plugins: { legend: { display: false } }
+  }
+});
 </script>
 {% endblock %}

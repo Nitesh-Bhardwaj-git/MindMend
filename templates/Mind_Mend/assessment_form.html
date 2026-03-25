@@ -1,25 +1,232 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% block title %}{{ assessment_title }}{% endblock %}
+
 {% block content %}
-<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <h2 class="text-2xl font-semibold mb-2">{{ assessment_heading }}</h2>
-    <p class="text-gray-600 mb-6">{{ assessment_intro }}</p>
-    <form method="post">
-        {% csrf_token %}
-        {% for q in questions %}
-        <div class="assessment-question">
-            <label class="font-semibold block mb-3">{{ forloop.counter }}. {{ q }}</label>
-            <div class="flex flex-wrap gap-4">
-                {% for value, label in options %}
-                <label class="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="q{{ forloop.parentloop.counter0 }}" value="{{ value }}" required class="w-4 h-4 text-primary border-gray-300 focus:ring-primary" id="{{ input_prefix }}_{{ forloop.parentloop.counter0 }}_{{ value }}">
-                    <span>{{ value }} - {{ label }}</span>
-                </label>
-                {% endfor %}
-            </div>
+<div class="assessment-shell h-[calc(100vh-96px)] bg-[#050b1a] relative overflow-hidden pt-6 md:pt-8 pb-4 text-white">
+
+  <!-- Background Glow -->
+  <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#00d1b2]/10 rounded-full blur-[120px] animate-pulse"></div>
+  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse"></div>
+
+  <div class="max-w-4xl mx-auto px-6 relative z-10">
+
+    <!-- Back Button -->
+    <a href="/assessments" class="inline-flex items-center gap-2 text-gray-400 hover:text-[#00d1b2] mb-6 text-sm font-bold uppercase tracking-[0.18em] transition">
+      ← Back to Assessments
+    </a>
+
+    <div class="assessment-card bg-[#0b162d]/80 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-6 md:p-8 shadow-2xl relative overflow-hidden">
+
+      <!-- Progress -->
+      <div class="absolute top-0 left-0 w-full h-[6px] bg-white/5">
+        <div id="progressBar" class="h-full bg-gradient-to-r from-[#00d1b2] to-purple-500 transition-all duration-500 rounded-r-full" style="width: 0%;"></div>
+      </div>
+
+      <!-- Header -->
+      <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-5 mb-6">
+        <div>
+          <h2 class="text-2xl md:text-3xl font-bold uppercase tracking-wide">{{ assessment_heading }}</h2>
+          <p class="text-gray-400 mt-3">{{ assessment_intro }}</p>
+          <p id="questionCount" class="text-xs text-gray-500 uppercase tracking-[0.25em] mt-3"></p>
         </div>
-        {% endfor %}
-        <button type="submit" class="mt-6 px-6 py-3 bg-primary text-white rounded-lg font-medium hover:bg-primary-dark transition">See Results</button>
-    </form>
+
+        <div id="progressPercent" class="h-14 w-14 shrink-0 flex items-center justify-center rounded-full border border-white/10 text-[#00d1b2] font-bold text-sm bg-white/5">
+          0%
+        </div>
+      </div>
+
+      <form method="post" id="assessmentForm">
+        {% csrf_token %}
+
+        <div id="questionsWrapper">
+          {% for q in questions %}
+          <div class="question-step {% if not forloop.first %}hidden{% endif %}" data-step="{{ forloop.counter0 }}">
+            <h3 class="text-[clamp(1.35rem,2.3vw,2.2rem)] font-bold mb-6 leading-snug">
+              {{ forloop.counter }}. {{ q }}
+            </h3>
+
+            <div class="grid gap-3">
+              {% for value, label in options %}
+              <label class="option-card cursor-pointer block">
+                <input
+                  type="radio"
+                  name="q{{ forloop.parentloop.counter0 }}"
+                  value="{{ value }}"
+                  required
+                  class="hidden peer"
+                  id="{{ input_prefix }}_{{ forloop.parentloop.counter0 }}_{{ value }}"
+                >
+                <div class="w-full text-left px-6 md:px-8 py-4 rounded-2xl border border-white/10 font-semibold bg-[#111c33]/80 text-gray-300 transition duration-200 peer-checked:bg-gradient-to-r peer-checked:from-[#00d1b2] peer-checked:to-purple-500 peer-checked:text-white hover:bg-[#16213d]/80">
+                  <span class="block text-sm md:text-base">{{ value }} - {{ label }}</span>
+                </div>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Buttons -->
+        <div class="assessment-actions mt-8 flex items-center justify-between gap-4">
+          <button
+            type="button"
+            id="prevBtn"
+            class="text-gray-500 hover:text-white font-bold uppercase transition disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            ← Previous
+          </button>
+
+          <div class="flex items-center gap-3">
+            <button
+              type="button"
+              id="nextBtn"
+              class="px-6 py-3 bg-white/5 border border-white/10 text-white rounded-xl font-bold hover:bg-white/10 transition"
+            >
+              Next →
+            </button>
+
+            <button
+              type="submit"
+              id="submitBtn"
+              class="hidden px-8 py-3 bg-[#00d1b2] text-[#050b1a] rounded-xl font-bold hover:bg-[#00bfa5] transition"
+            >
+              See Results
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
 </div>
+
+<style>
+  html, body {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  main {
+    height: calc(100vh - 96px);
+    overflow: hidden;
+    padding-bottom: 0 !important;
+  }
+
+  main > div.w-full {
+    display: none;
+  }
+
+  footer {
+    display: none;
+  }
+
+  @media (max-height: 820px) {
+    .assessment-shell {
+      padding-top: 1rem;
+      padding-bottom: 0.75rem;
+    }
+
+    .assessment-card {
+      padding: 1.25rem;
+    }
+  }
+
+  @media (max-height: 740px) {
+    .assessment-shell {
+      padding-top: 0.75rem;
+    }
+
+    .assessment-card {
+      padding: 1rem;
+      border-radius: 2rem;
+    }
+  }
+
+  body.assessment-last .assessment-card {
+    padding-bottom: 1.25rem;
+  }
+
+  body.assessment-last .assessment-actions {
+    margin-top: 1.25rem;
+  }
+
+  body.assessment-last .question-step h3 {
+    margin-bottom: 1rem;
+  }
+
+  .option-card input:checked + div {
+    box-shadow: 0 10px 30px rgba(0, 209, 178, 0.18);
+    transform: translateY(-1px);
+  }
+</style>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const steps = document.querySelectorAll(".question-step");
+  const prevBtn = document.getElementById("prevBtn");
+  const nextBtn = document.getElementById("nextBtn");
+  const submitBtn = document.getElementById("submitBtn");
+  const progressBar = document.getElementById("progressBar");
+  const progressPercent = document.getElementById("progressPercent");
+  const questionCount = document.getElementById("questionCount");
+
+  let currentStep = 0;
+
+  function updateProgress() {
+    const progress = ((currentStep + 1) / steps.length) * 100;
+    progressBar.style.width = progress + "%";
+    progressPercent.textContent = Math.round(progress) + "%";
+    questionCount.textContent = `QUESTION ${currentStep + 1} OF ${steps.length}`;
+  }
+
+  function showStep(index) {
+    steps.forEach((step, i) => {
+      if (i === index) {
+        step.classList.remove("hidden");
+      } else {
+        step.classList.add("hidden");
+      }
+    });
+
+    prevBtn.disabled = index === 0;
+
+    if (index === steps.length - 1) {
+      nextBtn.classList.add("hidden");
+      submitBtn.classList.remove("hidden");
+    } else {
+      nextBtn.classList.remove("hidden");
+      submitBtn.classList.add("hidden");
+    }
+
+    document.body.classList.toggle("assessment-last", index === steps.length - 1);
+    updateProgress();
+  }
+
+  function isCurrentStepAnswered() {
+    const currentQuestion = steps[currentStep];
+    const checked = currentQuestion.querySelector('input[type="radio"]:checked');
+    return !!checked;
+  }
+
+  nextBtn.addEventListener("click", function () {
+    if (!isCurrentStepAnswered()) {
+      alert("Please select an option before continuing.");
+      return;
+    }
+
+    if (currentStep < steps.length - 1) {
+      currentStep++;
+      showStep(currentStep);
+    }
+  });
+
+  prevBtn.addEventListener("click", function () {
+    if (currentStep > 0) {
+      currentStep--;
+      showStep(currentStep);
+    }
+  });
+
+  showStep(currentStep);
+});
+</script>
 {% endblock %}

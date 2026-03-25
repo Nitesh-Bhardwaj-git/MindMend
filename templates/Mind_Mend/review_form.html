@@ -1,29 +1,124 @@
 {% extends 'base.html' %}
-{% load widget_tweaks %}
-{% block title %}Leave a Review{% endblock %}
-{% block content %}
-<div class="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <h2 class="text-2xl font-semibold mb-2">Rate your session</h2>
-    <p class="text-gray-600 mb-6">with <strong>{{ booking.counsellor.name }}</strong> — {{ booking.date|date:"M d, Y" }}</p>
+{% block title %}Submit Review{% endblock %}
 
-    <div class="bg-white rounded-2xl shadow-lg p-8">
-        <form method="post">
-            {% csrf_token %}
-            <div class="mb-5">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Rating <span class="text-red-500">*</span></label>
-                {{ form.rating|add_class:"rounded-lg border border-gray-300 px-3 py-2 w-full" }}
-                {{ form.rating.errors }}
-            </div>
-            <div class="mb-6">
-                <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.review_text.label }}</label>
-                {{ form.review_text|add_class:"rounded-lg border border-gray-300 px-3 py-2 w-full" }}
-                {{ form.review_text.errors }}
-            </div>
-            <div class="flex gap-3">
-                <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition font-medium">Submit Review</button>
-                <a href="{% url 'my_bookings' %}" class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">Cancel</a>
-            </div>
-        </form>
+{% block content %}
+<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-32 pb-20">
+
+  <!-- Background Glows -->
+  <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#00d1b2]/10 rounded-full blur-[120px] -z-10 animate-pulse"></div>
+  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] -z-10 animate-pulse delay-1000"></div>
+
+  <div class="max-w-4xl mx-auto px-6 space-y-12">
+
+    <!-- Back Link -->
+    <a href="{% url 'my_bookings' %}" class="inline-flex items-center gap-2 text-gray-500 hover:text-[#00d1b2] font-bold text-xs uppercase tracking-widest transition-colors">
+      ← Back to My Bookings
+    </a>
+
+    <!-- Header -->
+    <div class="space-y-4">
+      <h1 class="text-5xl font-display font-bold text-white tracking-tight leading-tight">
+        Rate your session
+      </h1>
+      <p class="text-gray-500 text-lg max-w-2xl">
+        Your feedback helps us improve and helps others find the right support.
+      </p>
     </div>
+
+    <!-- Review Form Card -->
+    <div class="bg-[#0a1428]/40 backdrop-blur-sm rounded-[40px] border border-white/5 shadow-2xl p-10 space-y-12">
+
+      <!-- Counsellor Info -->
+      <div class="flex items-center gap-6 p-6 rounded-3xl bg-white/5 border border-white/5">
+        <img src="{{ booking.counsellor.avatar }}" alt="{{ booking.counsellor.name }}" class="h-20 w-20 rounded-2xl object-cover">
+        <div class="space-y-1">
+          <h3 class="text-2xl font-bold text-white tracking-tight">{{ booking.counsellor.name }}</h3>
+          <p class="text-gray-500 text-sm font-bold uppercase tracking-widest">
+            Session on {{ booking.date|date:"d M Y" }}
+          </p>
+        </div>
+      </div>
+
+      <!-- Form -->
+      <form method="POST" action="{% url 'submit_review' booking.id %}" class="space-y-10">
+        {% csrf_token %}
+
+        <!-- Rating -->
+        <div class="space-y-6">
+          <label class="text-sm font-bold text-gray-400 uppercase tracking-widest">How was your experience?</label>
+          <div class="flex items-center gap-4">
+            <!-- Integrate Django form.rating with stars -->
+            {{ form.rating|add_class:"hidden" }}
+            {% for i in "12345" %}
+            <button type="button" class="p-2 transition-transform hover:scale-125 text-2xl star-button" data-value="{{ i }}">
+              ⭐
+            </button>
+            {% endfor %}
+          </div>
+          {{ form.rating.errors }}
+        </div>
+
+        <!-- Review Text -->
+        <div class="space-y-4">
+          <label class="text-sm font-bold text-gray-400 uppercase tracking-widest">Share more details</label>
+          {{ form.review_text|add_class:"w-full bg-white/5 border border-white/10 rounded-3xl px-8 py-6 text-white text-lg placeholder-gray-600 focus:border-[#00d1b2] focus:ring-0 transition-all min-h-[200px] resize-none" }}
+          {{ form.review_text.errors }}
+        </div>
+
+        <!-- Footer / Submit -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-8 pt-6 border-t border-white/5">
+          <div class="flex items-center gap-3 text-[10px] font-bold text-gray-600 uppercase tracking-widest">
+            ✅ Your review will be public
+          </div>
+          <button type="submit" class="w-full sm:w-auto px-12 py-5 rounded-xl font-extrabold text-sm tracking-wider bg-[#00d1b2] text-[#050b1a] hover:scale-105 shadow-xl shadow-[#00d1b2]/20 flex items-center justify-center gap-2">
+            📨 Submit Review
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Info Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div class="bg-[#0a1428]/40 backdrop-blur-sm rounded-[40px] border border-white/5 p-10 space-y-6">
+        <div class="h-14 w-14 rounded-2xl bg-[#00d1b2]/10 flex items-center justify-center">❤️</div>
+        <div class="space-y-2">
+          <h4 class="text-2xl font-bold text-white tracking-tight leading-tight">Your Voice Matters</h4>
+          <p class="text-gray-500 text-base leading-relaxed">
+            Reviews help our counsellors improve their practice and help other members find the right match for their needs.
+          </p>
+        </div>
+      </div>
+
+      <div class="bg-[#0a1428]/40 backdrop-blur-sm rounded-[40px] border border-white/5 p-10 space-y-6">
+        <div class="h-14 w-14 rounded-2xl bg-[#7c3aed]/10 flex items-center justify-center">🛡️</div>
+        <div class="space-y-2">
+          <h4 class="text-2xl font-bold text-white tracking-tight leading-tight">Privacy First</h4>
+          <p class="text-gray-500 text-base leading-relaxed">
+            While reviews are public, your identity is protected. We only show your first name or username as per your settings.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </div>
+
+<!-- JS for Star Rating -->
+<script>
+  const stars = document.querySelectorAll('.star-button');
+  const ratingInput = document.querySelector('input[name="rating"]');
+
+  stars.forEach(star => {
+    star.addEventListener('click', () => {
+      const value = star.dataset.value;
+      ratingInput.value = value;
+
+      // Highlight stars
+      stars.forEach(s => s.classList.remove('text-yellow-400'));
+      stars.forEach(s => {
+        if (s.dataset.value <= value) s.classList.add('text-yellow-400');
+      });
+    });
+  });
+</script>
 {% endblock %}

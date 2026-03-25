@@ -1,24 +1,131 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+{% load static %}
 {% load widget_tweaks %}
+
 {% block title %}New Post{% endblock %}
+
 {% block content %}
-<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <h2 class="text-2xl font-semibold mb-6">New Forum Post</h2>
-    <p class="text-gray-600 mb-4">Choose Support, Discussion, or Recovery Story. Peer-to-peer; you can post anonymously.</p>
-    <div class="bg-white rounded-2xl shadow-lg p-8">
-        <form method="post">
-            {% csrf_token %}
-            {% for field in form %}
-            <div class="mb-4">
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
-                {{ field|add_class:"form-control" }}
-                {% if field.name == 'category' %}<span class="text-sm text-gray-500">Support = general help; Discussion = peer chat; Recovery Story = share your journey</span>{% endif %}
-                {% if field.name == 'is_anonymous' %}<span class="text-sm text-gray-500">Post anonymously</span>{% endif %}
-                {{ field.errors }}
-            </div>
-            {% endfor %}
-            <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition">Post</button>
-        </form>
+<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-4 md:pt-6 pb-20">
+
+  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] -z-10 animate-pulse delay-1000"></div>
+
+  <div class="max-w-4xl mx-auto px-6 space-y-10">
+
+    <a href="{% url 'forum_list' %}"
+       class="inline-flex items-center gap-2 text-gray-500 hover:text-[#00d1b2] font-bold text-xs uppercase tracking-widest transition-colors">
+      ← Back to Forum
+    </a>
+
+    <div>
+      <h1 class="text-5xl font-bold text-white tracking-tight leading-tight">
+        Start a conversation
+      </h1>
+      <p class="text-gray-500 text-lg max-w-2xl mt-2">
+        Choose Support, Discussion, or Recovery Story. Peer-to-peer; you can post anonymously.
+      </p>
     </div>
+
+    <div class="bg-[#0a1428]/40 backdrop-blur-sm rounded-[40px] border border-white/5 p-10 shadow-2xl">
+      <form method="POST" class="space-y-8">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+          <div class="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-red-300 text-sm">
+            {% for err in form.non_field_errors %}
+              <p>{{ err }}</p>
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <div>
+          <label class="text-sm font-bold text-gray-400 uppercase tracking-widest">
+            Title
+          </label>
+          {{ form.title|add_class:"w-full mt-2 bg-white/5 border border-white/10 rounded-2xl px-8 py-6 text-white text-xl placeholder-gray-600 focus:border-[#00d1b2] transition-all outline-none" }}
+          {% if form.title.errors %}
+            <div class="mt-2 text-sm text-red-400">
+              {% for error in form.title.errors %}
+                <p>{{ error }}</p>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+
+        <div>
+          <label class="text-sm font-bold text-gray-400 uppercase tracking-widest">
+            Category
+          </label>
+          <p class="text-sm text-gray-500 mt-2">
+            Support = general help; Discussion = peer chat; Recovery Story = share your journey
+          </p>
+
+          <div class="mt-4">
+            {{ form.category|add_class:"w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:border-[#00d1b2] outline-none" }}
+          </div>
+
+          {% if form.category.errors %}
+            <div class="mt-2 text-sm text-red-400">
+              {% for error in form.category.errors %}
+                <p>{{ error }}</p>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+
+        <div>
+          <label class="text-sm font-bold text-gray-400 uppercase tracking-widest">
+            Content
+          </label>
+          {{ form.content|add_class:"w-full mt-2 bg-white/5 border border-white/10 rounded-2xl px-8 py-6 text-white text-lg placeholder-gray-600 focus:border-[#00d1b2] min-h-[300px] resize-none outline-none" }}
+          {% if form.content.errors %}
+            <div class="mt-2 text-sm text-red-400">
+              {% for error in form.content.errors %}
+                <p>{{ error }}</p>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-8 pt-6 border-t border-white/5">
+
+          <label class="flex items-start gap-3 cursor-pointer">
+            {{ form.is_anonymous|add_class:"mt-1 h-4 w-4 rounded border-white/20 bg-white/5 text-[#00d1b2] focus:ring-[#00d1b2]" }}
+            <div>
+              <span class="text-sm font-bold text-gray-300">Post anonymously</span>
+              <p class="text-[10px] text-gray-600 uppercase tracking-widest">
+                Your identity will be hidden
+              </p>
+            </div>
+          </label>
+
+          {% if form.is_anonymous.errors %}
+            <div class="text-sm text-red-400">
+              {% for error in form.is_anonymous.errors %}
+                <p>{{ error }}</p>
+              {% endfor %}
+            </div>
+          {% endif %}
+
+          <button type="submit"
+            class="w-full sm:w-auto px-12 py-5 rounded-xl bg-[#00d1b2] text-[#050b1a] font-extrabold text-sm tracking-wider hover:scale-105 transition-transform">
+            Create Post
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="bg-[#0a1428]/60 backdrop-blur-xl rounded-[40px] border border-white/5 p-10 shadow-2xl flex items-center gap-8">
+      <div class="h-16 w-16 rounded-2xl bg-purple-500/10 flex items-center justify-center">
+        ⚠️
+      </div>
+      <div>
+        <h4 class="text-xl font-bold text-white">Community Guidelines</h4>
+        <p class="text-gray-500 text-sm">
+          Please be respectful and supportive. MindMend is a safe space for everyone.
+        </p>
+      </div>
+    </div>
+
+  </div>
 </div>
 {% endblock %}

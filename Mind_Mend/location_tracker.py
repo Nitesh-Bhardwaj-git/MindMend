@@ -160,7 +160,13 @@ def reverse_geocode(lat, lon):
         addr = data.get('address', {})
         return {
             'country': addr.get('country', ''),
-            'state': addr.get('state') or addr.get('region', ''),
+            'state': (
+                addr.get('state')
+                or addr.get('state_district')
+                or addr.get('province')
+                or addr.get('region')
+                or addr.get('county', '')
+            ),
             'city': addr.get('city') or addr.get('town') or addr.get('village') or addr.get('county', ''),
         }
     except Exception as e:

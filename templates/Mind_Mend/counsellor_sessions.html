@@ -1,48 +1,107 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% block title %}My Sessions{% endblock %}
 {% block content %}
-<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-        <h2 class="text-2xl font-semibold">My Sessions</h2>
-        <a href="{% url 'doctor_dashboard' %}" class="px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary hover:text-white transition text-sm font-medium">Doctor Dashboard</a>
-    </div>
-    <p class="text-gray-600 mb-6">Bookings with your clients. Open chat to communicate.</p>
-    {% for b in bookings %}
-    <div class="bg-white rounded-xl shadow p-6 mb-4">
-        <div class="flex justify-between items-start flex-wrap gap-4">
-            <div>
-                <h5 class="text-lg font-semibold">{{ b.user.get_username }}</h5>
-                <p class="text-gray-600">{{ b.date|date:"l, M d, Y" }} at {{ b.time_slot|time:"H:i" }}</p>
-                <span class="inline-block mt-2 px-3 py-1 rounded-full text-sm font-medium
-                    {% if b.status == 'confirmed' %}bg-green-100 text-green-800
-                    {% elif b.status == 'pending' %}bg-amber-100 text-amber-800
-                    {% elif b.status == 'completed' %}bg-gray-100 text-gray-800
-                    {% else %}bg-red-100 text-red-800{% endif %}">{{ b.status|title }}</span>
-                {% if b.review %}
-                <div class="mt-3 text-sm">
-                    <p class="font-medium text-amber-700">User Feedback: ★ {{ b.review.rating }}/5</p>
-                    {% if b.review.review_text %}
-                    <p class="text-gray-700 mt-1">{{ b.review.review_text }}</p>
-                    {% endif %}
-                </div>
-                {% endif %}
-            </div>
-            <div class="flex flex-wrap gap-2">
-                {% if b.status == 'confirmed' or b.status == 'completed' %}
-                <a href="{% url 'counsellor_chat' b.id %}" class="inline-flex items-center gap-1 px-3 py-1.5 bg-primary text-white rounded-lg hover:bg-primary-dark transition text-sm font-medium">💬 Open chat</a>
-                {% endif %}
-                {% if b.status != 'completed' and b.status != 'cancelled' %}
-                <form method="post" action="{% url 'finish_session' b.id %}" onsubmit="return confirm('Finish this session now? This will disable chat and mark it as completed.');">
-                    {% csrf_token %}
-                    <input type="hidden" name="next" value="{% url 'counsellor_sessions' %}">
-                    <button type="submit" class="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-700 hover:text-white transition text-sm font-medium">Finish Session</button>
-                </form>
-                {% endif %}
-            </div>
+
+<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-32 pb-20">
+
+  <!-- Background Glow -->
+  <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#00d1b2]/10 rounded-full blur-[120px] animate-pulse pointer-events-none"></div>
+  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse pointer-events-none"></div>
+
+  <div class="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 relative z-10">
+
+    <!-- HEADER -->
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8 mb-14">
+      <div class="max-w-3xl">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#00d1b2]/30 bg-[#00d1b2]/5 text-[#00d1b2] text-[10px] font-bold tracking-[0.2em] mb-6">
+          📅 SESSION MANAGEMENT
         </div>
+
+        <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">
+          My
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#00d1b2] to-purple-400">
+            Sessions
+          </span>
+        </h1>
+
+        <p class="text-gray-400 text-lg">
+          Bookings with your clients. Open chat to communicate and manage session completion.
+        </p>
+      </div>
+
+      <div>
+        <a href="{% url 'doctor_dashboard' %}"
+           class="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-[#00d1b2]/10 text-[#00d1b2] border border-[#00d1b2]/20 hover:bg-[#00d1b2] hover:text-[#04111d] transition font-semibold">
+          Doctor Dashboard
+        </a>
+      </div>
     </div>
-    {% empty %}
-    <p class="text-gray-600">No sessions yet.</p>
-    {% endfor %}
+
+    <!-- SESSIONS LIST -->
+    <div class="space-y-6">
+      {% for b in bookings %}
+      <div class="bg-[#0a1428]/60 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 md:p-8 shadow-2xl hover:border-[#00d1b2]/30 transition">
+        <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-6">
+
+          <!-- LEFT -->
+          <div class="flex-1 min-w-0">
+            <div class="flex flex-wrap items-center gap-3 mb-3">
+              <h3 class="text-2xl font-bold text-white">{{ b.user.get_username }}</h3>
+
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
+                {% if b.status == 'confirmed' %}bg-green-500/15 text-green-300 border border-green-400/20
+                {% elif b.status == 'pending' %}bg-amber-500/15 text-amber-300 border border-amber-400/20
+                {% elif b.status == 'completed' %}bg-white/10 text-gray-200 border border-white/10
+                {% else %}bg-red-500/15 text-red-300 border border-red-400/20{% endif %}">
+                {{ b.status|title }}
+              </span>
+            </div>
+
+            <p class="text-gray-300 mb-2">
+              {{ b.date|date:"l, M d, Y" }} at {{ b.time_slot|time:"H:i" }}
+            </p>
+
+            {% if b.review %}
+            <div class="mt-4 rounded-2xl bg-white/5 border border-white/10 p-4">
+              <p class="font-medium text-amber-300">User Feedback: ★ {{ b.review.rating }}/5</p>
+              {% if b.review.review_text %}
+              <p class="text-gray-400 mt-2 text-sm leading-relaxed">{{ b.review.review_text }}</p>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- RIGHT ACTIONS -->
+          <div class="flex flex-wrap gap-3 xl:justify-end">
+            {% if b.status == 'confirmed' or b.status == 'completed' %}
+            <a href="{% url 'counsellor_chat' b.id %}"
+               class="inline-flex items-center gap-2 px-5 py-3 bg-[#00d1b2] text-[#04111d] rounded-2xl hover:shadow-[0_0_30px_rgba(0,209,178,0.35)] transition text-sm font-bold">
+              💬 Open Chat
+            </a>
+            {% endif %}
+
+            {% if b.status != 'completed' and b.status != 'cancelled' %}
+            <form method="post" action="{% url 'finish_session' b.id %}" onsubmit="return confirm('Finish this session now? This will disable chat and mark it as completed.');">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{% url 'counsellor_sessions' %}">
+              <button type="submit"
+                      class="inline-flex items-center gap-2 px-5 py-3 bg-white/5 text-white border border-white/10 rounded-2xl hover:bg-red-500 hover:border-red-500 hover:text-white transition text-sm font-semibold">
+                Finish Session
+              </button>
+            </form>
+            {% endif %}
+          </div>
+
+        </div>
+      </div>
+      {% empty %}
+      <div class="bg-[#0a1428]/60 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 text-center shadow-2xl">
+        <p class="text-gray-400 text-lg">No sessions yet.</p>
+      </div>
+      {% endfor %}
+    </div>
+
+  </div>
 </div>
+
 {% endblock %}

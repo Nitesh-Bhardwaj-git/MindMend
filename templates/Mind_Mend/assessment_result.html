@@ -1,16 +1,93 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% block title %}Result{% endblock %}
+
 {% block content %}
-<div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <div class="bg-white rounded-2xl shadow-lg p-8">
-        <h3 class="text-2xl font-semibold mb-4">{{ assessment_name }} Result</h3>
-        <p class="text-lg mb-2">Your score: <strong>{{ score }}</strong> / {{ max_score }}</p>
-        <p class="mb-4">Interpretation: <strong>{{ result_level }}</strong></p>
-        <p class="text-gray-600 text-sm mb-6">This is a screening tool only, not a diagnosis. Consider speaking with a mental health professional for guidance.</p>
-        <div class="flex gap-3">
-            <a href="{% url next_url %}" class="px-4 py-2 border-2 border-primary text-primary rounded-lg hover:bg-primary hover:text-white transition">Back to Assessments</a>
-            <a href="{% url 'resources' %}" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition">View Helplines</a>
+<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-32 pb-20 text-white">
+
+  <!-- Background Glow -->
+  <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#00d1b2]/10 rounded-full blur-[120px] animate-pulse"></div>
+  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse"></div>
+
+  <div class="max-w-3xl mx-auto px-6 text-center relative z-10">
+
+    <!-- Back Button -->
+    <a href="{% url next_url %}"
+       class="inline-flex items-center gap-2 text-gray-400 hover:text-[#00d1b2] mb-12 text-sm font-bold uppercase group transition">
+      ← Back to Assessments
+    </a>
+
+    <!-- Result Card -->
+    <div class="bg-[#0a1428]/60 backdrop-blur-xl border border-white/10 rounded-[3rem] p-10 md:p-16 shadow-2xl relative overflow-hidden">
+
+      <!-- Glow -->
+      <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-[#00d1b2]/10 rounded-full blur-[100px]"></div>
+
+      <!-- Icon -->
+      <div class="relative z-10 h-24 w-24 rounded-[2rem] bg-[#00d1b2]/10 text-[#00d1b2] flex items-center justify-center mx-auto mb-10 shadow-[0_0_30px_rgba(0,209,178,0.2)] text-4xl">
+        🧠
+      </div>
+
+      <!-- Title -->
+      <h3 class="relative z-10 text-4xl md:text-5xl font-bold text-white mb-6 uppercase">
+        {{ assessment_name }} Result
+      </h3>
+
+      <!-- Score -->
+      <div class="relative z-10 flex flex-col items-center gap-8 mb-12">
+        <div class="text-6xl md:text-8xl font-extrabold text-white">
+          {{ score }}
+          <span class="text-3xl text-gray-500 ml-3">/ {{ max_score }}</span>
         </div>
+
+        <!-- Level Badge -->
+        <div
+          id="levelBadge"
+          class="px-8 py-3 rounded-full border font-bold uppercase text-sm
+          {% if result_level == 'Minimal' %}
+            text-emerald-400 bg-emerald-500/10 border-emerald-500/20
+          {% elif result_level == 'Mild' %}
+            text-yellow-400 bg-yellow-500/10 border-yellow-500/20
+          {% elif result_level == 'Moderate' %}
+            text-orange-400 bg-orange-500/10 border-orange-500/20
+          {% else %}
+            text-red-400 bg-red-500/10 border-red-500/20
+          {% endif %}">
+          {{ result_level }} Symptoms
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="relative z-10 max-w-xl mx-auto mb-16">
+        <p class="text-gray-300 text-xl leading-relaxed mb-6">
+          {% if result_level == 'Minimal' %}
+            You are showing minimal symptoms. Keep maintaining your mental well-being.
+          {% elif result_level == 'Mild' %}
+            You are showing mild symptoms. Consider tracking your mood more closely.
+          {% elif result_level == 'Moderate' %}
+            You are showing moderate symptoms. It might be helpful to talk to a counselor.
+          {% else %}
+            You are showing severe symptoms. We strongly recommend speaking with a professional.
+          {% endif %}
+        </p>
+
+        <p class="text-gray-500 text-sm">
+          This is a screening tool only, not a diagnosis. Consider speaking with a mental health professional for guidance.
+        </p>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <a href="{% url next_url %}"
+           class="px-10 py-5 rounded-2xl border border-[#00d1b2] text-[#00d1b2] hover:bg-[#00d1b2] hover:text-[#050b1a] transition font-bold flex items-center justify-center gap-3">
+          ← Back to Assessments
+        </a>
+
+        <a href="{% url 'resources' %}"
+           class="px-10 py-5 rounded-2xl bg-[#00d1b2] text-[#050b1a] font-extrabold shadow-lg hover:scale-105 transition flex items-center justify-center gap-3">
+          🛡️ View Helplines
+        </a>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}

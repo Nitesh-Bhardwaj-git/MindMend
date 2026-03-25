@@ -1,59 +1,157 @@
 {% extends 'base.html' %}
 {% load widget_tweaks %}
-{% block title %}{% if is_doctor_login %}Doctor Login{% else %}Login{% endif %}{% endblock %}
+{% block title %}Login{% endblock %}
+
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-    <div class="max-w-md mx-auto">
-        <div class="bg-white rounded-2xl shadow-lg p-8">
-            <h3 class="text-2xl font-semibold mb-6">{% if is_doctor_login %}Doctor Login{% else %}Login{% endif %}</h3>
-            {% if form.non_field_errors %}
-            <div id="loginPopup" class="mb-4 p-4 rounded-lg bg-red-50 border-2 border-red-400 text-red-700 text-sm flex items-center justify-between shadow-lg">
-                <span>{% if username_not_found %}Invalid username. Please sign up first.{% else %}Wrong password. Please try again.{% endif %}</span>
-                <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 font-bold text-lg">×</button>
-            </div>
-            {% endif %}
-            <form method="post" action="{% if is_doctor_login %}{% url 'doctor_login' %}{% else %}{% url 'login' %}{% endif %}">
-                {% csrf_token %}
-                <p class="text-xs text-gray-500 mb-4">All fields are required.</p>
-                {% for field in form %}
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }} <span class="text-red-500">*</span></label>
-                    {% if field.name == 'password' %}
-                    <div class="relative">
-                        {{ field|add_class:"form-control pr-12"|attr:"required:required" }}
-                        <button type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700" onclick="togglePass(this)" aria-label="Show password">
-                            <svg class="eye-open w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                            <svg class="eye-closed w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/></svg>
-                        </button>
-                    </div>
-                    {% else %}
-                    {{ field|add_class:"form-control"|attr:"required:required" }}
-                    {% endif %}
-                    {{ field.errors }}
-                </div>
-                {% endfor %}
-                <button type="submit" class="w-full py-3 bg-[#2d6a4f] text-white rounded-lg font-medium hover:bg-[#1b4332] transition cursor-pointer">{% if is_doctor_login %}Login as Doctor{% else %}Login{% endif %}</button>
-            </form>
-            {% if not is_doctor_login %}
-            <p class="mt-4 text-center text-gray-600">Don't have an account? <a href="{% url 'register' %}" class="text-primary font-medium hover:underline">Sign up</a></p>
-            {% endif %}
+<div class="min-h-[calc(100vh-80px)] flex items-center justify-center px-6 py-12 bg-[#050b1a] relative overflow-hidden">
+
+  <!-- Background Glows -->
+  <div class="absolute top-0 left-0 w-full h-full pointer-events-none">
+    <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-[#00d1b2]/10 blur-[120px] rounded-full"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-[#7c3aed]/10 blur-[120px] rounded-full"></div>
+  </div>
+
+  <div class="max-w-md w-full relative z-10">
+    <div class="bg-[#0a1428]/40 backdrop-blur-xl rounded-[40px] border border-white/5 p-10 shadow-2xl space-y-8">
+
+      <!-- Header -->
+      <div class="text-center space-y-4">
+        <div id="loginTypeBadge" class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00d1b2]/10 border border-[#00d1b2]/20 text-[#00d1b2] text-[10px] font-bold uppercase tracking-widest mb-2">
+          🛡️ Secure Login
         </div>
+        <h2 id="loginTitle" class="text-4xl font-display font-bold text-white tracking-tight">
+          Welcome Back
+        </h2>
+        <p id="loginDescription" class="text-gray-500 text-sm">
+          Enter your credentials to access your wellness journey.
+        </p>
+      </div>
+
+      <!-- Toggle Buttons -->
+      <div class="flex p-1 bg-white/5 rounded-2xl border border-white/5">
+        <button id="userLoginBtn" class="flex-1 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all bg-[#00d1b2] text-[#050b1a] shadow-lg">
+          User Login
+        </button>
+        <button id="doctorLoginBtn" class="flex-1 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all text-gray-500 hover:text-white">
+          Doctor Login
+        </button>
+      </div>
+
+      <!-- Error Alert -->
+      {% if form.non_field_errors %}
+      <div id="errorBox" class="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          ⚠️
+          <span>{% for err in form.non_field_errors %}{{ err }}{% endfor %}</span>
+        </div>
+        <button onclick="hideError()">✖️</button>
+      </div>
+      {% else %}
+      <div id="errorBox" class="hidden p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs flex items-center justify-between">
+        <div class="flex items-center gap-3">⚠️ <span id="errorText"></span></div>
+        <button onclick="hideError()">✖️</button>
+      </div>
+      {% endif %}
+
+      <!-- Login Form -->
+      <form method="POST" class="space-y-6" id="loginForm">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="space-y-2">
+          <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{{ field.label }} <span class="text-red-500">*</span></label>
+          <div class="relative group">
+            {% if field.name == 'password' %}
+            🔒
+            {{ field|add_class:"w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-12 py-4 text-white text-sm placeholder-gray-600 focus:border-[#00d1b2] focus:ring-0 transition-all"|attr:"required:required" }}
+            <button type="button" id="togglePassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white transition-colors">👁️</button>
+            {% else %}
+            👤
+            {{ field|add_class:"w-full bg-white/5 border border-white/10 rounded-2xl pl-12 pr-4 py-4 text-white text-sm placeholder-gray-600 focus:border-[#00d1b2] focus:ring-0 transition-all"|attr:"required:required" }}
+            {% endif %}
+            {{ field.errors }}
+          </div>
+        </div>
+        {% endfor %}
+
+        <button type="submit" class="w-full py-6 rounded-2xl bg-[#00d1b2] text-[#050b1a] font-extrabold text-sm tracking-widest hover:scale-[1.02] transition-transform flex items-center justify-center gap-3 shadow-xl shadow-[#00d1b2]/20" id="submitBtn">
+          Login to Account →
+        </button>
+
+        <p class="text-center text-gray-500 text-sm" id="signupText">
+          Don't have an account? <a href="{% url 'register' %}" class="text-[#00d1b2] hover:underline font-bold">Sign up</a>
+        </p>
+
+        <div class="flex items-center gap-3 justify-center text-[10px] font-bold text-gray-600 uppercase tracking-widest">
+          🛡️ Secure & Encrypted
+        </div>
+      </form>
+
     </div>
+  </div>
 </div>
+
 <script>
-function togglePass(btn) {
-    var inp = btn.parentElement.querySelector('input');
-    var eyeOpen = btn.querySelector('.eye-open');
-    var eyeClosed = btn.querySelector('.eye-closed');
-    if (inp.type === 'password') {
-        inp.type = 'text';
-        eyeOpen.classList.add('hidden');
-        eyeClosed.classList.remove('hidden');
+let isDoctorLogin = false;
+
+// Elements
+const loginTypeBadge = document.getElementById('loginTypeBadge');
+const loginTitle = document.getElementById('loginTitle');
+const loginDescription = document.getElementById('loginDescription');
+const userLoginBtn = document.getElementById('userLoginBtn');
+const doctorLoginBtn = document.getElementById('doctorLoginBtn');
+const submitBtn = document.getElementById('submitBtn');
+const signupText = document.getElementById('signupText');
+const loginForm = document.getElementById('loginForm');
+
+userLoginBtn.addEventListener('click', () => toggleLogin(false));
+doctorLoginBtn.addEventListener('click', () => toggleLogin(true));
+
+function toggleLogin(isDoctor){
+    isDoctorLogin = isDoctor;
+
+    if(isDoctorLogin){
+        loginTypeBadge.innerHTML = '🩺 Doctor Access';
+        loginTitle.textContent = 'Doctor Login';
+        loginDescription.textContent = 'Access your professional dashboard and patient sessions.';
+        submitBtn.textContent = 'Login as Doctor →';
+        signupText.style.display = 'none';
+        loginForm.action = "{% url 'doctor_login' %}";
+
+        doctorLoginBtn.classList.add('bg-[#00d1b2]','text-[#050b1a]','shadow-lg');
+        userLoginBtn.classList.remove('bg-[#00d1b2]','text-[#050b1a]','shadow-lg');
+        doctorLoginBtn.classList.remove('text-gray-500');
+        userLoginBtn.classList.add('text-gray-500');
     } else {
-        inp.type = 'password';
-        eyeOpen.classList.remove('hidden');
-        eyeClosed.classList.add('hidden');
+        loginTypeBadge.innerHTML = '🛡️ Secure Login';
+        loginTitle.textContent = 'Welcome Back';
+        loginDescription.textContent = 'Enter your credentials to access your wellness journey.';
+        submitBtn.textContent = 'Login to Account →';
+        signupText.style.display = 'block';
+        loginForm.action = "{% url 'login' %}";
+
+        userLoginBtn.classList.add('bg-[#00d1b2]','text-[#050b1a]','shadow-lg');
+        doctorLoginBtn.classList.remove('bg-[#00d1b2]','text-[#050b1a]','shadow-lg');
+        userLoginBtn.classList.remove('text-gray-500');
+        doctorLoginBtn.classList.add('text-gray-500');
     }
+}
+
+// Password toggle
+const togglePassword = document.getElementById('togglePassword');
+const passwordInput = document.getElementById('id_password');
+togglePassword.addEventListener('click', () => {
+    if(passwordInput.type === 'password'){
+        passwordInput.type = 'text';
+        togglePassword.textContent = '🙈';
+    } else {
+        passwordInput.type = 'password';
+        togglePassword.textContent = '👁️';
+    }
+});
+
+// Hide error
+function hideError(){
+    document.getElementById('errorBox').classList.add('hidden');
 }
 </script>
 {% endblock %}

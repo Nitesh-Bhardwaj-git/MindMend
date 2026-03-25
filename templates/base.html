@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}MindMend{% endblock %} | AI-Enabled Health Awareness & Support</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -15,149 +16,221 @@
                         accent: '#95d5b2'
                     },
                     fontFamily: {
-                        sans: ['DM Sans', 'system-ui', 'sans-serif'],
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
                         display: ['Playfair Display', 'serif']
                     }
                 }
             }
         }
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
-<body class="min-h-screen flex flex-col bg-gray-50 text-gray-900 pt-[70px] font-sans overflow-x-hidden">
-    <nav class="fixed top-0 left-0 right-0 z-[9999] bg-gradient-to-r from-primary-dark to-primary shadow-lg">
-        <div class="w-full px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-16">
-                <a href="{% url 'home' %}" class="flex items-center flex-shrink-0 gap-3 -ml-4 sm:-ml-6 lg:-ml-8 pl-2 sm:pl-4">
-                    <img src="{% static 'images/mindmend-logo.png' %}" alt="MindMend" class="h-10 sm:h-12 object-contain">
-                    <span class="text-xl sm:text-2xl font-semibold text-black">MindMend</span>
-                </a>
-                <button type="button" class="md:hidden p-2 rounded-lg text-white hover:bg-white/10" id="navToggle" aria-label="Toggle menu">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
-                </button>
-                <div class="hidden md:flex items-center gap-6" id="navbarMenu">
-                    <a href="{% url 'home' %}" class="text-white/90 hover:text-white font-medium transition">Home</a>
-                    <a href="{% url 'chat' %}" class="text-white/90 hover:text-white font-medium transition">AI Chat</a>
-                    <a href="{% url 'assessments' %}" class="text-white/90 hover:text-white font-medium transition">Assessments</a>
-                    <a href="{% url 'counsellor_booking' %}" class="text-white/90 hover:text-white font-medium transition">Book Counsellor</a>
-                    {% if user.is_authenticated %}
-                    <a href="{% url 'mood_tracker' %}" class="text-white/90 hover:text-white font-medium transition">Mood</a>
-                    {% endif %}
-                    <a href="{% url 'contact_us' %}" class="text-white/90 hover:text-white font-medium transition">Contact</a>
-                    {% if user.is_authenticated %}
-                        <div class="relative group" id="dashboardDropdown">
-                            <button type="button" class="flex items-center gap-1 text-white/90 hover:text-white font-medium transition cursor-pointer" id="dashboardDropdownBtn" aria-haspopup="true" aria-expanded="false">
-                                Dashboard
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
-                            </button>
-                            <div class="absolute right-0 mt-1 w-48 py-2 bg-white rounded-lg shadow-xl border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-150 z-[9999]" id="dashboardDropdownMenu">
-                                <a href="{% url 'dashboard' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Dashboard</a>
-                                <a href="{% url 'my_progress' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">My Progress</a>
-                                <a href="{% url 'doctor_dashboard' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Doctor Panel</a>
-                                <a href="{% url 'resources' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Helplines</a>
-                                <a href="{% url 'forum_list' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Support Forum</a>
-                                <a href="{% url 'location_map' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Location Map</a>
-                                <a href="{% url 'mental_health_heatmap' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Heatmap</a>
-                                <a href="{% url 'survey_analytics' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Survey Analytics</a>
-                                <a href="{% url 'survey_sentiment_dashboard' %}" class="block px-4 py-2 text-gray-700 hover:bg-primary/10 hover:text-primary">Survey Sentiment</a>
-                                <a href="{% url 'logout' %}" class="block px-4 py-2 text-gray-700 hover:bg-red-50 hover:text-red-600">Logout</a>
-                            </div>
-                        </div>
-                    {% else %}
-                        <a href="{% url 'resources' %}" class="text-white/90 hover:text-white font-medium transition">Helplines</a>
-                        <a href="{% url 'login' %}" class="text-white/90 hover:text-white font-medium transition cursor-pointer">Login</a>
-                        <a href="{% url 'doctor_login' %}" class="text-white/90 hover:text-white font-medium transition cursor-pointer">Doctor Login</a>
-                        <a href="{% url 'register' %}" class="bg-[#95d5b2] text-[#1b4332] px-4 py-2 rounded-lg font-medium hover:opacity-90 transition cursor-pointer">Sign Up</a>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-        <div class="hidden md:hidden border-t border-white/20" id="mobileMenu">
-            <div class="px-4 py-3 flex flex-col gap-2">
-                <a href="{% url 'home' %}" class="text-white/90 hover:text-white py-2">Home</a>
-                <a href="{% url 'chat' %}" class="text-white/90 hover:text-white py-2">AI Chat</a>
-                <a href="{% url 'assessments' %}" class="text-white/90 hover:text-white py-2">Assessments</a>
-                <a href="{% url 'counsellor_booking' %}" class="text-white/90 hover:text-white py-2">Book Counsellor</a>
-                {% if user.is_authenticated %}
-                <a href="{% url 'mood_tracker' %}" class="text-white/90 hover:text-white py-2">Mood</a>
-                {% endif %}
-                <a href="{% url 'contact_us' %}" class="text-white/90 hover:text-white py-2">Contact us</a>
-                {% if user.is_authenticated %}
-                    <p class="text-white/70 text-sm uppercase pt-2">Dashboard menu</p>
-                    <a href="{% url 'dashboard' %}" class="text-white/90 hover:text-white py-2">Dashboard</a>
-                    <a href="{% url 'my_progress' %}" class="text-white/90 hover:text-white py-2">My Progress</a>
-                    <a href="{% url 'doctor_dashboard' %}" class="text-white/90 hover:text-white py-2">Doctor Panel</a>
-                    <a href="{% url 'resources' %}" class="text-white/90 hover:text-white py-2">Helplines</a>
-                    <a href="{% url 'forum_list' %}" class="text-white/90 hover:text-white py-2">Support Forum</a>
-                    <a href="{% url 'location_map' %}" class="text-white/90 hover:text-white py-2">Location Map</a>
-                    <a href="{% url 'mental_health_heatmap' %}" class="text-white/90 hover:text-white py-2">Heatmap</a>
-                    <a href="{% url 'survey_analytics' %}" class="text-white/90 hover:text-white py-2">Survey Analytics</a>
-                    <a href="{% url 'survey_sentiment_dashboard' %}" class="text-white/90 hover:text-white py-2">Survey Sentiment</a>
-                    <a href="{% url 'logout' %}" class="text-white/90 hover:text-white py-2">Logout</a>
-                {% else %}
-                    <a href="{% url 'forum_list' %}" class="text-white/90 hover:text-white py-2">Support Forum</a>
-                    <a href="{% url 'resources' %}" class="text-white/90 hover:text-white py-2">Helplines</a>
-                    <a href="{% url 'login' %}" class="text-white/90 hover:text-white py-2 cursor-pointer">Login</a>
-                    <a href="{% url 'doctor_login' %}" class="text-white/90 hover:text-white py-2 cursor-pointer">Doctor Login</a>
-                    <a href="{% url 'register' %}" class="bg-[#95d5b2] text-[#1b4332] px-4 py-2 rounded-lg font-medium text-center cursor-pointer">Sign Up</a>
-                {% endif %}
-            </div>
-        </div>
-    </nav>
 
+<body class="min-h-screen flex flex-col bg-[#050b1a] text-white font-sans overflow-x-hidden pt-[96px]">
+
+    <!-- ================= NAVBAR ================= -->
+    <header class="fixed top-0 left-0 right-0 z-[9999] px-4 sm:px-6 pt-4">
+        <nav class="max-w-7xl mx-auto rounded-2xl px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between bg-[#0a1428] border border-white/10 shadow-xl">
+            
+            <!-- LOGO -->
+            <a href="{% url 'home' %}" class="flex items-center gap-3">
+                {% if True %}
+                <div class="h-10 w-10 rounded-xl bg-white flex items-center justify-center shadow-lg overflow-hidden">
+                    <img src="{% static 'images/mindmend-logo.png' %}" alt="MindMend" class="h-8 w-8 object-contain">
+                </div>
+                {% endif %}
+                <div>
+                    <h1 class="text-xl font-bold text-white">MindMend</h1>
+                    <p class="text-xs text-[#00d1b2]">Safe space for healing</p>
+                </div>
+            </a>
+
+            <!-- MOBILE BUTTON -->
+            <button id="menu-btn" class="md:hidden p-2 rounded-lg text-white hover:bg-white/10 transition" aria-label="Toggle menu">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
+
+            <!-- DESKTOP MENU -->
+            <div class="hidden md:flex items-center gap-6 lg:gap-8">
+                <a href="{% url 'home' %}" class="hover:text-[#00d1b2] font-bold transition">HOME</a>
+                <a href="{% url 'chat' %}" class="hover:text-[#00d1b2] font-bold transition">AI CHAT</a>
+                <a href="{% url 'assessments' %}" class="hover:text-[#00d1b2] font-bold transition">ASSESSMENTS</a>
+                <a href="{% url 'counsellor_booking' %}" class="hover:text-[#00d1b2] font-bold transition">COUNSELLOR</a>
+
+                {% if user.is_authenticated %}
+                    <a href="{% url 'mood_tracker' %}" class="hover:text-[#00d1b2] font-bold transition">MOOD</a>
+                {% endif %}
+
+                <a href="{% url 'contact_us' %}" class="hover:text-[#00d1b2] font-bold transition">CONTACT</a>
+
+                {% if user.is_authenticated %}
+                    <!-- DASHBOARD DROPDOWN -->
+                    <div class="relative" id="dashboardDropdown">
+                        <button type="button" id="dashboardDropdownBtn" class="flex items-center gap-1 font-bold hover:text-[#00d1b2] transition">
+                            DASHBOARD
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                            </svg>
+                        </button>
+
+                        <div id="dashboardDropdownMenu" class="absolute right-0 mt-2 w-56 bg-[#0a1428] rounded-xl border border-white/10 shadow-xl opacity-0 invisible transition-all duration-200 z-[9999]">
+                            <a href="{% url 'dashboard' %}" class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5 rounded-t-xl">Dashboard</a>
+                            <a href="{% url 'my_progress' %}" class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">My Progress</a>
+                            <a href="{% url 'doctor_dashboard' %}" class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">Doctor Panel</a>
+                            <a href="{% url 'forum_list' %}" class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">Support Forum</a>
+                            <a href="{% url 'location_map' %}" class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">Location Map</a>
+                            <a href="{% url 'mental_health_heatmap' %}" class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">Heatmap</a>
+                            <a href="{% url 'survey_analytics' %}" class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">Survey Analytics</a>
+                            <a href="{% url 'survey_sentiment_dashboard' %}" class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">Survey Sentiment</a>
+                            <a href="{% url 'resources' %}" class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">Helplines</a>
+                            <div class="border-t border-white/10"></div>
+                            <a href="{% url 'logout' %}" class="block px-4 py-3 text-red-400 hover:bg-white/5 rounded-b-xl">Logout</a>
+                        </div>
+                    </div>
+                {% else %}
+                    <a href="{% url 'resources' %}" class="hover:text-[#00d1b2] font-bold transition">HELPLINES</a>
+                    <a href="{% url 'login' %}" class="hover:text-[#00d1b2] font-bold transition">LOGIN</a>
+                    <a href="{% url 'doctor_login' %}" class="hover:text-[#00d1b2] font-bold transition">DOCTOR LOGIN</a>
+                    <a href="{% url 'register' %}" class="bg-[#00d1b2] text-[#04111f] px-4 py-2 rounded-xl font-bold hover:opacity-90 transition">SIGN UP</a>
+                {% endif %}
+            </div>
+        </nav>
+
+        <!-- MOBILE MENU -->
+        <div id="mobile-menu" class="hidden md:hidden max-w-7xl mx-auto mt-2 bg-[#0a1428] border border-white/10 rounded-2xl p-4 space-y-2 shadow-xl">
+            <a href="{% url 'home' %}" class="block py-2 hover:text-[#00d1b2]">HOME</a>
+            <a href="{% url 'chat' %}" class="block py-2 hover:text-[#00d1b2]">AI CHAT</a>
+            <a href="{% url 'assessments' %}" class="block py-2 hover:text-[#00d1b2]">ASSESSMENTS</a>
+            <a href="{% url 'counsellor_booking' %}" class="block py-2 hover:text-[#00d1b2]">COUNSELLOR</a>
+
+            {% if user.is_authenticated %}
+                <a href="{% url 'mood_tracker' %}" class="block py-2 hover:text-[#00d1b2]">MOOD</a>
+            {% endif %}
+
+            <a href="{% url 'contact_us' %}" class="block py-2 hover:text-[#00d1b2]">CONTACT</a>
+
+            <hr class="border-white/10">
+
+            {% if user.is_authenticated %}
+                <p class="text-xs uppercase text-white/50 pt-2">Dashboard menu</p>
+                <a href="{% url 'dashboard' %}" class="block py-2 hover:text-[#00d1b2]">Dashboard</a>
+                <a href="{% url 'my_progress' %}" class="block py-2 hover:text-[#00d1b2]">My Progress</a>
+                <a href="{% url 'doctor_dashboard' %}" class="block py-2 hover:text-[#00d1b2]">Doctor Panel</a>
+                <a href="{% url 'forum_list' %}" class="block py-2 hover:text-[#00d1b2]">Support Forum</a>
+                <a href="{% url 'location_map' %}" class="block py-2 hover:text-[#00d1b2]">Location Map</a>
+                <a href="{% url 'mental_health_heatmap' %}" class="block py-2 hover:text-[#00d1b2]">Heatmap</a>
+                <a href="{% url 'survey_analytics' %}" class="block py-2 hover:text-[#00d1b2]">Survey Analytics</a>
+                <a href="{% url 'survey_sentiment_dashboard' %}" class="block py-2 hover:text-[#00d1b2]">Survey Sentiment</a>
+                <a href="{% url 'resources' %}" class="block py-2 hover:text-[#00d1b2]">Helplines</a>
+                <a href="{% url 'logout' %}" class="block py-2 text-red-400">Logout</a>
+            {% else %}
+                <a href="{% url 'forum_list' %}" class="block py-2 hover:text-[#00d1b2]">Support Forum</a>
+                <a href="{% url 'resources' %}" class="block py-2 hover:text-[#00d1b2]">Helplines</a>
+                <a href="{% url 'login' %}" class="block py-2 hover:text-[#00d1b2]">Login</a>
+                <a href="{% url 'doctor_login' %}" class="block py-2 hover:text-[#00d1b2]">Doctor Login</a>
+                <a href="{% url 'register' %}" class="block mt-2 bg-[#00d1b2] text-[#04111f] px-4 py-2 rounded-xl font-bold text-center">Sign Up</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- ================= MAIN CONTENT ================= -->
     <main class="flex-1 pb-8">
         <div class="w-full px-4 sm:px-6 lg:px-8 mt-4 mb-2">
-            <a href="#" onclick="history.back(); return false;" class="inline-flex items-center gap-1 text-[#2d6a4f] hover:text-[#1b4332] font-medium transition" aria-label="Go back">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                
+            <a href="#" onclick="history.back(); return false;" class="inline-flex items-center gap-1 text-[#00d1b2] hover:text-[#7ef5df] font-medium transition" aria-label="Go back">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                </svg>
+                <span>Back</span>
             </a>
         </div>
+
         {% if messages %}
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
             {% for message in messages %}
-            <div class="rounded-lg p-4 mb-2 flex items-center justify-between {% if message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200{% elif message.tags == 'success' %}bg-green-50 text-green-800 border border-green-200{% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
+            <div class="rounded-xl p-4 mb-3 flex items-center justify-between border
+                {% if message.tags == 'error' %}
+                    bg-red-500/10 text-red-200 border-red-500/30
+                {% elif message.tags == 'success' %}
+                    bg-green-500/10 text-green-200 border-green-500/30
+                {% else %}
+                    bg-blue-500/10 text-blue-200 border-blue-500/30
+                {% endif %}">
                 <span>{{ message }}</span>
                 <button type="button" class="text-lg hover:opacity-70" onclick="this.parentElement.remove()">×</button>
             </div>
             {% endfor %}
         </div>
         {% endif %}
+
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="bg-primary-dark text-white/90 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 text-center">
-            <p>MindMend — Stigma-free mental health support. In crisis? Call <strong>KIRAN 1800-599-0019</strong> or <strong>Tele-MANAS 14416</strong> (24/7)</p>
+    <!-- ================= FOOTER ================= -->
+    <footer class="border-t border-white/10 py-8 text-center text-white/90 bg-[#08101f]">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col items-center gap-2">
+                <div class="flex items-center gap-3">
+                    <div class="h-10 w-10 rounded-xl bg-white flex items-center justify-center shadow-lg overflow-hidden">
+                        <img src="{% static 'images/mindmend-logo.png' %}" alt="MindMend" class="h-7 w-7 object-contain">
+                    </div>
+                    <div class="text-left">
+                        <h2 class="font-bold text-lg text-white leading-tight">MindMend</h2>
+                        <p class="text-[10px] font-bold tracking-[0.28em] text-[#00d1b2]">SAFE SPACE FOR HEALING</p>
+                    </div>
+                </div>
+                <p class="text-gray-400 text-sm mt-2">
+                    Stigma-free mental health support. In crisis? Call
+                    <strong class="text-white">KIRAN 1800-599-0019</strong> or
+                    <strong class="text-white">Tele-MANAS 14416</strong> (24/7)
+                </p>
+            </div>
         </div>
     </footer>
 
+    <!-- ================= JS ================= -->
     <script>
-        var navToggle = document.getElementById('navToggle');
-        if (navToggle) navToggle.addEventListener('click', function() {
-            var menu = document.getElementById('mobileMenu');
-            if (menu) menu.classList.toggle('hidden');
-        });
-        var dropdownBtn = document.getElementById('dashboardDropdownBtn');
-        if (dropdownBtn) dropdownBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const menu = document.getElementById('dashboardDropdownMenu');
-            if (menu) {
-                menu.classList.toggle('opacity-0');
-                menu.classList.toggle('invisible');
-                menu.classList.toggle('opacity-100');
-                menu.classList.toggle('visible');
-            }
-        });
-        document.addEventListener('click', () => {
-            const menu = document.getElementById('dashboardDropdownMenu');
-            if (menu && menu.classList.contains('visible')) {
-                menu.classList.add('opacity-0', 'invisible');
-                menu.classList.remove('opacity-100', 'visible');
-            }
-        });
+        if (window.lucide) {
+            lucide.createIcons();
+        }
 
+        const btn = document.getElementById("menu-btn");
+        const menu = document.getElementById("mobile-menu");
+
+        if (btn && menu) {
+            btn.addEventListener("click", () => {
+                menu.classList.toggle("hidden");
+            });
+        }
+
+        const dropdownBtn = document.getElementById("dashboardDropdownBtn");
+        if (dropdownBtn) {
+            dropdownBtn.addEventListener("click", function (e) {
+                e.stopPropagation();
+                const dropdownMenu = document.getElementById("dashboardDropdownMenu");
+                if (dropdownMenu) {
+                    dropdownMenu.classList.toggle("opacity-0");
+                    dropdownMenu.classList.toggle("invisible");
+                    dropdownMenu.classList.toggle("opacity-100");
+                    dropdownMenu.classList.toggle("visible");
+                }
+            });
+        }
+
+        document.addEventListener("click", () => {
+            const dropdownMenu = document.getElementById("dashboardDropdownMenu");
+            if (dropdownMenu && dropdownMenu.classList.contains("visible")) {
+                dropdownMenu.classList.add("opacity-0", "invisible");
+                dropdownMenu.classList.remove("opacity-100", "visible");
+            }
+        });
     </script>
+
     <script>
         (function () {
             if (!navigator.geolocation) return;
@@ -184,10 +257,13 @@
                     }).then(function () {
                         localStorage.setItem(LAST_KEY, String(Date.now()));
                     }).catch(function () {});
-                }, function () {}, { enableHighAccuracy: true, timeout: 10000, maximumAge: 300000 });
+                }, function () {}, {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 300000
+                });
             }
 
-            // Only auto-send when permission is already granted (no extra prompt).
             if (navigator.permissions && navigator.permissions.query) {
                 navigator.permissions.query({ name: 'geolocation' }).then(function (res) {
                     if (res.state === 'granted') sendCoords();
@@ -195,6 +271,7 @@
             }
         })();
     </script>
+
     {% block scripts %}{% endblock %}
 </body>
 </html>

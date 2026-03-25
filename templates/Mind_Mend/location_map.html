@@ -1,120 +1,128 @@
 {% extends 'base.html' %}
-{% block title %}User Location Map{% endblock %}
+{% load static %}
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-        <div>
-            <h2 class="text-2xl font-semibold mb-1">User Location Map</h2>
-            <p class="text-gray-600">Where users are accessing MindMend from — Country, State, City</p>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+
+<div class="h-[calc(100vh-140px)] flex bg-[#050b1a] overflow-hidden">
+
+    <!-- ================= SIDEBAR ================= -->
+    <div class="w-[380px] border-r border-white/5 bg-[#0a1428]/40 backdrop-blur-xl flex flex-col overflow-hidden min-h-0">
+
+        <!-- HEADER -->
+        <div class="p-8 space-y-4">
+            <h2 class="text-3xl font-bold text-white">🌍 User Insights</h2>
+            <p class="text-gray-500 text-sm">Live user tracking dashboard</p>
         </div>
-        <a href="{% url 'mental_health_heatmap' %}" class="inline-flex items-center gap-2 px-4 py-2 bg-amber-800 hover:bg-amber-900 text-white rounded-lg font-medium transition">
-            🧠 Heatmap
-        </a>
-        <div class="flex flex-wrap items-center gap-4">
-            <form method="get" class="flex items-center gap-2">
-                <label class="text-sm text-gray-600">Last</label>
-                <select name="days" onchange="this.form.submit()" class="rounded-lg border border-gray-300 px-3 py-2 text-sm">
-                    <option value="7" {% if days == 7 %}selected{% endif %}>7 days</option>
-                    <option value="14" {% if days == 14 %}selected{% endif %}>14 days</option>
-                    <option value="30" {% if days == 30 %}selected{% endif %}>30 days</option>
-                    <option value="90" {% if days == 90 %}selected{% endif %}>90 days</option>
-                </select>
-            </form>
-            <div class="flex flex-wrap gap-2 text-sm">
-                <span class="px-3 py-1 bg-primary/10 text-primary rounded-lg">{{ stats.total|default:0 }} accesses</span>
-                <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-lg">{{ stats.gps_shared|default:0 }} GPS shared</span>
-                <span class="px-3 py-1 bg-sky-100 text-sky-700 rounded-lg">{{ stats.visitors|default:0 }} visitors</span>
-                <span class="px-3 py-1 bg-primary/10 text-primary rounded-lg">{{ stats.countries|default:0 }} countries</span>
+
+        <!-- STATS -->
+        <div class="px-6 space-y-3 text-sm">
+            <div class="bg-white/5 p-3 rounded-lg text-white">
+                👥 Active Now: <b>{{ active_now|default:0 }}</b>
+            </div>
+            <div class="bg-white/5 p-3 rounded-lg text-white">
+                🌐 Total Access: <b>{{ stats.total|default:0 }}</b>
+            </div>
+            <div class="bg-white/5 p-3 rounded-lg text-white">
+                📍 GPS Shared: <b>{{ stats.gps_shared|default:0 }}</b>
+            </div>
+            <div class="bg-white/5 p-3 rounded-lg text-white">
+                🌎 Countries: <b>{{ stats.countries|default:0 }}</b>
             </div>
         </div>
-    </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div class="bg-white rounded-xl shadow-lg p-5 border-l-4 border-primary">
-            <p class="text-sm text-gray-500 font-medium">Active Users Right Now</p>
-            <p class="text-3xl font-bold text-primary mt-1">{{ active_now|default:0 }}</p>
-            <p class="text-xs text-gray-500 mt-1">Unique visitors in last 15 min</p>
-        </div>
-        <div class="bg-white rounded-xl shadow-lg p-5">
-            <p class="text-sm text-gray-500 font-medium">Total Accesses ({{ days }}d)</p>
-            <p class="text-3xl font-bold text-gray-800 mt-1">{{ stats.total|default:0 }}</p>
-        </div>
-        <div class="bg-white rounded-xl shadow-lg p-5">
-            <p class="text-sm text-gray-500 font-medium">Visitors with GPS Shared</p>
-            <p class="text-3xl font-bold text-gray-800 mt-1">{{ stats.gps_shared|default:0 }}</p>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div class="bg-white rounded-xl shadow-lg p-6">
-            <h5 class="font-semibold mb-4 flex items-center gap-2">📈 Total Users per Country</h5>
-            {% if users_per_country %}
-            <div class="space-y-2 max-h-64 overflow-y-auto">
-                {% for row in users_per_country %}
-                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 py-2 border-b border-gray-100 last:border-0">
-                    <span class="font-medium">{{ row.country|default:"Unknown" }}</span>
-                    <span class="px-2 py-0.5 bg-primary/10 text-primary rounded font-medium">{{ row.count }}</span>
-                </div>
-                {% endfor %}
-            </div>
-            {% else %}
-            <p class="text-gray-500 text-sm">No country data in this period.</p>
-            {% endif %}
-        </div>
-        <div class="bg-white rounded-xl shadow-lg p-6">
-            <h5 class="font-semibold mb-4 flex items-center gap-2">📈 Total Users per State</h5>
+        <!-- STATE LIST -->
+        <div id="stateList" class="flex-1 min-h-0 overflow-y-auto px-4 mt-6 space-y-3">
             {% if users_per_state %}
-            <div class="space-y-2 max-h-64 overflow-y-auto">
                 {% for row in users_per_state %}
-                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 py-2 border-b border-gray-100 last:border-0">
-                    <span class="font-medium">{{ row.state|default:"Unknown" }}{% if row.country %}, {{ row.country }}{% endif %}</span>
-                    <span class="px-2 py-0.5 bg-primary/10 text-primary rounded font-medium">{{ row.count }}</span>
+                <div onclick="focusState('{{ row.state }}')"
+                     class="bg-white/5 p-4 rounded-xl cursor-pointer hover:bg-white/10 transition">
+
+                    <h3 class="text-white font-semibold">
+                        {{ row.state|default:"Unknown" }}
+                        {% if row.country %}, {{ row.country }}{% endif %}
+                    </h3>
+
+                    <p class="text-blue-400 text-sm">
+                        👥 Users: {{ row.count }}
+                    </p>
                 </div>
                 {% endfor %}
-            </div>
             {% else %}
-            <p class="text-gray-500 text-sm">No state data in this period.</p>
+                <p class="text-gray-400 text-sm px-2">No state data</p>
             {% endif %}
+        </div>
+
+        <!-- FOOTER -->
+        <div class="p-6 border-t border-white/10 text-xs text-gray-500">
+            ✔ Real-time user analytics
         </div>
     </div>
 
-    <div class="bg-white rounded-2xl shadow-lg overflow-hidden mb-6">
-        <div id="map" class="w-full h-[340px] sm:h-[420px] lg:h-[500px]"></div>
-    </div>
-
-    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm text-amber-800">
-        <strong>Privacy note:</strong> Locations come from IP (approximate) or browser GPS (accurate). Users see a "Share location" banner for precise positioning. Markers show 📍 GPS when shared, or IP for IP-based. Local dev shows "Localhost".
+    <!-- ================= MAP ================= -->
+    <div class="flex-1 relative">
+        <div id="map" class="h-full w-full"></div>
     </div>
 </div>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
 <script>
-(function() {
-    const markers = {{ markers_json|safe }};
-    const map = L.map('map').setView([20.5937, 78.9629], 3); // India center, zoomed out
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    }).addTo(map);
+// ================= BACKEND DATA =================
+const markers = {{ markers_json|safe }};
 
-    markers.forEach(function(m) {
-        if (m.lat && m.lon) {
-            const popup = '<strong>' + (m.label || 'Unknown') + '</strong><br>'
-                + 'User: ' + (m.user || 'Anonymous') + '<br>'
-                + (m.date ? 'When: ' + m.date + '<br>' : '')
-                + (m.page ? 'Page: ' + m.page + '<br>' : '')
-                + (m.source === 'browser' ? '<span class="text-green-600">📍 GPS</span>' : '<span class="text-gray-500">IP</span>');
-            L.marker([m.lat, m.lon]).addTo(map).bindPopup(popup);
-        }
-    });
+// ================= MAP =================
+const map = L.map('map').setView([20.5937, 78.9629], 4);
 
-    if (markers.length > 0) {
-        const valid = markers.filter(function(m){ return m.lat && m.lon && m.lat !== 0 && m.lon !== 0; });
-        if (valid.length > 0) {
-            const bounds = L.latLngBounds(valid.map(function(m){ return [m.lat, m.lon]; }));
-            map.fitBounds(bounds.pad(0.1));
-        }
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+// ================= STORE MARKERS =================
+let leafletMarkers = [];
+
+// ================= ADD USER MARKERS =================
+markers.forEach(m => {
+    if (m.lat && m.lon) {
+
+        const marker = L.marker([m.lat, m.lon]).addTo(map)
+        .bindPopup(`
+            <div class="text-black">
+                <b>${m.label || "User"}</b><br>
+                ${m.user || "Anonymous"}<br>
+                ${m.date || ""}<br>
+                ${m.page || ""}<br>
+                ${m.source === 'browser' ? '📍 GPS' : 'IP'}
+            </div>
+        `);
+
+        leafletMarkers.push({
+            marker: marker,
+            state: m.state
+        });
     }
-})();
+});
+
+// ================= AUTO FIT =================
+if (leafletMarkers.length > 0) {
+    const bounds = L.latLngBounds(
+        leafletMarkers.map(m => m.marker.getLatLng())
+    );
+    map.fitBounds(bounds.pad(0.2));
+}
+
+// ================= FOCUS STATE =================
+function focusState(state) {
+
+    const filtered = leafletMarkers.filter(m => m.state === state);
+
+    if (filtered.length === 0) return;
+
+    const bounds = L.latLngBounds(
+        filtered.map(m => m.marker.getLatLng())
+    );
+
+    map.fitBounds(bounds.pad(0.3));
+}
+
 </script>
+
 {% endblock %}

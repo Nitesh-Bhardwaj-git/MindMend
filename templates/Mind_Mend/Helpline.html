@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}Helplines{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-6 md:pt-8 pb-20">
+
+  <!-- Background Glows -->
+  <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#00d1b2]/10 rounded-full blur-[120px] -z-10 animate-pulse"></div>
+  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] -z-10 animate-pulse delay-1000"></div>
+
+  <div class="max-w-6xl mx-auto px-6 space-y-12">
+
+    <!-- Header Section -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-8">
+      <div class="space-y-4">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00d1b2]/10 border border-[#00d1b2]/20 text-[#00d1b2] text-[10px] font-bold uppercase tracking-widest">
+          ✅ 24/7 Support
+        </div>
+        <h1 class="text-5xl md:text-6xl font-display font-bold text-white tracking-tight leading-tight">
+          Helplines & <span class="text-[#00d1b2]">Resources</span>.
+        </h1>
+        <p class="text-gray-500 text-lg md:text-xl max-w-2xl leading-relaxed">
+          Free, confidential support is available whenever you need it. You are not alone in this journey.
+        </p>
+      </div>
+
+      <div class="bg-[#0a1428]/40 backdrop-blur-sm rounded-3xl border border-white/5 p-6 flex items-center gap-4">
+        <div class="h-12 w-12 rounded-2xl bg-[#7c3aed]/10 flex items-center justify-center">
+          🕒
+        </div>
+        <div>
+          <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Availability</p>
+          <p class="text-2xl font-bold text-white">Always Open</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Helplines List -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      {% for helpline in helplines %}
+      <div class="bg-[#0a1428]/40 backdrop-blur-sm rounded-[40px] border border-white/5 p-10 space-y-8 group hover:bg-[#0a1428]/60 transition-all">
+        <div class="space-y-4">
+          <div class="flex items-center justify-between">
+            <span class="px-3 py-1 rounded-full bg-white/5 border border-white/5 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+              Support Line
+            </span>
+            <div class="flex items-center gap-2 text-[10px] font-bold text-gray-600 uppercase tracking-widest">
+              🌐 {{ helpline.languages }}
+            </div>
+          </div>
+          <h3 class="text-3xl font-bold text-white tracking-tight leading-tight group-hover:text-[#00d1b2] transition-colors">
+            {{ helpline.name }}
+          </h3>
+          <p class="text-gray-500 text-lg leading-relaxed">
+            {{ helpline.desc }}
+          </p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-center gap-4">
+          <a href="tel:{{ helpline.number }}"
+             class="w-full flex items-center justify-between p-6 rounded-2xl bg-[#00d1b2] text-[#050b1a] font-extrabold text-xl tracking-tight hover:scale-[1.02] transition-transform shadow-xl shadow-[#00d1b2]/20">
+            <div class="flex items-center gap-4">
+              📞 {{ helpline.number }}
+            </div>
+            🔗
+          </a>
+        </div>
+      </div>
+      {% empty %}
+      <p class="text-gray-500">No helplines available right now.</p>
+      {% endfor %}
+    </div>
+
+    <!-- Features -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+      <div class="bg-white/5 backdrop-blur-sm rounded-[40px] border border-white/5 p-10 space-y-6">
+        <div class="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center">🔒</div>
+        <div class="space-y-2">
+          <h4 class="text-2xl font-bold text-white tracking-tight">Confidential</h4>
+          <p class="text-gray-500 text-base leading-relaxed">Private, judgement-free support whenever you need it.</p>
+        </div>
+      </div>
+      <div class="bg-white/5 backdrop-blur-sm rounded-[40px] border border-white/5 p-10 space-y-6">
+        <div class="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center">🌙</div>
+        <div class="space-y-2">
+          <h4 class="text-2xl font-bold text-white tracking-tight">24/7 Availability</h4>
+          <p class="text-gray-500 text-base leading-relaxed">Reach out at any hour, day or night.</p>
+        </div>
+      </div>
+      <div class="bg-white/5 backdrop-blur-sm rounded-[40px] border border-white/5 p-10 space-y-6">
+        <div class="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center">🤝</div>
+        <div class="space-y-2">
+          <h4 class="text-2xl font-bold text-white tracking-tight">Human Support</h4>
+          <p class="text-gray-500 text-base leading-relaxed">Connect with trained professionals who can help.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- When to Call Section -->
+    <div class="bg-[#0a1428]/40 backdrop-blur-sm rounded-[40px] border border-white/5 p-10 mt-12">
+      <h4 class="text-3xl font-bold text-white tracking-tight mb-4">When to Call</h4>
+      <p class="text-gray-500 text-lg leading-relaxed">
+        Reach out if you're experiencing stress, anxiety, depression, panic, trauma, substance use concerns, or thoughts of self-harm.
+        These helplines offer early screening, psychological support, distress management, and crisis intervention.
+      </p>
+    </div>
+
+    <!-- Emergency Section -->
+    <div class="bg-[#0a1428]/60 backdrop-blur-xl rounded-[40px] border border-white/5 p-10 flex flex-col md:flex-row items-center gap-12 mt-12">
+      <div class="h-24 w-24 rounded-[32px] bg-red-500/10 flex items-center justify-center flex-shrink-0">
+        ❗
+      </div>
+      <div class="flex-1 text-center md:text-left space-y-4">
+        <h4 class="text-3xl font-bold text-white tracking-tight leading-tight">Emergency Situation?</h4>
+        <p class="text-gray-500 text-xl leading-relaxed">
+          If you or someone you know is in immediate danger, please call emergency services (911 in the US) or go to the nearest emergency room.
+        </p>
+      </div>
+      <a href="tel:911" class="w-full md:w-auto px-12 py-6 rounded-2xl bg-red-500 text-white font-extrabold text-sm tracking-widest hover:scale-105 transition-transform shadow-xl shadow-red-500/20">
+        Call Emergency Services
+      </a>
+    </div>
+
+  </div>
+</div>
+{% endblock %} 

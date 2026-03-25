@@ -1,58 +1,158 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% load widget_tweaks %}
 {% block title %}Book Counsellor{% endblock %}
 {% block content %}
-<div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <h2 class="text-2xl font-semibold mb-4">Book a Counsellor</h2>
-    {% if user.is_authenticated %}<p class="mb-4"><a href="{% url 'my_bookings' %}" class="text-primary font-medium hover:underline">View my bookings</a></p>{% endif %}
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div class="bg-white rounded-2xl shadow-lg p-8">
-            <form method="post">
-                {% csrf_token %}
-                {% if form.non_field_errors %}
-                <div class="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm" id="bookingFormError">
-                    {% for err in form.non_field_errors %}
-                    <p>{{ err }}</p>
-                    {% endfor %}
-                </div>
-                {% endif %}
-                {% for field in form %}
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
-                    {{ field|add_class:"form-control" }}
-                    {{ field.errors }}
-                </div>
-                {% endfor %}
-                <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition">Book Appointment</button>
-            </form>
+
+<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-6 md:pt-8 pb-20">
+  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse"></div>
+
+  <div class="max-w-7xl mx-auto px-6 md:px-12 lg:px-20">
+
+    <!-- HEADER -->
+    <div class="flex flex-col md:flex-row justify-between gap-12 mb-6">
+      <div class="max-w-2xl">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#00d1b2]/30 bg-[#00d1b2]/5 text-[#00d1b2] text-[10px] font-bold tracking-[0.2em] mb-4">
+          🛡️ VERIFIED PROFESSIONALS
         </div>
-        <div>
-            <h5 class="text-lg font-semibold mb-4">Available Counsellors</h5>
-            {% for c in counsellors %}
-            <div class="bg-white rounded-xl shadow p-4 mb-3">
-                <div class="flex items-center gap-2 flex-wrap">
-                    <strong>{{ c.name }}</strong>
-                    {% if c.avg_rating %}
-                    <span class="text-amber-500 text-sm" title="Average rating {{ c.avg_rating|floatformat:1 }}/5">★ {{ c.avg_rating|floatformat:1 }}</span>
-                    {% endif %}
-                </div>
-                <p class="text-gray-600">{{ c.specialization }}</p>
-                {% if c.bio %}
-                <p class="text-sm text-rose-700 mt-1">{{ c.bio|truncatewords:30 }}</p>
-                {% endif %}
-                <p class="text-sm text-gray-500 mt-1">{{ c.available_days }}, {{ c.available_time_start|time:"H:i" }}-{{ c.available_time_end|time:"H:i" }}</p>
-            </div>
-            {% empty %}
-            <p class="text-gray-600">No counsellors available. Check back later or contact admin.</p>
-            {% endfor %}
-        </div>
+
+        <h1 class="text-4xl md:text-6xl font-bold text-white mb-6 leading-tight">
+          Book a
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#00d1b2] to-purple-400">
+            Professional Counsellor
+          </span>
+        </h1>
+
+        <p class="text-gray-400 text-lg">
+          Connect with certified experts for private, secure and stigma-free sessions.
+        </p>
+      </div>
+
+      {% if user.is_authenticated %}
+      <div>
+        <a href="{% url 'my_bookings' %}"
+           class="px-8 py-4 rounded-2xl border border-white/10 bg-white/5 text-white font-bold uppercase inline-flex items-center gap-3 hover:bg-white/10 transition">
+          📅 My Bookings →
+        </a>
+      </div>
+      {% endif %}
     </div>
+
+    <!-- MAIN GRID -->
+    <div class="grid grid-cols-1 lg:grid-cols-[1fr_620px] gap-12">
+
+      <!-- BOOKING FORM -->
+      <div class="bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 rounded-[3rem] p-10 md:p-12 shadow-2xl relative overflow-hidden">
+        <div class="absolute top-0 right-0 w-32 h-32 bg-[#00d1b2]/5 rounded-full blur-3xl"></div>
+
+        <h3 class="text-2xl font-bold text-white mb-8">Schedule Session</h3>
+
+        <form method="post">
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+          <div class="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-400/20 text-red-300 text-sm" id="bookingFormError">
+            {% for err in form.non_field_errors %}
+            <p>{{ err }}</p>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          {% for field in form %}
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-300 mb-2">
+              {{ field.label }}
+            </label>
+
+            {{ field|add_class:"w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder-gray-500 outline-none hover:bg-white/10 focus:border-[#00d1b2]/50" }}
+
+            {% if field.errors %}
+            <div class="mt-2 text-sm text-red-400">
+              {{ field.errors }}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+
+          <button type="submit"
+                  class="mt-4 px-6 py-4 rounded-2xl bg-[#00d1b2] text-[#050b1a] font-bold hover:shadow-[0_0_30px_rgba(0,209,178,0.35)] transition cursor-pointer">
+            Book Appointment
+          </button>
+        </form>
+      </div>
+
+      <!-- COUNSELLORS -->
+      <div>
+        <h3 class="text-2xl font-bold text-white mb-6">Available Counsellors</h3>
+
+        <div class="space-y-6">
+          {% for c in counsellors %}
+          <div class="bg-gradient-to-br from-[#0b162d] to-[#0a1428] border border-white/10 rounded-[2.75rem] px-10 py-8 shadow-2xl transition hover:border-[#00d1b2]/30 min-h-[170px]">
+            <div class="grid grid-cols-1 md:grid-cols-[96px_minmax(0,1fr)_210px] gap-6 md:gap-8 items-center">
+              <!-- Avatar -->
+              <div class="relative shrink-0">
+                <div class="h-20 w-20 rounded-full bg-gradient-to-br from-[#111c33] to-[#0a1428] border border-white/10 flex items-center justify-center text-xl font-bold text-white shadow-lg overflow-hidden">
+                  {{ c.name|slice:":1"|upper }}
+                </div>
+                <div class="absolute -bottom-2 -right-2 h-9 w-9 rounded-full bg-[#00d1b2] text-[#04111d] flex items-center justify-center text-sm font-bold shadow-md">
+                  🛡️
+                </div>
+              </div>
+
+              <!-- Details -->
+              <div class="min-w-0">
+                <div class="flex items-center gap-3">
+                  <h4 class="text-2xl font-bold text-white truncate">{{ c.name }}</h4>
+                  {% if c.avg_rating %}
+                  <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-400/10 text-amber-300 text-xs font-bold border border-amber-400/30 whitespace-nowrap">
+                    ★ {{ c.avg_rating|floatformat:1 }}
+                  </span>
+                  {% endif %}
+                </div>
+
+                <p class="text-[#00d1b2] text-xs font-semibold tracking-[0.3em] uppercase mt-2">
+                  {{ c.specialization }}
+                </p>
+
+                {% if c.bio %}
+                <p class="text-gray-400 text-sm mt-3 leading-relaxed">
+                  {{ c.bio|truncatewords:16 }}
+                </p>
+                {% endif %}
+              </div>
+
+              <!-- Availability -->
+              <div class="flex flex-col items-end gap-4">
+                <div class="text-right">
+                  <p class="text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-2">Availability</p>
+                  <div class="px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white font-semibold text-sm text-center min-w-[185px] leading-snug">
+                    {{ c.available_days }},<br>
+                    {{ c.available_time_start|time:"H:i" }} - {{ c.available_time_end|time:"H:i" }}
+                  </div>
+                </div>
+                <div class="h-11 w-11 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/70">
+                  →
+                </div>
+              </div>
+            </div>
+          </div>
+          {% empty %}
+          <div class="bg-[#0a1428]/60 backdrop-blur-xl border border-white/10 p-8 rounded-[2rem] text-gray-400">
+            No counsellors available. Check back later or contact admin.
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+  </div>
 </div>
+
 {% if form.non_field_errors %}
 <script>
-    (function () {
-        alert('The counsellor is not available on this day or time.');
-    })();
+  (function () {
+    alert('The counsellor is not available on this day or time.');
+  })();
 </script>
 {% endif %}
+
 {% endblock %}

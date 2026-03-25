@@ -275,65 +275,134 @@ def _chat_context_from_request(request, session_id, data):
 def chat_api(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
+
     try:
         data = json.loads(request.body) if request.body else {}
     except json.JSONDecodeError:
         data = {}
+
     message = data.get('message', '') or request.POST.get('message', '')
     session_id = data.get('session_id') or request.POST.get('session_id') or get_session_id()
     lang = data.get('lang', 'en') or request.POST.get('lang', 'en')
+
     if lang not in ('en', 'hi'):
         lang = 'en'
+
     if not message.strip():
         return JsonResponse({'error': 'Empty message'}, status=400)
+
     # Fetch conversation history: by user for logged-in (persistent), by session_id for anonymous
     if request.user.is_authenticated:
         recent = list(ChatMessage.objects.filter(user=request.user).order_by('-created_at')[:20])
     else:
-        recent = list(ChatMessage.objects.filter(session_id=session_id, user__isnull=True).order_by('-created_at')[:20])
+        recent = list(
+            ChatMessage.objects.filter(session_id=session_id, user__isnull=True).order_by('-created_at')[:20]
+        )
+
     recent.reverse()  # chronological order
     history = [{'role': m.role, 'content': m.content} for m in recent]
     context = _chat_context_from_request(request, session_id, data)
-    result = get_chat_response(message, session_id, lang=lang, conversation_history=history, context=context)
+
+    try:
+        result = get_chat_response(
+            message,
+            session_id,
+            lang=lang,
+            conversation_history=history,
+            context=context
+        )
+
+        if not isinstance(result, dict):
+            raise ValueError("get_chat_response must return a dict")
+
+        response_text = (result.get('response') or '').strip()
+        if not response_text:
+            response_text = (
+                "I'm here with you. Tell me a little more about what feels hardest right now."
+                if lang == 'en'
+                else "मैं आपके साथ हूँ। अभी आपको सबसे मुश्किल क्या लग रहा है, थोड़ा और बताइए।"
+            )
+
+        sentiment = result.get('sentiment', 'neutral')
+        is_distress = result.get('is_distress', False)
+        recommendations = result.get('recommendations', [])
+
+    except Exception as service_error:
+        print("chat_api service error:", service_error)
+
+        response_text = (
+            "I'm still here with you. I couldn't reach the main support system right now, but you can tell me what feels hardest at this moment."
+            if lang == 'en'
+            else "मैं अभी भी आपके साथ हूँ। अभी मुख्य सहायता प्रणाली तक पहुँचना संभव नहीं हुआ, लेकिन आप बता सकते हैं कि इस समय सबसे मुश्किल क्या लग रहा है।"
+        )
+        sentiment = 'neutral'
+        is_distress = False
+        recommendations = []
+
     # Save for all users (incl. anonymous) to enable conversation memory
-    ChatMessage.objects.create(
-        user=request.user if request.user.is_authenticated else None,
-        session_id=session_id, role='user', content=message
-    )
-    ChatMessage.objects.create(
-        user=request.user if request.user.is_authenticated else None,
-        session_id=session_id, role='assistant', content=result['response'], sentiment=result['sentiment']
-    )
+    try:
+        ChatMessage.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            session_id=session_id,
+            role='user',
+            content=message
+        )
+        ChatMessage.objects.create(
+            user=request.user if request.user.is_authenticated else None,
+            session_id=session_id,
+            role='assistant',
+            content=response_text,
+            sentiment=sentiment
+        )
+    except Exception as db_error:
+        print("chat_api message save error:", db_error)
+
     # Update long-term memory
-    memory = None
-    if request.user.is_authenticated:
-        memory, _ = UserMemory.objects.get_or_create(user=request.user, defaults={'session_id': ''})
-    else:
-        memory, _ = UserMemory.objects.get_or_create(user=None, session_id=session_id)
-    if memory:
-        emotion = detect_emotion(message)
-        context_label = detect_context_label(message)
-        topics = extract_topics(message)
-        activities = extract_activities(message, result.get('recommendations'))
-        if emotion:
-            memory.last_emotion = emotion
-        if context_label and context_label != 'unknown':
-            memory.last_context = context_label
-        name = extract_name(message)
-        if name:
-            memory.preferred_name = name
-        if topics:
-            merged = list(dict.fromkeys((topics + (memory.stress_topics or []))) )
-            memory.stress_topics = merged[:10]
-        if activities:
-            merged = list(dict.fromkeys((activities + (memory.helpful_activities or []))) )
-            memory.helpful_activities = merged[:10]
-        memory.save()
+    try:
+        if request.user.is_authenticated:
+            memory, _ = UserMemory.objects.get_or_create(
+                user=request.user,
+                defaults={'session_id': ''}
+            )
+        else:
+            memory, _ = UserMemory.objects.get_or_create(
+                user=None,
+                session_id=session_id
+            )
+
+        if memory:
+            emotion = detect_emotion(message)
+            context_label = detect_context_label(message)
+            topics = extract_topics(message)
+            activities = extract_activities(message, recommendations)
+
+            if emotion:
+                memory.last_emotion = emotion
+            if context_label and context_label != 'unknown':
+                memory.last_context = context_label
+
+            name = extract_name(message)
+            if name:
+                memory.preferred_name = name
+
+            if topics:
+                merged = list(dict.fromkeys(topics + (memory.stress_topics or [])))
+                memory.stress_topics = merged[:10]
+
+            if activities:
+                merged = list(dict.fromkeys(activities + (memory.helpful_activities or [])))
+                memory.helpful_activities = merged[:10]
+
+            memory.save()
+
+    except Exception as memory_error:
+        print("chat_api memory update error:", memory_error)
+
     return JsonResponse({
-        'response': result['response'],
-        'sentiment': result['sentiment'],
-        'is_distress': result['is_distress'],
-        'recommendations': result['recommendations'],
+        'response': response_text,
+        'sentiment': sentiment,
+        'is_distress': is_distress,
+        'recommendations': recommendations,
         'session_id': session_id
     })
 
@@ -906,7 +975,9 @@ def submit_review(request, booking_id):
 @login_required
 def mood_tracker(request):
     from datetime import timedelta
-    entries = MoodEntry.objects.filter(user=request.user).order_by('-date')[:30]
+    entries_qs = MoodEntry.objects.filter(user=request.user).order_by('-date')
+    show_all = (request.GET.get('all') or '').strip() in ('1', 'true', 'yes', 'all')
+    entries = entries_qs if show_all else entries_qs[:30]
     if request.method == 'POST':
         form = MoodEntryForm(request.POST)
         if form.is_valid():
@@ -929,6 +1000,8 @@ def mood_tracker(request):
     week_entries = MoodEntry.objects.filter(user=request.user).order_by('-date')[:7]
     avg_mood_7 = week_entries.aggregate(Avg('mood'))['mood__avg']
     mood_data = [{'date': str(e.date), 'mood': e.mood} for e in list(week_entries)[::-1]]
+    chart_labels = [d['date'] for d in mood_data]
+    chart_data = [d['mood'] for d in mood_data]
     # Streak: consecutive days with entry, starting from today
     streak = 0
     check_date = timezone.now().date()
@@ -963,10 +1036,13 @@ def mood_tracker(request):
         'form': form, 'entries': entries,
         'avg_mood_7': round(avg_mood_7, 1) if avg_mood_7 else None,
         'mood_data': mood_data,
+        'chart_labels': json.dumps(chart_labels),
+        'chart_data': json.dumps(chart_data),
         'streak': streak,
         'crisis_alert': crisis_alert,
         'very_low_streak': very_low_streak,
         'activity_chips': activity_chips,
+        'show_all_entries': show_all,
     })
 
 
@@ -985,7 +1061,7 @@ def resources(request):
             'languages': 'English and 20+ regional languages'
         },
     ]
-    return render(request, 'Mind_Mend/resources.html', {'helplines': helplines})
+    return render(request, 'Mind_Mend/Helpline.html', {'helplines': helplines, 'features': []})
 
 
 @login_required
@@ -1030,6 +1106,7 @@ def location_map(request):
     markers = []
     for loc in sorted(latest_by_identity.values(), key=lambda x: x.created_at, reverse=True):
         label = ', '.join(filter(None, [str(loc.city or ''), str(loc.state or ''), str(loc.country or '')])) or 'Unknown'
+        state_label = (loc.state or '').strip() or (loc.city or '').strip() or 'Unknown'
         markers.append({
             'lat': float(loc.latitude or 0),
             'lon': float(loc.longitude or 0),
@@ -1038,6 +1115,7 @@ def location_map(request):
             'date': loc.created_at.strftime('%Y-%m-%d %H:%M') if loc.created_at else '',
             'page': loc.page_path or '',
             'source': loc.location_source or 'ip',
+            'state': state_label,
         })
 
     active_now = len({
@@ -1058,8 +1136,10 @@ def location_map(request):
             continue
         if loc.country:
             by_country[loc.country] += 1
-        if loc.state:
-            by_state[(loc.country or '', loc.state)] += 1
+        state_label = (loc.state or '').strip()
+        if not state_label:
+            state_label = (loc.city or '').strip() or 'Unknown'
+        by_state[(loc.country or '', state_label)] += 1
 
     users_per_country = [{'country': c, 'count': n} for c, n in by_country.most_common(15)]
     users_per_state = [{'country': c, 'state': s, 'count': n} for (c, s), n in by_state.most_common(15)]
@@ -1176,7 +1256,7 @@ def mental_health_heatmap(request):
     depression_by_region.sort(key=lambda x: -x['avg'])
     mood_by_region.sort(key=lambda x: -x['avg'])  # higher mood = better
 
-    return render(request, 'Mind_Mend/mental_health_heatmap.html', {
+    return render(request, 'Mind_Mend/heatmap.html', {
         'markers_json': json.dumps(markers),
         'metric': metric,
         'days': days,
@@ -1186,9 +1266,17 @@ def mental_health_heatmap(request):
     })
 
 
+def _has_mental_data(user):
+    return (
+        MoodEntry.objects.filter(user=user).exists()
+        or AssessmentResult.objects.filter(user=user).exists()
+    )
+
+
 def _mental_health_score(user):
     """Composite mental health score 0–100 from recent mood and latest assessments."""
-    from datetime import timedelta
+    if not _has_mental_data(user):
+        return 0
     mood_entries = MoodEntry.objects.filter(user=user).order_by('-date')[:14]
     avg_mood = mood_entries.aggregate(Avg('mood'))['mood__avg']
     mood_component = (float(avg_mood) / 5.0 * 60) if avg_mood else 50  # 0–60 from mood
@@ -1206,6 +1294,8 @@ def _mental_health_score(user):
 def _wellness_suggestions(user, mental_score):
     """Contextual wellness tips based on mental health score."""
     tips = []
+    if not _has_mental_data(user):
+        return ['Log mood regularly to get personalised wellness suggestions.']
     if mental_score is not None:
         if mental_score < 40:
             tips.append('Your score suggests you might be struggling. Consider talking to a counsellor or using the anonymous forum for support.')
@@ -1866,12 +1956,18 @@ def survey_sentiment_dashboard(request):
     return render(request, 'Mind_Mend/survey_sentiment_dashboard.html', {
         'error': err,
         'total_filtered': len(filtered),
+        'total_responses': len(filtered),
         'age_options': age_options,
         'gender_options': gender_options,
         'occupation_options': occupation_options,
         'age_filter': age_filter,
         'gender_filter': gender_filter,
         'occupation_filter': occupation_filter,
+        'filters': {
+            'age': age_options,
+            'gender': gender_options,
+            'occupation': occupation_options,
+        },
         'month_labels': month_labels,
         'top_causes': top_causes,
         'cause_series': cause_series,

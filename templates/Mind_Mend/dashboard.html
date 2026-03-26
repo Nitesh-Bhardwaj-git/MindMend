@@ -57,13 +57,18 @@
           <p class="text-xs text-gray-400 uppercase mb-2">🧠 Mental Health Score</p>
           <div class="flex items-center gap-2">
             <span class="text-5xl font-bold text-[#00d1b2]">
-              {{ mental_health_score|default:"72" }}
+              {{ mental_health_score|default_if_none:"0" }}
             </span>
             <span class="text-gray-500">/100</span>
           </div>
           <p class="text-xs text-gray-500 mt-2">
             From mood + assessments. Higher = better.
           </p>
+          {% if mental_health_score == 0 %}
+          <p class="text-xs text-[#00d1b2] mt-2">
+            No mood logs or assessments yet — your score starts when you log your first entry.
+          </p>
+          {% endif %}
         </div>
 
         <!-- APPOINTMENTS -->

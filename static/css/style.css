@@ -30,6 +30,73 @@ iframe {
   display: block;
 }
 
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  min-width: 0;
+  width: 100%;
+}
+
+img, video, canvas, iframe, svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+@media (max-width: 1024px) {
+  body {
+    font-size: 15px;
+  }
+
+  .max-w-7xl, .max-w-6xl, .max-w-5xl, .max-w-4xl, .max-w-3xl {
+    max-width: calc(100% - 2rem) !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+
+  .grid-cols-3, .lg\:grid-cols-3 {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+
+  .grid-cols-2, .md\:grid-cols-2 {
+    grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+  }
+
+  .hidden\,md\:block, .md\:hidden {
+    display: block !important;
+  }
+
+  .overflow-hidden {
+    overflow: visible !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .text-sm {
+    font-size: 0.9rem;
+  }
+
+  .text-xs {
+    font-size: 0.78rem;
+  }
+
+  .p-10, .p-8, .p-6 {
+    padding: 0.75rem !important;
+  }
+
+  .pt-32,
+  .pb-20 {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+  }
+
+  .rounded-[2.5rem], .rounded-[3rem], .rounded-[2.2rem] {
+    border-radius: 1.25rem !important;
+  }
+}
+
 /* Global form field visibility */
 .form-control,
 input[type="text"],

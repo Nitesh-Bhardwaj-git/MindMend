@@ -3,10 +3,10 @@
 {% block title %}Book Counsellor{% endblock %}
 {% block content %}
 
-<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-6 md:pt-8 pb-20">
-  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse"></div>
+<div class="min-h-screen bg-[#050b1a] relative overflow-auto pt-6 md:pt-8 pb-20">
+  <div class="absolute bottom-0 right-1/2 md:right-1/4 w-[360px] h-[360px] md:w-[500px] md:h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse"></div>
 
-  <div class="max-w-7xl mx-auto px-6 md:px-12 lg:px-20">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 lg:px-20">
 
     <!-- HEADER -->
     <div class="flex flex-col md:flex-row justify-between gap-12 mb-6">
@@ -38,11 +38,11 @@
     </div>
 
     <!-- MAIN GRID -->
-    <div class="grid grid-cols-1 lg:grid-cols-[1fr_620px] gap-12">
+    <div class="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-[1fr_620px] gap-6 md:gap-8 lg:gap-12">
 
       <!-- BOOKING FORM -->
-      <div class="bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 rounded-[3rem] p-10 md:p-12 shadow-2xl relative overflow-hidden">
-        <div class="absolute top-0 right-0 w-32 h-32 bg-[#00d1b2]/5 rounded-full blur-3xl"></div>
+      <div class="bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 sm:p-8 md:p-10 lg:p-12 shadow-2xl relative overflow-visible">
+        <div class="absolute top-0 right-0 w-28 h-28 sm:w-32 sm:h-32 bg-[#00d1b2]/5 rounded-full blur-3xl"></div>
 
         <h3 class="text-2xl font-bold text-white mb-8">Schedule Session</h3>
 
@@ -86,8 +86,8 @@
 
         <div class="space-y-6">
           {% for c in counsellors %}
-          <div class="bg-gradient-to-br from-[#0b162d] to-[#0a1428] border border-white/10 rounded-[2.75rem] px-10 py-8 shadow-2xl transition hover:border-[#00d1b2]/30 min-h-[170px]">
-            <div class="grid grid-cols-1 md:grid-cols-[96px_minmax(0,1fr)_210px] gap-6 md:gap-8 items-center">
+          <div class="bg-gradient-to-br from-[#0b162d] to-[#0a1428] border border-white/10 rounded-[2rem] px-6 md:px-8 py-6 md:py-8 shadow-2xl transition hover:border-[#00d1b2]/30 min-h-[170px]">
+            <div class="grid grid-cols-1 md:grid-cols-[96px_minmax(0,1fr)_210px] gap-4 md:gap-8 items-center">
               <!-- Avatar -->
               <div class="relative shrink-0">
                 <div class="h-20 w-20 rounded-full bg-gradient-to-br from-[#111c33] to-[#0a1428] border border-white/10 flex items-center justify-center text-xl font-bold text-white shadow-lg overflow-hidden">

@@ -107,6 +107,13 @@ def contact_us(request):
 def register(request):
     if request.user.is_authenticated:
         return redirect('home')
+
+    feature_list = [
+        {'title': 'Personalized Insights', 'desc': 'Track your mood and get AI-driven wellness suggestions.'},
+        {'title': 'Expert Support', 'desc': 'Connect with certified counsellors whenever you need.'},
+        {'title': 'Safe Community', 'desc': 'Share your journey anonymously in our support forum.'},
+    ]
+
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
@@ -116,7 +123,8 @@ def register(request):
             return redirect('home')
     else:
         form = SignUpForm()
-    return render(request, 'Mind_Mend/register.html', {'form': form})
+
+    return render(request, 'Mind_Mend/register.html', {'form': form, 'feature_list': feature_list})
 
 
 def login_view(request):
@@ -126,12 +134,14 @@ def login_view(request):
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
-            login(request, user)
-            enforce_single_device_login(request, user)
-            return redirect(request.GET.get('next', 'home'))
-        else:
-            username = request.POST.get('username', '').strip()
-            username_not_found = username and not User.objects.filter(username=username).exists()
+            if Counsellor.objects.filter(user=user).exists():
+                form.add_error(None, 'This is a doctor account. Please use Doctor Login.')
+            else:
+                login(request, user)
+                enforce_single_device_login(request, user)
+                return redirect(request.GET.get('next', 'home'))
+        username = request.POST.get('username', '').strip()
+        username_not_found = username and not User.objects.filter(username=username).exists()
     else:
         form = AuthenticationForm()
         username_not_found = False
@@ -147,7 +157,7 @@ def doctor_login_view(request):
         if form.is_valid():
             user = form.get_user()
             if not Counsellor.objects.filter(user=user).exists():
-                form.add_error(None, 'This account is not registered as a counsellor.')
+                form.add_error(None, 'This is a regular user account. Please use User Login.')
             else:
                 login(request, user)
                 enforce_single_device_login(request, user)
@@ -694,8 +704,6 @@ def _notify_counsellor(counsellor, event_type, title, body='', booking=None, act
 def my_bookings(request):
     bookings = CounsellorBooking.objects.filter(user=request.user).select_related('counsellor').order_by('-date', '-time_slot')
     # Prefetch reviews for completed bookings (to show "Leave review" or existing review)
-    from django.db.models import Exists, OuterRef
-    has_review = CounsellorReview.objects.filter(booking_id=OuterRef('pk'))
     bookings = list(bookings)
     for b in bookings:
         b.has_review = CounsellorReview.objects.filter(booking=b).exists()
@@ -1984,7 +1992,7 @@ def download_progress_report_pdf(request):
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="mindmend-progress-report.pdf"'
     p = canvas.Canvas(response, pagesize=A4)
-    page_width, page_height = A4
+    _, page_height = A4
     y = page_height - 50
 
     def write_line(text, size=11, gap=16):

@@ -28,11 +28,7 @@
       </div>
 
       <div class="space-y-6">
-        {% for feature in [
-          {'title':'Personalized Insights','desc':'Track your mood and get AI-driven wellness suggestions.'},
-          {'title':'Expert Support','desc':'Connect with certified counsellors whenever you need.'},
-          {'title':'Safe Community','desc':'Share your journey anonymously in our support forum.'}
-        ] %}
+        {% for feature in feature_list %}
         <div class="flex items-start gap-4">
           <div class="h-6 w-6 rounded-full bg-[#00d1b2]/10 flex items-center justify-center flex-shrink-0 mt-1">
             ✅

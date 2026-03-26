@@ -827,11 +827,6 @@ def _place_in_history(history, lang, limit=4):
     return '', ''
 
 
-def _location_in_history(history, lang):
-    place, label = _place_in_history(history, lang, limit=4)
-    return bool(label)
-
-
 def _extract_phrase(msg, min_len=4):
     words = (msg or '').split()
     if len(words) <= 2:
@@ -853,7 +848,7 @@ def get_chat_response(user_message, session_id=None, lang='en', conversation_his
     try:
         sentiment = analyze_sentiment(user_message)
         has_distress, distress_keywords = detect_distress(user_message)
-        has_violence_risk, violence_keywords = detect_violence_risk(user_message)
+        has_violence_risk = detect_violence_risk(user_message)[0]
         context_meta = _build_context(user_message, context, lang)
         history = conversation_history or []
         msg = (user_message or '').lower().strip()

@@ -64,10 +64,7 @@ img, video, canvas, iframe, svg {
     grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
   }
 
-  .hidden\,md\:block, .md\:hidden {
-    display: block !important;
-  }
-
+  /* keep hidden elements hidden on mobile unless toggled by JS */
   .overflow-hidden {
     overflow: visible !important;
   }

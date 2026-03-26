@@ -58,11 +58,24 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'Mind_Mend',
+    'rest_framework',
+    'rest_framework.authtoken',
 ]
 if _HAS_CHANNELS:
     INSTALLED_APPS.append('channels')
 if _HAS_WIDGET_TWEAKS:
     INSTALLED_APPS.append('widget_tweaks')
+
+# Django REST Framework
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

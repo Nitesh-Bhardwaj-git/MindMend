@@ -42,9 +42,6 @@ urlpatterns = [
     # Mood
     path('mood/', views.mood_tracker, name='mood_tracker'),
 
-    # Forum & Community
-    path('forum/recovery/', views.recovery_stories, name='recovery_stories'),
-
     # Resources & Helplines
     path('resources/', views.resources, name='resources'),
 

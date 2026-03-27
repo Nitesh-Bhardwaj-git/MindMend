@@ -17,7 +17,6 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
-from django.urls import reverse
 from django.db import IntegrityError
 from django.db.models import Count, Avg
 from django.core.paginator import Paginator

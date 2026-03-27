@@ -8,6 +8,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 
+from django.views.decorators.cache import cache_page
 from .models import (
     Counsellor, CounsellorBooking, CounsellorChatMessage,
     CounsellorReview, MoodEntry, ForumPost, ForumReply,
@@ -118,6 +119,7 @@ def api_dashboard(request):
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
+@cache_page(60 * 15)  # Cache for 15 minutes
 def api_counsellors(request):
     qs = Counsellor.objects.filter(is_active=True).annotate(
         avg_rating=Avg('counsellorbooking__counsellorreview__rating')

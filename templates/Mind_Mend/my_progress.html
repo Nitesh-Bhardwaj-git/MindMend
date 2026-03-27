@@ -86,14 +86,14 @@
 
     <!-- Charts Section -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-      <section class="bg-[#0a1428]/40 backdrop-blur-sm rounded-[40px] border border-white/5 p-10 space-y-6">
+      <section class="bg-[#0a1428]/40 backdrop-blur-sm rounded-[40px] border border-white/5 p-10 space-y-6 overflow-hidden max-w-full">
         <h3 id="title-phq9" class="text-2xl font-bold text-white tracking-tight">PHQ-9 Daily Trend</h3>
-        <div class="h-[450px]"><canvas id="chart-phq9"></canvas></div>
+        <div class="h-[clamp(240px,40vw,450px)] max-w-full overflow-hidden"><canvas id="chart-phq9" class="w-full"></canvas></div>
       </section>
 
-      <section class="bg-[#0a1428]/40 backdrop-blur-sm rounded-[40px] border border-white/5 p-10 space-y-6">
+      <section class="bg-[#0a1428]/40 backdrop-blur-sm rounded-[40px] border border-white/5 p-10 space-y-6 overflow-hidden max-w-full">
         <h3 id="title-gad7" class="text-2xl font-bold text-white tracking-tight">GAD-7 Daily Trend</h3>
-        <div class="h-[450px]"><canvas id="chart-gad7"></canvas></div>
+        <div class="h-[clamp(240px,40vw,450px)] max-w-full overflow-hidden"><canvas id="chart-gad7" class="w-full"></canvas></div>
       </section>
 
       <section class="bg-[#0a1428]/40 backdrop-blur-sm rounded-[40px] border border-white/5 p-10 space-y-6">

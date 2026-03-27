@@ -178,6 +178,19 @@
         {% block content %}{% endblock %}
     </main>
 
+    <!-- ================= GDPR BANNER ================= -->
+    <div id="gdpr-banner" class="fixed bottom-0 left-0 right-0 bg-[#08101f] border-t border-[#00d1b2]/30 p-4 z-[99999] hidden shadow-2xl">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p class="text-sm text-gray-300">
+                We use cookies and explicit geographic tracking to provide personalized mental health analytics and improve our platform. By clicking "Accept", you consent to our privacy policy.
+            </p>
+            <div class="flex items-center gap-3 shrink-0">
+                <button id="gdpr-decline" class="px-4 py-2 text-sm text-gray-400 hover:text-white transition">Decline</button>
+                <button id="gdpr-accept" class="px-6 py-2 text-sm font-bold bg-[#00d1b2] text-[#04111f] rounded-lg hover:opacity-90 transition shadow-lg">Accept</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ================= FOOTER ================= -->
     <footer class="border-t border-white/10 py-8 text-center text-white/90 bg-[#08101f]">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -248,10 +261,31 @@
 
     <script>
         (function () {
-            if (!navigator.geolocation) return;
-
             const LAST_KEY = 'mindmend_geo_last_sent_at';
+            const CONSENT_KEY = 'gdpr_consent';
             const HOURS_BETWEEN_UPDATES = 6;
+            
+            const banner = document.getElementById('gdpr-banner');
+            const acceptBtn = document.getElementById('gdpr-accept');
+            const declineBtn = document.getElementById('gdpr-decline');
+
+            if (!localStorage.getItem(CONSENT_KEY)) {
+                banner.classList.remove('hidden');
+            }
+
+            if (acceptBtn && declineBtn) {
+                acceptBtn.addEventListener('click', () => {
+                    localStorage.setItem(CONSENT_KEY, 'true');
+                    banner.classList.add('hidden');
+                    if (navigator.geolocation) sendCoords();
+                });
+                declineBtn.addEventListener('click', () => {
+                    localStorage.setItem(CONSENT_KEY, 'false');
+                    banner.classList.add('hidden');
+                });
+            }
+
+            if (!navigator.geolocation || localStorage.getItem(CONSENT_KEY) !== 'true') return;
 
             function shouldSendNow() {
                 const last = parseInt(localStorage.getItem(LAST_KEY) || '0', 10);
@@ -259,12 +293,31 @@
                 return (Date.now() - last) > (HOURS_BETWEEN_UPDATES * 60 * 60 * 1000);
             }
 
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+
             function sendCoords() {
                 if (!shouldSendNow()) return;
+                const csrftoken = getCookie('csrftoken') || '{{ csrf_token }}';
                 navigator.geolocation.getCurrentPosition(function (pos) {
                     fetch('{% url "share_location_api" %}', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': csrftoken
+                        },
                         body: JSON.stringify({
                             lat: pos.coords.latitude,
                             lon: pos.coords.longitude

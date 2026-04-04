@@ -4,6 +4,8 @@
 
 {% block content %}
 
+{% block show_back_button %}{% endblock %}
+
 {% if user.is_authenticated %}
 <div id="locationShareBanner" class="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 pt-6 hidden home-location-banner">
   <div class="flex items-center justify-between gap-4 py-3 px-4 bg-[#00d1b2]/10 border border-[#00d1b2]/30 rounded-xl text-sm home-location-bar">
@@ -19,7 +21,7 @@
 <div class="space-y-20 pb-20 bg-[#050b1a] overflow-hidden home-page">
 
   <!-- Hero Section -->
-  <section class="relative min-h-[calc(100vh-10rem)] flex flex-col items-center justify-start pt-16 md:pt-20 px-6 overflow-hidden home-hero">
+  <section class="relative min-h-[60vh] sm:min-h-[calc(100vh-10rem)] flex flex-col items-center justify-start pt-6 sm:pt-12 md:pt-20 px-4 sm:px-6 overflow-hidden home-hero">
     
     <!-- Atmospheric Particles -->
     <div class="absolute inset-0 overflow-hidden pointer-events-none">
@@ -34,17 +36,17 @@
         ✨ NEXT GEN MENTAL HEALTH CARE
       </div>
 
-      <h1 class="text-7xl md:text-9xl font-extrabold tracking-tight mb-8 home-hero-title">
+      <h1 class="text-5xl sm:text-6xl md:text-7xl lg:text-9xl font-extrabold tracking-tight mb-4 sm:mb-8 home-hero-title">
         <span class="bg-gradient-to-r from-white via-[#00d1b2] to-[#00d1b2] bg-clip-text text-transparent">
           MindMend
         </span>
       </h1>
 
-      <h2 class="text-2xl md:text-3xl font-bold text-white mb-8 home-hero-subtitle">
+      <h2 class="text-lg sm:text-xl md:text-2xl lg:text-3xl font-bold text-white mb-4 sm:mb-8 home-hero-subtitle">
         AI-Enabled Health Awareness & Support Platform
       </h2>
 
-      <p class="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-12 home-hero-lead">
+      <p class="text-gray-400 text-sm sm:text-base md:text-lg lg:text-xl max-w-2xl mx-auto leading-relaxed mb-6 sm:mb-12 home-hero-lead">
         A stigma-free, accessible space to understand your mental well-being and seek timely help with cutting-edge AI support.
       </p>
 

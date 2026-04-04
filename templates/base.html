@@ -39,11 +39,11 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
 
-<body class="min-h-screen flex flex-col bg-[#050b1a] text-white font-sans overflow-x-hidden pt-[7rem] md:pt-[8rem]">
+<body class="min-h-screen flex flex-col bg-[#050b1a] text-white font-sans overflow-x-hidden pt-[5rem] sm:pt-[6rem] md:pt-[8rem]">
 
     <!-- ================= NAVBAR ================= -->
-    <header class="fixed top-0 left-0 right-0 z-[9999] px-4 sm:px-6 pt-4">
-        <nav class="max-w-7xl mx-auto rounded-2xl px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between bg-[#0a1428] border border-white/10 shadow-xl">
+    <header class="fixed top-0 left-0 right-0 z-[9999] px-2 sm:px-4 md:px-6 pt-2 sm:pt-3 md:pt-4">
+        <nav class="max-w-7xl mx-auto rounded-2xl px-3 sm:px-4 md:px-6 lg:px-8 py-2.5 sm:py-3 md:py-4 flex items-center justify-between bg-[#0a1428] border border-white/10 shadow-xl">
             
             <!-- LOGO -->
             <a href="{% url 'home' %}" class="flex items-center gap-3">
@@ -147,15 +147,17 @@
     </header>
 
     <!-- ================= MAIN CONTENT ================= -->
-    <main class="flex-1 pb-8 pt-4">
-        <div class="w-full px-4 sm:px-6 lg:px-8 mt-4 mb-2">
-            <a href="#" onclick="history.back(); return false;" class="inline-flex items-center gap-1 text-[#00d1b2] hover:text-[#7ef5df] font-medium transition" aria-label="Go back">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <main class="flex-1 pb-8 pt-2 sm:pt-4">
+        {% block show_back_button %}
+        <div class="w-full px-4 sm:px-6 lg:px-8 mt-2 sm:mt-4 mb-2">
+            <a href="#" onclick="history.back(); return false;" class="inline-flex items-center gap-1 text-[#00d1b2] hover:text-[#7ef5df] font-medium transition text-sm" aria-label="Go back">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                 </svg>
                 <span>Back</span>
             </a>
         </div>
+        {% endblock %}
 
         {% if messages %}
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
@@ -179,14 +181,14 @@
     </main>
 
     <!-- ================= GDPR BANNER ================= -->
-    <div id="gdpr-banner" class="fixed bottom-0 left-0 right-0 bg-[#08101f] border-t border-[#00d1b2]/30 p-4 z-[99999] hidden shadow-2xl">
-        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p class="text-sm text-gray-300">
-                We use cookies and explicit geographic tracking to provide personalized mental health analytics and improve our platform. By clicking "Accept", you consent to our privacy policy.
+    <div id="gdpr-banner" class="fixed bottom-0 left-0 right-0 bg-[#08101f]/95 backdrop-blur-md border-t border-[#00d1b2]/30 px-3 py-2.5 sm:p-4 z-[99999] hidden shadow-2xl">
+        <div class="max-w-7xl mx-auto flex flex-row items-center justify-between gap-3 sm:gap-4">
+            <p class="text-[11px] sm:text-sm text-gray-300 leading-tight">
+                We use cookies and location tracking for personalized analytics.
             </p>
-            <div class="flex items-center gap-3 shrink-0">
-                <button id="gdpr-decline" class="px-4 py-2 text-sm text-gray-400 hover:text-white transition">Decline</button>
-                <button id="gdpr-accept" class="px-6 py-2 text-sm font-bold bg-[#00d1b2] text-[#04111f] rounded-lg hover:opacity-90 transition shadow-lg">Accept</button>
+            <div class="flex items-center gap-2 shrink-0">
+                <button id="gdpr-decline" class="px-3 py-1.5 text-xs sm:text-sm text-gray-400 hover:text-white transition">Decline</button>
+                <button id="gdpr-accept" class="px-4 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm font-bold bg-[#00d1b2] text-[#04111f] rounded-lg hover:opacity-90 transition shadow-lg">Accept</button>
             </div>
         </div>
     </div>

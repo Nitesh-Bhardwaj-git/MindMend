@@ -27,7 +27,11 @@ from .assessment_data import (
     PHQ9_QUESTIONS, GAD7_QUESTIONS, PSS_QUESTIONS,
     get_phq9_result, get_gad7_result, get_pss_result, PSS_REVERSE_ITEMS,
 )
-from .services import get_chat_response, get_session_id
+from .services import (
+    get_chat_response, get_session_id, detect_emotion, 
+    detect_context_label, extract_topics, extract_activities, 
+    extract_name
+)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -326,8 +330,27 @@ def api_chat(request):
     recent.reverse()
     history = [{'role': m.role, 'content': m.content} for m in recent]
 
+    memory = None
+    if user:
+        memory = UserMemory.objects.filter(user=user).first()
+    else:
+        memory = UserMemory.objects.filter(user__isnull=True, session_id=session_id).first()
+        
+    context = {'memory': {}}
+    if memory:
+        context['memory'].update({
+            'topics': memory.stress_topics or [],
+            'activities': memory.helpful_activities or [],
+            'last_emotion': memory.last_emotion or '',
+            'last_context': memory.last_context or '',
+            'preferred_name': memory.preferred_name or '',
+        })
+        
+    if not context['memory'].get('preferred_name') and user:
+        context['memory']['preferred_name'] = user.first_name or user.username
+
     try:
-        result = get_chat_response(message, session_id, lang=lang, conversation_history=history, context={})
+        result = get_chat_response(message, session_id, lang=lang, conversation_history=history, context=context)
         response_text = (result.get('response') or '').strip() or 'I am here for you.'
         sentiment = result.get('sentiment', 'neutral')
         is_distress = result.get('is_distress', False)
@@ -340,6 +363,33 @@ def api_chat(request):
 
     ChatMessage.objects.create(user=user, session_id=session_id, role='user', content=message)
     ChatMessage.objects.create(user=user, session_id=session_id, role='assistant', content=response_text, sentiment=sentiment)
+
+    try:
+        if user:
+            memory, _ = UserMemory.objects.get_or_create(user=user, defaults={'session_id': ''})
+        else:
+            memory, _ = UserMemory.objects.get_or_create(user=None, session_id=session_id)
+
+        if memory:
+            emotion = detect_emotion(message)
+            context_label = detect_context_label(message)
+            topics = extract_topics(message)
+            activities = extract_activities(message, recommendations)
+
+            if emotion: memory.last_emotion = emotion
+            if context_label and context_label != 'unknown': memory.last_context = context_label
+            name = extract_name(message)
+            if name: memory.preferred_name = name
+
+            if topics:
+                merged = list(dict.fromkeys(topics + (memory.stress_topics or [])))
+                memory.stress_topics = merged[:10]
+            if activities:
+                merged = list(dict.fromkeys(activities + (memory.helpful_activities or [])))
+                memory.helpful_activities = merged[:10]
+            memory.save()
+    except Exception as memory_error:
+        print("api_chat memory update error:", memory_error)
 
     return Response({
         'response': response_text,

@@ -539,7 +539,27 @@
   }
 
   function saveChatStore(store) {
-    localStorage.setItem(CHAT_STORE_KEY, JSON.stringify(store || []));
+    try {
+      localStorage.setItem(CHAT_STORE_KEY, JSON.stringify(store || []));
+    } catch (e) {
+      console.warn("localStorage is not available", e);
+    }
+  }
+
+  function getBreathingOptIn() {
+    try {
+      return localStorage.getItem('mindmend_breathing_opt_in');
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function setBreathingOptIn(val) {
+    try {
+      localStorage.setItem('mindmend_breathing_opt_in', val);
+    } catch (e) {
+      console.warn("localStorage is not available for breathing opt in", e);
+    }
   }
 
   function chatTitleFromText(text) {
@@ -895,13 +915,13 @@
     messages.scrollTop = messages.scrollHeight;
 
     yesBtn.addEventListener('click', function () {
-      localStorage.setItem('mindmend_breathing_opt_in', 'yes');
-      addBreathingVideoBubble();
+      setBreathingOptIn('yes');
       row.remove();
+      addBreathingVideoBubble();
     });
 
     noBtn.addEventListener('click', function () {
-      localStorage.setItem('mindmend_breathing_opt_in', 'no');
+      setBreathingOptIn('no');
       row.remove();
     });
   }
@@ -1108,7 +1128,7 @@
       }
 
       if (data.recommendations && data.recommendations.some(function (r) { return r.type === 'breathing'; })) {
-        const pref = localStorage.getItem('mindmend_breathing_opt_in');
+        const pref = getBreathingOptIn();
 
         if (pref === 'yes') {
           addBreathingVideoBubble();
@@ -1130,7 +1150,7 @@
       }
     } catch (err) {
       hideTyping();
-      await addBotMsgWithTyping("I'm still here with you. I couldn't reach the main AI service right now, but you can keep talking and I'll do my best to help.");
+      await addBotMsgWithTyping("Frontend Diagnostic Error: " + (err.message || err.toString()) + " | Please tell Antigravity what this says.");
     }
 
     if (btn) btn.disabled = false;

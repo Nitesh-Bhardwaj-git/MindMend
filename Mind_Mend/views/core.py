@@ -139,14 +139,20 @@ def _chat_context_from_request(request, session_id, data):
         memory = UserMemory.objects.filter(user=request.user).first()
     else:
         memory = UserMemory.objects.filter(user__isnull=True, session_id=session_id).first()
-    if memory and (memory.stress_topics or memory.helpful_activities or memory.last_emotion or memory.last_context):
-        context['memory'] = {
+        
+    context['memory'] = {}
+    if memory:
+        context['memory'].update({
             'topics': memory.stress_topics or [],
             'activities': memory.helpful_activities or [],
             'last_emotion': memory.last_emotion or '',
             'last_context': memory.last_context or '',
             'preferred_name': memory.preferred_name or '',
-        }
+        })
+        
+    if not context['memory'].get('preferred_name') and request.user.is_authenticated:
+        context['memory']['preferred_name'] = request.user.first_name or request.user.username
+        
     return context
 
 

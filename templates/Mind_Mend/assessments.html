@@ -2,7 +2,7 @@
 {% block title %}Self-Assessments{% endblock %}
 {% block content %}
 
-<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-6 md:pt-8 pb-20">
+<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-0 md:pt-2 pb-20">
 
   <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse"></div>
 
@@ -46,6 +46,14 @@
             Start Assessment →
           </a>
         </div>
+        {% if last_results.phq9 %}
+        <div class="mt-6 rounded-3xl border border-white/10 bg-white/5 p-4 text-left">
+          <p class="text-xs uppercase text-[#00d1b2] tracking-[0.3em] mb-2">Latest Result</p>
+          <p class="text-sm text-gray-200 mb-1">{{ last_results.phq9.result_level }}</p>
+          <p class="text-sm text-gray-400">Score: <span class="text-white font-semibold">{{ last_results.phq9.total_score }}</span> / 27</p>
+          <p class="text-xs text-gray-500 mt-2">{{ last_results.phq9.created_at|date:'M d, Y H:i' }}</p>
+        </div>
+        {% endif %}
       </div>
 
       <div class="group relative">
@@ -67,6 +75,14 @@
             Start Assessment →
           </a>
         </div>
+        {% if last_results.gad7 %}
+        <div class="mt-6 rounded-3xl border border-white/10 bg-white/5 p-4 text-left">
+          <p class="text-xs uppercase text-[#7c3aed] tracking-[0.3em] mb-2">Latest Result</p>
+          <p class="text-sm text-gray-200 mb-1">{{ last_results.gad7.result_level }}</p>
+          <p class="text-sm text-gray-400">Score: <span class="text-white font-semibold">{{ last_results.gad7.total_score }}</span> / 21</p>
+          <p class="text-xs text-gray-500 mt-2">{{ last_results.gad7.created_at|date:'M d, Y H:i' }}</p>
+        </div>
+        {% endif %}
       </div>
 
       <div class="group relative">
@@ -88,9 +104,56 @@
             Start Assessment →
           </a>
         </div>
+        {% if last_results.pss %}
+        <div class="mt-6 rounded-3xl border border-white/10 bg-white/5 p-4 text-left">
+          <p class="text-xs uppercase text-[#10b981] tracking-[0.3em] mb-2">Latest Result</p>
+          <p class="text-sm text-gray-200 mb-1">{{ last_results.pss.result_level }}</p>
+          <p class="text-sm text-gray-400">Score: <span class="text-white font-semibold">{{ last_results.pss.total_score }}</span> / 40</p>
+          <p class="text-xs text-gray-500 mt-2">{{ last_results.pss.created_at|date:'M d, Y H:i' }}</p>
+        </div>
+        {% endif %}
       </div>
 
     </div>
+
+    {% if combined_result %}
+    <div class="mt-16 max-w-5xl mx-auto">
+      <div class="rounded-[2.5rem] border border-white/10 bg-[#0a1428]/80 p-10 shadow-2xl">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div>
+            <p class="text-xs uppercase tracking-[0.35em] text-[#00d1b2] mb-3">Combined Assessment Summary</p>
+            <h2 class="text-3xl md:text-4xl font-bold text-white mb-3">{{ combined_result.summary_title }}</h2>
+            <p class="text-gray-400 max-w-2xl">{{ combined_result.summary_text }}</p>
+          </div>
+          <div class="rounded-3xl bg-white/5 px-6 py-5 text-center">
+            <p class="text-xs uppercase tracking-[0.35em] text-gray-400 mb-2">Average Score</p>
+            <p class="text-4xl font-bold text-white">{{ combined_result.average_percent|floatformat:0 }}%</p>
+          </div>
+        </div>
+
+        <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-4">
+          {% for item in combined_result.items %}
+          <div class="rounded-[2rem] border border-white/10 bg-[#08101f]/80 p-5">
+            <p class="text-xs uppercase tracking-[0.3em] text-gray-400 mb-3">{{ item.name }}</p>
+            <p class="text-lg text-white font-bold mb-2">{{ item.level }}</p>
+            <p class="text-sm text-gray-400">Score: <span class="text-white font-semibold">{{ item.score }}</span> / {{ item.max_score }}</p>
+            <p class="text-xs text-gray-500 mt-3">{{ item.date|date:'M d, Y H:i' }}</p>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="mt-10 rounded-[2rem] border border-white/10 bg-[#08101f]/80 p-8">
+          <p class="text-xs uppercase tracking-[0.3em] text-gray-400 mb-4">Personalized Tips</p>
+          <div class="space-y-3">
+            {% for tip in combined_result.tips %}
+            <p class="text-gray-300 text-sm leading-relaxed">{{ tip }}</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% endif %}
 
     <div class="mt-24 p-12 rounded-[3rem] bg-gradient-to-br from-[#0a1428]/80 to-[#050b1a]/80 border border-white/5 text-center relative">
       <div class="absolute top-0 right-0 w-64 h-64 bg-[#00d1b2]/5 rounded-full blur-3xl"></div>

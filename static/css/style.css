@@ -21,6 +21,25 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.fixed-back-button-wrapper {
+  position: fixed;
+  top: 6rem;
+  left: 1rem;
+  z-index: 9998;
+  background: rgba(10, 20, 40, 0.88);
+  backdrop-filter: blur(12px);
+  padding: 0.75rem 0.9rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+@media (min-width: 48rem) {
+  .fixed-back-button-wrapper {
+    top: 5.75rem;
+    left: 1.5rem;
+  }
+}
+
 img, video, canvas, iframe, svg {
   display: block;
   max-width: 100%;

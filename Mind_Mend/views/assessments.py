@@ -1,5 +1,6 @@
 import json
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from ..models import AssessmentResult
@@ -241,11 +242,16 @@ def assessment_pss(request):
 def assessment_result(request, result_id):
     result = get_object_or_404(AssessmentResult, id=result_id, user=request.user)
     max_scores = {'phq9': 27, 'gad7': 21, 'pss': 40}
+    assessment_names = {'phq9': 'PHQ-9', 'gad7': 'GAD-7', 'pss': 'PSS-10'}
     max_score = max_scores.get(result.assessment_type, 100)
     percent = (result.total_score / max_score) * 100 if max_score > 0 else 0
 
     return render(request, 'Mind_Mend/assessment_result.html', {
         'result': result,
+        'assessment_name': assessment_names.get(result.assessment_type, 'Assessment'),
+        'score': result.total_score,
+        'result_level': result.result_level,
+        'max_score': max_score,
         'percent': min(percent, 100),
-        'max_score': max_score
+        'next_url': reverse('assessments'),
     })

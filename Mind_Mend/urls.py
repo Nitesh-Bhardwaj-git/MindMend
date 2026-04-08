@@ -18,6 +18,7 @@ urlpatterns = [
     path('assessments/phq9/', assessments.assessment_phq9, name='assessment_phq9'),
     path('assessments/gad7/', assessments.assessment_gad7, name='assessment_gad7'),
     path('assessments/pss/', assessments.assessment_pss, name='assessment_pss'),
+    path('assessments/result/<int:result_id>/', assessments.assessment_result, name='assessment_result'),
 
     # Forum & Community (anonymous support, peer-to-peer, recovery stories)
     path('forum/', forum.forum_list, name='forum_list'),

@@ -2,11 +2,11 @@
 {% block title %}{{ assessment_title }}{% endblock %}
 
 {% block content %}
-<div class="assessment-shell min-h-[calc(100vh-96px)] bg-[#050b1a] relative overflow-auto pt-6 md:pt-8 pb-4 text-white">
+<div class="assessment-shell min-h-[calc(100vh-96px)] bg-[#050b1a] relative overflow-auto pt-2 md:pt-4 pb-4 text-white">
 
   <!-- Background Glow -->
-  <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#00d1b2]/10 rounded-full blur-[120px] animate-pulse"></div>
-  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse"></div>
+  <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#00d1b2]/10 rounded-full blur-[120px]"></div>
+  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px]"></div>
 
   <div class="max-w-4xl mx-auto px-6 relative z-10">
 
@@ -35,7 +35,7 @@
         </div>
       </div>
 
-      <form method="post" id="assessmentForm">
+      <form method="post" action="" id="assessmentForm">
         {% csrf_token %}
 
         <div id="questionsWrapper">
@@ -56,7 +56,7 @@
                   class="hidden peer"
                   id="{{ input_prefix }}_{{ forloop.parentloop.counter0 }}_{{ value }}"
                 >
-                <div class="w-full text-left px-6 md:px-8 py-4 rounded-2xl border border-white/10 font-semibold bg-[#111c33]/80 text-gray-300 transition duration-200 peer-checked:bg-gradient-to-r peer-checked:from-[#00d1b2] peer-checked:to-purple-500 peer-checked:text-white hover:bg-[#16213d]/80">
+                <div class="w-full text-left px-6 md:px-8 py-4 rounded-2xl border border-white/10 font-semibold bg-[#111c33]/80 text-gray-300 transition duration-200 peer-checked:bg-[#16213d]/90 peer-checked:text-white hover:bg-[#16213d]/80">
                   <span class="block text-sm md:text-base">{{ value }} - {{ label }}</span>
                 </div>
               </label>
@@ -154,8 +154,15 @@
   }
 
   .option-card input:checked + div {
-    box-shadow: 0 10px 30px rgba(0, 209, 178, 0.18);
     transform: translateY(-1px);
+  }
+
+  .submit-faded {
+    background-color: #6b7280 !important; /* gray-500 */
+  }
+
+  .submit-active {
+    background-color: #34d399 !important; /* light green */
   }
 </style>
 
@@ -178,6 +185,18 @@ document.addEventListener("DOMContentLoaded", function () {
     questionCount.textContent = `QUESTION ${currentStep + 1} OF ${steps.length}`;
   }
 
+  function updateSubmitStyle() {
+    if (currentStep === steps.length - 1) {
+      if (isCurrentStepAnswered()) {
+        submitBtn.classList.remove('submit-faded');
+        submitBtn.classList.add('submit-active');
+      } else {
+        submitBtn.classList.add('submit-faded');
+        submitBtn.classList.remove('submit-active');
+      }
+    }
+  }
+
   function showStep(index) {
     steps.forEach((step, i) => {
       if (i === index) {
@@ -192,6 +211,12 @@ document.addEventListener("DOMContentLoaded", function () {
     if (index === steps.length - 1) {
       nextBtn.classList.add("hidden");
       submitBtn.classList.remove("hidden");
+      // Add listeners to radios for style update
+      const currentQuestion = steps[index];
+      const radios = currentQuestion.querySelectorAll('input[type="radio"]');
+      radios.forEach(radio => {
+        radio.addEventListener('change', updateSubmitStyle);
+      });
     } else {
       nextBtn.classList.remove("hidden");
       submitBtn.classList.add("hidden");
@@ -199,6 +224,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     document.body.classList.toggle("assessment-last", index === steps.length - 1);
     updateProgress();
+    updateSubmitStyle();
   }
 
   function isCurrentStepAnswered() {

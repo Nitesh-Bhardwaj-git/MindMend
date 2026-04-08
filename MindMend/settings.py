@@ -13,18 +13,13 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 import os
 import importlib.util
 from pathlib import Path
+from dotenv import load_dotenv
+from urllib.parse import urlparse, parse_qsl
+
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
-# Load .env from the MindMend config folder when python-dotenv is available.
-try:
-    from dotenv import load_dotenv
-except ModuleNotFoundError:
-    load_dotenv = None
-
-if load_dotenv:
-    load_dotenv(BASE_DIR / 'MindMend' / '.env')
 
 # Production detection.
 # Treat as Render production only when both Render flag and DATABASE_URL are present.
@@ -120,16 +115,19 @@ if _HAS_CHANNELS:
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
-if os.environ.get('DATABASE_URL'):
-    import dj_database_url
-    DATABASES = {'default': dj_database_url.config(conn_max_age=600, conn_health_checks=True)}
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
-        }
+tmpPostgres = urlparse(os.getenv("DATABASE_URL", ""))
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': tmpPostgres.path.replace('/', ''),
+        'USER': tmpPostgres.username,
+        'PASSWORD': tmpPostgres.password,
+        'HOST': tmpPostgres.hostname,
+        'PORT': 5432,
+        'OPTIONS': dict(parse_qsl(tmpPostgres.query)),
     }
+}
 
 
 # Password validation

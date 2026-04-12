@@ -9,6 +9,8 @@ class Counsellor(models.Model):
     name = models.CharField(max_length=200)
     specialization = models.CharField(max_length=200)
     bio = models.TextField(blank=True)
+    profile_picture = models.ImageField(upload_to='counsellors/', null=True, blank=True)
+    session_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Session fee")
     available_days = models.CharField(max_length=100, help_text="e.g., Mon,Wed,Fri")
     available_time_start = models.TimeField()
     available_time_end = models.TimeField()
@@ -36,6 +38,7 @@ class CounsellorBooking(models.Model):
         ],
         default='pending'
     )
+    is_paid = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -131,8 +134,7 @@ class MoodEntry(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ['user', 'date']
-        ordering = ['-date']
+        ordering = ['-date', '-created_at']
 
 
 class ForumPost(models.Model):

@@ -2,7 +2,7 @@
 {% block title %}My Sessions{% endblock %}
 {% block content %}
 
-<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-4 pb-20">
+<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-4 md:pt-6 pb-20">
 
   <!-- Background Glow -->
   <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#00d1b2]/10 rounded-full blur-[120px] animate-pulse pointer-events-none"></div>
@@ -80,7 +80,7 @@
             </a>
             {% endif %}
 
-            {% if b.status != 'completed' and b.status != 'cancelled' %}
+            {% if b.status == 'confirmed' %}
             <form method="post" action="{% url 'finish_session' b.id %}" onsubmit="return confirm('Finish this session now? This will disable chat and mark it as completed.');">
               {% csrf_token %}
               <input type="hidden" name="next" value="{% url 'counsellor_sessions' %}">

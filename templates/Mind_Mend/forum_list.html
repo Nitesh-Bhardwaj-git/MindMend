@@ -5,7 +5,7 @@
 
 {% block content %}
 
-<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-2 md:pt-4 pb-20">
+<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-4 md:pt-6 pb-20">
 
   <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] -z-10 animate-pulse"></div>
 
@@ -27,7 +27,7 @@
 
       {% if user.is_authenticated %}
       <a href="{% url 'forum_create' %}{% if current_category %}?category={{ current_category }}{% endif %}"
-         class="px-8 py-4 rounded-xl bg-[#00d1b2] text-[#050b1a] font-extrabold text-sm tracking-wider hover:scale-105 transition-transform shadow-[0_0_20px_rgba(0,209,178,0.3)]">
+         class="px-8 py-4 rounded-xl bg-[#00d1b2] text-[#050b1a] font-extrabold text-sm tracking-wider hover:scale-105 transition-transform ">
         + New Post
       </a>
       {% endif %}
@@ -47,53 +47,18 @@
         All
       </a>
 
-      {% if categories %}
-        {% for cat in categories %}
-        <a href="?category={{ cat.id|default:cat }}"
+      {% for value, label in categories %}
+        <a href="?category={{ value }}"
            class="px-6 py-2.5 rounded-xl text-xs font-bold tracking-wider transition-all flex items-center gap-2
-           {% if current_category == cat.id or current_category == cat %}
+           {% if current_category == value %}
               bg-[#00d1b2] text-[#050b1a]
            {% else %}
               text-gray-400 hover:text-white hover:bg-white/5
            {% endif %}">
-          <span>{{ cat.icon|default:"📌" }}</span>
-          {{ cat.name|default:cat }}
+          <span>📌</span>
+          {{ label }}
         </a>
-        {% endfor %}
-      {% else %}
-        <a href="?category=support"
-           class="px-6 py-2.5 rounded-xl text-xs font-bold tracking-wider transition-all flex items-center gap-2
-           {% if current_category == 'support' %}
-              bg-[#00d1b2] text-[#050b1a]
-           {% else %}
-              text-gray-400 hover:text-white hover:bg-white/5
-           {% endif %}">
-          <span>🤝</span>
-          Support
-        </a>
-
-        <a href="?category=discussion"
-           class="px-6 py-2.5 rounded-xl text-xs font-bold tracking-wider transition-all flex items-center gap-2
-           {% if current_category == 'discussion' %}
-              bg-[#00d1b2] text-[#050b1a]
-           {% else %}
-              text-gray-400 hover:text-white hover:bg-white/5
-           {% endif %}">
-          <span>💬</span>
-          Discussion
-        </a>
-
-        <a href="?category=recovery"
-           class="px-6 py-2.5 rounded-xl text-xs font-bold tracking-wider transition-all flex items-center gap-2
-           {% if current_category == 'recovery' %}
-              bg-[#00d1b2] text-[#050b1a]
-           {% else %}
-              text-gray-400 hover:text-white hover:bg-white/5
-           {% endif %}">
-          <span>🌱</span>
-          Recovery Stories
-        </a>
-      {% endif %}
+      {% endfor %}
 
     </div>
 
@@ -139,9 +104,9 @@
                   👤 {{ post.author.username }}
                 {% endif %}
               </span>
-              <span>
+              <a href="{% url 'forum_detail' post.pk %}?focus=replies" class="hover:text-[#00d1b2] transition-colors">
                 💬 {{ post.reply_count }} repl{{ post.reply_count|pluralize:"y,ies" }}
-              </span>
+              </a>
             </div>
 
           </div>

@@ -28,11 +28,14 @@ def counsellor_booking(request):
         if form.is_valid():
             booking = form.save(commit=False)
             booking.user = request.user
-            try:
-                booking.save()
-            except IntegrityError:
-                form.add_error(None, 'This time slot is already booked for the counsellor. Please choose another slot.')
+            booking.save()
+            
+            if booking.counsellor.session_fee > 0:
+                return redirect('checkout_payment', booking_id=booking.id)
             else:
+                booking.is_paid = True
+                booking.status = 'confirmed'
+                booking.save(update_fields=['is_paid', 'status'])
                 _notify_counsellor(
                     booking.counsellor,
                     'booking_created',
@@ -43,7 +46,7 @@ def counsellor_booking(request):
                 )
                 return redirect('my_bookings')
     else:
-        form = CounsellorBookingForm()
+        form = CounsellorBookingForm(initial={'date': timezone.localdate()})
     return render(request, 'Mind_Mend/counsellor_booking.html', {
         'form': form,
         'counsellors': counsellors,
@@ -177,7 +180,7 @@ def finish_session(request, booking_id):
     if booking.user_id == request.user.id:
         if not CounsellorReview.objects.filter(booking=booking).exists():
             return redirect('submit_review', booking_id=booking.id)
-        return redirect('dashboard')
+        return redirect('counsellor_booking')
     return redirect('counsellor_sessions')
 
 
@@ -375,7 +378,36 @@ def submit_review(request, booking_id):
             obj.user = request.user
             obj.save()
             messages.success(request, 'Thank you for your review!')
-            return redirect('dashboard')
+            return redirect('counsellor_booking')
     else:
         form = CounsellorReviewForm(instance=review)
     return render(request, 'Mind_Mend/review_form.html', {'form': form, 'booking': booking})
+
+
+@login_required
+@require_http_methods(['GET', 'POST'])
+def checkout_payment(request, booking_id):
+    booking = get_object_or_404(CounsellorBooking, pk=booking_id, user=request.user)
+    
+    if booking.is_paid or booking.status != 'pending':
+        messages.info(request, "This booking has already been processed.")
+        return redirect('my_bookings')
+        
+    if request.method == 'POST':
+        booking.is_paid = True
+        booking.status = 'confirmed'
+        booking.save(update_fields=['is_paid', 'status'])
+        
+        _notify_counsellor(
+            booking.counsellor,
+            'booking_created',
+            'New appointment booked',
+            f'{request.user.get_username()} booked {booking.date} at {booking.time_slot.strftime("%H:%M")}.',
+            booking=booking,
+            actor=request.user
+        )
+        
+        messages.success(request, "Payment successful! Your appointment is confirmed.")
+        return redirect('my_bookings')
+        
+    return render(request, 'Mind_Mend/payment.html', {'booking': booking})

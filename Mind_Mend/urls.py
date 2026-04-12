@@ -39,7 +39,7 @@ urlpatterns = [
     path('api/doctor/notifications/', counsellor.doctor_notifications_api, name='doctor_notifications_api'),
     path('api/doctor/notifications/mark-read/', counsellor.doctor_notifications_mark_read_api, name='doctor_notifications_mark_read_api'),
     path('booking/<int:booking_id>/review/', counsellor.submit_review, name='submit_review'),
-
+    path('payment/<int:booking_id>/', counsellor.checkout_payment, name='checkout_payment'),
     # Mood
     path('mood/', analytics.mood_tracker, name='mood_tracker'),
 
@@ -51,7 +51,7 @@ urlpatterns = [
 
     # Dashboard
     path('dashboard/', analytics.dashboard, name='dashboard'),
-    path('my-progress/', analytics.my_progress, name='my_progress'),
+
     path('survey-analytics/', analytics.survey_analytics, name='survey_analytics'),
     path('survey-sentiment/', analytics.survey_sentiment_dashboard, name='survey_sentiment_dashboard'),
     path('my-progress/report.pdf', analytics.download_progress_report_pdf, name='download_progress_report_pdf'),

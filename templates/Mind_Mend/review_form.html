@@ -1,8 +1,9 @@
 {% extends 'base.html' %}
+{% load widget_tweaks %}
 {% block title %}Submit Review{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-32 pb-20">
+<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-4 md:pt-6 pb-20">
 
   <!-- Background Glows -->
   <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#00d1b2]/10 rounded-full blur-[120px] -z-10 animate-pulse"></div>
@@ -46,12 +47,14 @@
         <!-- Rating -->
         <div class="space-y-6">
           <label class="text-sm font-bold text-gray-400 uppercase tracking-widest">How was your experience?</label>
-          <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2">
             <!-- Integrate Django form.rating with stars -->
             {{ form.rating|add_class:"hidden" }}
             {% for i in "12345" %}
-            <button type="button" class="p-2 transition-transform hover:scale-125 text-2xl star-button" data-value="{{ i }}">
-              ⭐
+            <button type="button" class="p-2 transition-all duration-300 star-button" data-value="{{ i }}">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 star-svg text-gray-500 transition-all duration-300 filter drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
             </button>
             {% endfor %}
           </div>
@@ -106,19 +109,54 @@
 <!-- JS for Star Rating -->
 <script>
   const stars = document.querySelectorAll('.star-button');
-  const ratingInput = document.querySelector('input[name="rating"]');
+  const ratingInput = document.querySelector('[name="rating"]');
+
+  function updateStars(value, isHover) {
+    stars.forEach(s => {
+      const sValue = parseInt(s.dataset.value);
+      const svg = s.querySelector('.star-svg');
+      if (sValue <= value) {
+        // Filled star
+        svg.setAttribute('fill', 'currentColor');
+        svg.classList.remove('text-gray-600', 'text-gray-500');
+        svg.classList.add(isHover ? 'text-amber-300' : 'text-amber-400', 'drop-shadow-lg');
+        s.classList.add(isHover ? 'scale-110' : 'scale-100');
+      } else {
+        // Empty star
+        svg.setAttribute('fill', 'none');
+        svg.classList.remove('text-amber-400', 'text-amber-300', 'drop-shadow-lg');
+        svg.classList.add('text-gray-500');
+        s.classList.remove('scale-110', 'scale-125');
+      }
+    });
+  }
 
   stars.forEach(star => {
+    star.addEventListener('mouseenter', () => {
+      const value = parseInt(star.dataset.value);
+      updateStars(value, true);
+    });
+    
+    star.addEventListener('mouseleave', () => {
+      const currentValue = parseInt(ratingInput.value) || 0;
+      updateStars(currentValue, false);
+    });
+
     star.addEventListener('click', () => {
       const value = star.dataset.value;
       ratingInput.value = value;
-
-      // Highlight stars
-      stars.forEach(s => s.classList.remove('text-yellow-400'));
-      stars.forEach(s => {
-        if (s.dataset.value <= value) s.classList.add('text-yellow-400');
-      });
+      updateStars(value, false);
+      // Give a tiny pop animation to the clicked star
+      const svg = star.querySelector('.star-svg');
+      svg.classList.add('scale-125');
+      setTimeout(() => svg.classList.remove('scale-125'), 150);
     });
   });
+
+  // Initialize state
+  const initialValue = parseInt(ratingInput.value) || 0;
+  if(initialValue > 0) {
+    updateStars(initialValue, false);
+  }
 </script>
 {% endblock %}

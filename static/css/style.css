@@ -22,21 +22,25 @@ body {
 }
 
 .fixed-back-button-wrapper {
-  position: fixed;
-  top: 6rem;
-  left: 1rem;
-  z-index: 9998;
+  position: relative;
+  display: inline-block;
+  margin: 1rem 0 0.5rem 2.5rem;
+  z-index: 90;
   background: rgba(10, 20, 40, 0.88);
   backdrop-filter: blur(12px);
-  padding: 0.75rem 0.9rem;
+  padding: 0.35rem 0.8rem;
   border-radius: 9999px;
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 @media (min-width: 48rem) {
   .fixed-back-button-wrapper {
+    position: fixed;
     top: 5.75rem;
-    left: 1.5rem;
+    left: 3.5rem;
+    margin: 0;
+    padding: 0.35rem 0.9rem;
+    z-index: 9998;
   }
 }
 

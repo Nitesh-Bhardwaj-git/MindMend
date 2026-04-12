@@ -36,7 +36,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3.1">
 </head>
 
 <body class="min-h-screen flex flex-col bg-[#050b1a] text-white font-sans overflow-x-hidden pt-[4rem] sm:pt-[5rem] md:pt-[6rem]">
@@ -67,21 +67,21 @@
 
             <!-- DESKTOP MENU -->
             <div class="hidden md:flex items-center gap-6 lg:gap-8">
-                <a href="{% url 'home' %}" class="hover:text-[#00d1b2] font-bold transition">HOME</a>
-                <a href="{% url 'chat' %}" class="hover:text-[#00d1b2] font-bold transition">AI CHAT</a>
-                <a href="{% url 'assessments' %}" class="hover:text-[#00d1b2] font-bold transition">ASSESSMENTS</a>
-                <a href="{% url 'counsellor_booking' %}" class="hover:text-[#00d1b2] font-bold transition">COUNSELLOR</a>
+                <a href="{% url 'home' %}" class="font-bold transition {% if request.resolver_match.url_name == 'home' %}text-[#00d1b2]{% else %}hover:text-[#00d1b2]{% endif %}">HOME</a>
+                <a href="{% url 'chat' %}" class="font-bold transition {% if request.resolver_match.url_name == 'chat' %}text-[#00d1b2]{% else %}hover:text-[#00d1b2]{% endif %}">AI CHAT</a>
+                <a href="{% url 'assessments' %}" class="font-bold transition {% if request.resolver_match.url_name == 'assessments' %}text-[#00d1b2]{% else %}hover:text-[#00d1b2]{% endif %}">ASSESSMENTS</a>
+                <a href="{% url 'counsellor_booking' %}" class="font-bold transition {% if request.resolver_match.url_name == 'counsellor_booking' %}text-[#00d1b2]{% else %}hover:text-[#00d1b2]{% endif %}">COUNSELLOR</a>
 
                 {% if user.is_authenticated %}
-                    <a href="{% url 'mood_tracker' %}" class="hover:text-[#00d1b2] font-bold transition">MOOD</a>
+                    <a href="{% url 'mood_tracker' %}" class="font-bold transition {% if request.resolver_match.url_name == 'mood_tracker' %}text-[#00d1b2]{% else %}hover:text-[#00d1b2]{% endif %}">MOOD</a>
                 {% endif %}
 
-                <a href="{% url 'contact_us' %}" class="hover:text-[#00d1b2] font-bold transition">CONTACT</a>
+                <a href="{% url 'contact_us' %}" class="font-bold transition {% if request.resolver_match.url_name == 'contact_us' %}text-[#00d1b2]{% else %}hover:text-[#00d1b2]{% endif %}">CONTACT</a>
 
                 {% if user.is_authenticated %}
                     <!-- DASHBOARD DROPDOWN -->
                     <div class="relative" id="dashboardDropdown">
-                        <button type="button" id="dashboardDropdownBtn" class="flex items-center gap-1 font-bold hover:text-[#00d1b2] transition">
+                        <button type="button" id="dashboardDropdownBtn" class="flex items-center gap-1 font-bold transition {% if 'dashboard' in request.path or 'survey' in request.path %}text-[#00d1b2]{% else %}hover:text-[#00d1b2]{% endif %}">
                             DASHBOARD
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
@@ -90,7 +90,7 @@
 
                         <div id="dashboardDropdownMenu" class="absolute right-0 mt-2 w-56 bg-[#0a1428] rounded-xl border border-white/10 shadow-xl opacity-0 invisible transition-all duration-200 z-[9999]">
                             <a href="{% url 'dashboard' %}" class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5 rounded-t-xl">Dashboard</a>
-                            <a href="{% url 'my_progress' %}" class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">My Progress</a>
+
                             <a href="{% url 'doctor_dashboard' %}" class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">Doctor Panel</a>
                             <a href="{% url 'forum_list' %}" class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">Support Forum</a>
                             <a href="{% url 'location_map' %}" class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">Location Map</a>
@@ -112,30 +112,29 @@
 
         <!-- MOBILE MENU -->
         <div id="mobile-menu" class="hidden md:hidden max-w-7xl mx-auto mt-2 bg-[#0a1428] border border-white/10 rounded-2xl p-4 space-y-2 shadow-xl">
-            <a href="{% url 'home' %}" class="block py-2 hover:text-[#00d1b2]">HOME</a>
-            <a href="{% url 'chat' %}" class="block py-2 hover:text-[#00d1b2]">AI CHAT</a>
-            <a href="{% url 'assessments' %}" class="block py-2 hover:text-[#00d1b2]">ASSESSMENTS</a>
-            <a href="{% url 'counsellor_booking' %}" class="block py-2 hover:text-[#00d1b2]">COUNSELLOR</a>
+            <a href="{% url 'home' %}" class="block py-2 font-bold {% if request.resolver_match.url_name == 'home' %}text-[#00d1b2]{% else %}hover:text-[#00d1b2]{% endif %}">HOME</a>
+            <a href="{% url 'chat' %}" class="block py-2 font-bold {% if request.resolver_match.url_name == 'chat' %}text-[#00d1b2]{% else %}hover:text-[#00d1b2]{% endif %}">AI CHAT</a>
+            <a href="{% url 'assessments' %}" class="block py-2 font-bold {% if request.resolver_match.url_name == 'assessments' %}text-[#00d1b2]{% else %}hover:text-[#00d1b2]{% endif %}">ASSESSMENTS</a>
+            <a href="{% url 'counsellor_booking' %}" class="block py-2 font-bold {% if request.resolver_match.url_name == 'counsellor_booking' %}text-[#00d1b2]{% else %}hover:text-[#00d1b2]{% endif %}">COUNSELLOR</a>
 
             {% if user.is_authenticated %}
-                <a href="{% url 'mood_tracker' %}" class="block py-2 hover:text-[#00d1b2]">MOOD</a>
+                <a href="{% url 'mood_tracker' %}" class="block py-2 font-bold {% if request.resolver_match.url_name == 'mood_tracker' %}text-[#00d1b2]{% else %}hover:text-[#00d1b2]{% endif %}">MOOD</a>
             {% endif %}
 
-            <a href="{% url 'contact_us' %}" class="block py-2 hover:text-[#00d1b2]">CONTACT</a>
+            <a href="{% url 'contact_us' %}" class="block py-2 font-bold {% if request.resolver_match.url_name == 'contact_us' %}text-[#00d1b2]{% else %}hover:text-[#00d1b2]{% endif %}">CONTACT</a>
 
             <hr class="border-white/10">
 
             {% if user.is_authenticated %}
                 <p class="text-xs uppercase text-white/50 pt-2">Dashboard menu</p>
-                <a href="{% url 'dashboard' %}" class="block py-2 hover:text-[#00d1b2]">Dashboard</a>
-                <a href="{% url 'my_progress' %}" class="block py-2 hover:text-[#00d1b2]">My Progress</a>
-                <a href="{% url 'doctor_dashboard' %}" class="block py-2 hover:text-[#00d1b2]">Doctor Panel</a>
-                <a href="{% url 'forum_list' %}" class="block py-2 hover:text-[#00d1b2]">Support Forum</a>
-                <a href="{% url 'location_map' %}" class="block py-2 hover:text-[#00d1b2]">Location Map</a>
-                <a href="{% url 'mental_health_heatmap' %}" class="block py-2 hover:text-[#00d1b2]">Heatmap</a>
-                <a href="{% url 'survey_analytics' %}" class="block py-2 hover:text-[#00d1b2]">Survey Analytics</a>
-                <a href="{% url 'survey_sentiment_dashboard' %}" class="block py-2 hover:text-[#00d1b2]">Survey Sentiment</a>
-                <a href="{% url 'resources' %}" class="block py-2 hover:text-[#00d1b2]">Helplines</a>
+                <a href="{% url 'dashboard' %}" class="block py-2 {% if request.resolver_match.url_name == 'dashboard' %}text-[#00d1b2] font-bold{% else %}hover:text-[#00d1b2]{% endif %}">Dashboard</a>
+                <a href="{% url 'doctor_dashboard' %}" class="block py-2 {% if request.resolver_match.url_name == 'doctor_dashboard' %}text-[#00d1b2] font-bold{% else %}hover:text-[#00d1b2]{% endif %}">Doctor Panel</a>
+                <a href="{% url 'forum_list' %}" class="block py-2 {% if request.resolver_match.url_name == 'forum_list' %}text-[#00d1b2] font-bold{% else %}hover:text-[#00d1b2]{% endif %}">Support Forum</a>
+                <a href="{% url 'location_map' %}" class="block py-2 {% if request.resolver_match.url_name == 'location_map' %}text-[#00d1b2] font-bold{% else %}hover:text-[#00d1b2]{% endif %}">Location Map</a>
+                <a href="{% url 'mental_health_heatmap' %}" class="block py-2 {% if request.resolver_match.url_name == 'mental_health_heatmap' %}text-[#00d1b2] font-bold{% else %}hover:text-[#00d1b2]{% endif %}">Heatmap</a>
+                <a href="{% url 'survey_analytics' %}" class="block py-2 {% if request.resolver_match.url_name == 'survey_analytics' %}text-[#00d1b2] font-bold{% else %}hover:text-[#00d1b2]{% endif %}">Survey Analytics</a>
+                <a href="{% url 'survey_sentiment_dashboard' %}" class="block py-2 {% if request.resolver_match.url_name == 'survey_sentiment_dashboard' %}text-[#00d1b2] font-bold{% else %}hover:text-[#00d1b2]{% endif %}">Survey Sentiment</a>
+                <a href="{% url 'resources' %}" class="block py-2 {% if request.resolver_match.url_name == 'resources' %}text-[#00d1b2] font-bold{% else %}hover:text-[#00d1b2]{% endif %}">Helplines</a>
                 <a href="{% url 'logout' %}" class="block py-2 text-red-400">Logout</a>
             {% else %}
                 <a href="{% url 'forum_list' %}" class="block py-2 hover:text-[#00d1b2]">Support Forum</a>
@@ -147,12 +146,12 @@
     </header>
 
     <!-- ================= MAIN CONTENT ================= -->
-    <main class="flex-1 pb-8 pt-0 sm:pt-2">
+    <main class="flex-1 pb-8 pt-0 sm:pt-4">
         {% block show_back_button %}
         <div class="fixed-back-button-wrapper">
             <a href="#" onclick="history.back(); return false;" class="inline-flex items-center gap-1 text-[#00d1b2] hover:text-[#7ef5df] font-medium transition text-sm" aria-label="Go back">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                 </svg>
                 <span>Back</span>
             </a>

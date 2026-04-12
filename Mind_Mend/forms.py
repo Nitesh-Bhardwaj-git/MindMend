@@ -100,7 +100,14 @@ class CounsellorBookingForm(forms.ModelForm):
         if not (day_available and time_available):
             raise forms.ValidationError('The counsellor is not available on this day or time.')
 
+        if CounsellorBooking.objects.filter(counsellor=counsellor, date=booking_date, time_slot=time_slot).exists():
+            raise forms.ValidationError('This counsellor is already booked for this specific date and time slot.')
+
         return cleaned
+
+    def validate_unique(self):
+        """Skip default model validation to avoid duplicate unique_together error."""
+        pass
 
     class Meta:
         model = CounsellorBooking

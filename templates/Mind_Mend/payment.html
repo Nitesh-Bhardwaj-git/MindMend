@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+{% block title %}Complete Payment{% endblock %}
+{% block content %}
+
+<div class="min-h-screen bg-[#050b1a] relative overflow-auto pt-4 md:pt-6 pb-20">
+  <div class="absolute top-0 left-1/4 w-[360px] h-[360px] bg-[#00d1b2]/10 rounded-full blur-[120px] animate-pulse"></div>
+
+  <div class="max-w-4xl mx-auto px-4 md:px-12">
+    
+    <div class="text-center mb-10">
+      <h1 class="text-3xl md:text-5xl font-bold text-white mb-4">
+        Checkout & Confirm
+      </h1>
+      <p class="text-gray-400">
+        Review your booking details and complete the payment to finalize your appointment.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
+      
+      <!-- Order Summary Column -->
+      <div class="bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-2xl space-y-6">
+        <h3 class="text-xl font-bold text-white mb-6 uppercase tracking-wider text-sm">Booking Summary</h3>
+        
+        <div class="flex items-center gap-4 border-b border-white/10 pb-6">
+          <div class="h-16 w-16 rounded-full border border-white/10 shadow-lg overflow-hidden shrink-0">
+            {% if booking.counsellor.profile_picture %}
+              <img src="{{ booking.counsellor.profile_picture.url }}" alt="{{ booking.counsellor.name }}" class="w-full h-full object-cover">
+            {% else %}
+              <div class="w-full h-full bg-[#111c33] flex items-center justify-center text-xl font-bold text-white">
+                {{ booking.counsellor.name|slice:":1"|upper }}
+              </div>
+            {% endif %}
+          </div>
+          <div>
+            <h4 class="text-white font-bold text-lg">{{ booking.counsellor.name }}</h4>
+            <p class="text-[#00d1b2] text-xs uppercase tracking-widest mt-1">{{ booking.counsellor.specialization }}</p>
+          </div>
+        </div>
+
+        <div class="space-y-4 pt-2">
+            <div class="flex justify-between items-center text-gray-300">
+                <span class="text-sm">Date</span>
+                <span class="font-semibold text-white">{{ booking.date|date:"F j, Y" }}</span>
+            </div>
+            <div class="flex justify-between items-center text-gray-300">
+                <span class="text-sm">Time</span>
+                <span class="font-semibold text-white">{{ booking.time_slot|time:"H:i" }}</span>
+            </div>
+        </div>
+
+        <div class="pt-6 border-t border-white/10 flex justify-between items-end">
+          <div class="text-gray-400 text-sm">Total Due</div>
+          <div class="text-4xl font-bold text-[#00d1b2] shrink-0">
+             ₹{{ booking.counsellor.session_fee|floatformat:"0" }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Payment UI Column -->
+      <div class="bg-[#0b162d] border border-emerald-500/20 rounded-[2rem] p-8 shadow-2xl relative overflow-hidden">
+        <div class="absolute -top-10 -right-10 w-40 h-40 bg-[#00d1b2]/5 rounded-full blur-[50px]"></div>
+        
+        <h3 class="text-xl font-bold text-white mb-6">Payment Method</h3>
+
+        <!-- Mock Card Element -->
+        <div class="w-full bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-5 mb-8 border border-white/5 shadow-inner">
+            <div class="flex justify-between items-center mb-6">
+                <div class="text-white/80 font-mono tracking-widest">VISA</div>
+                <div class="h-5 w-8 rounded-sm bg-gray-400/30"></div>
+            </div>
+            <div class="text-white/60 font-mono tracking-widest mb-4">
+                **** **** **** 4242
+            </div>
+            <div class="flex justify-between text-xs text-white/50 font-mono">
+                <span>CARDHOLDER</span>
+                <span>EXPIRES</span>
+            </div>
+            <div class="flex justify-between text-sm text-white/80 font-mono uppercase">
+                <span>{{ request.user.get_full_name|default:request.user.username }}</span>
+                <span>12/28</span>
+            </div>
+        </div>
+
+        <form method="post" action="{% url 'checkout_payment' booking.id %}">
+          {% csrf_token %}
+          
+          <p class="text-xs text-gray-400 mb-6 text-center italic">
+            This is a secure simulated payment gateway. No actual card covers or details are processed.
+          </p>
+
+          <button type="submit" 
+                  class="w-full py-4 rounded-xl bg-[#00d1b2] text-[#050b1a] font-bold text-lg hover:bg-[#00b8a5] transition duration-300 shadow-[0_0_20px_rgba(0,209,178,0.3)] hover:shadow-[0_0_25px_rgba(0,209,178,0.5)]">
+            Pay ₹{{ booking.counsellor.session_fee|floatformat:"0" }} Now
+          </button>
+        </form>
+
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+{% endblock %}

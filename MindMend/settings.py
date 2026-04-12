@@ -218,7 +218,7 @@ MINDMEND_OPENAI_API_KEY = os.environ.get('MINDMEND_OPENAI_API_KEY', '') or os.en
 
 
 # Google Form survey integration
-MINDMEND_GOOGLE_FORM_URL = os.environ.get('MINDMEND_GOOGLE_FORM_URL', '')
+MINDMEND_GOOGLE_FORM_URL = os.environ.get('MINDMEND_GOOGLE_FORM_URL', 'https://forms.gle/BeJXSgCqb4pCKtK69')
 # Private Google Sheets API settings (recommended for sensitive survey data)
 MINDMEND_GOOGLE_SURVEY_SHEET_ID = os.environ.get('MINDMEND_GOOGLE_SURVEY_SHEET_ID', '')
 MINDMEND_GOOGLE_SURVEY_WORKSHEET = os.environ.get('MINDMEND_GOOGLE_SURVEY_WORKSHEET', 'Form Responses 1')
@@ -226,4 +226,4 @@ MINDMEND_GOOGLE_SERVICE_ACCOUNT_FILE = os.environ.get('MINDMEND_GOOGLE_SERVICE_A
 MINDMEND_GOOGLE_SERVICE_ACCOUNT_JSON = os.environ.get('MINDMEND_GOOGLE_SERVICE_ACCOUNT_JSON', '')
 
 # Optional public CSV fallback (less secure; keep empty if using private API)
-MINDMEND_GOOGLE_FORM_RESPONSES_CSV_URL = os.environ.get('MINDMEND_GOOGLE_FORM_RESPONSES_CSV_URL', '')
+MINDMEND_GOOGLE_FORM_RESPONSES_CSV_URL = os.environ.get('MINDMEND_GOOGLE_FORM_RESPONSES_CSV_URL', 'https://docs.google.com/spreadsheets/d/1QfZ01IA4to-E_GHrlZZ35BVzOHFvlJfafWFlbuhGgl8/export?format=csv')

@@ -24,7 +24,7 @@ body {
 .fixed-back-button-wrapper {
   position: relative;
   display: inline-block;
-  margin: 1rem 0 0.5rem 2.5rem;
+  margin: 1rem 0 0.5rem 0;
   z-index: 90;
   background: rgba(10, 20, 40, 0.88);
   backdrop-filter: blur(12px);
@@ -37,7 +37,7 @@ body {
   .fixed-back-button-wrapper {
     position: fixed;
     top: 5.75rem;
-    left: 3.5rem;
+    left: 0.25rem;
     margin: 0;
     padding: 0.35rem 0.9rem;
     z-index: 9998;

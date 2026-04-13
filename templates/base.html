@@ -159,22 +159,45 @@
         {% endblock %}
 
         {% if messages %}
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4" id="toast-container">
             {% for message in messages %}
-            <div class="rounded-xl p-4 mb-3 flex items-center justify-between border
+            <div class="toast-msg rounded-xl p-4 mb-3 flex items-center justify-between border transition-all duration-500 opacity-100
                 {% if message.tags == 'error' %}
                     bg-red-500/10 text-red-200 border-red-500/30
                 {% elif message.tags == 'success' %}
-                    bg-green-500/10 text-green-200 border-green-500/30
+                    bg-[#00d1b2]/10 text-[#00d1b2] border-[#00d1b2]/30
                 {% else %}
                     bg-blue-500/10 text-blue-200 border-blue-500/30
                 {% endif %}">
                 <span>{{ message }}</span>
-                <button type="button" class="text-lg hover:opacity-70" onclick="this.parentElement.remove()">×</button>
+                <button type="button" class="text-lg hover:opacity-70 ml-4 shrink-0" onclick="dismissToast(this.parentElement)">×</button>
             </div>
             {% endfor %}
         </div>
+        <script>
+        (function () {
+            function dismissToast(el) {
+                if (!el) return;
+                el.style.transition = 'opacity 0.5s ease, max-height 0.4s ease, margin 0.4s ease, padding 0.4s ease';
+                el.style.opacity = '0';
+                el.style.maxHeight = el.offsetHeight + 'px';
+                setTimeout(function () {
+                    el.style.maxHeight = '0';
+                    el.style.marginBottom = '0';
+                    el.style.paddingTop = '0';
+                    el.style.paddingBottom = '0';
+                }, 500);
+                setTimeout(function () { el.remove(); }, 900);
+            }
+            window.dismissToast = dismissToast;
+
+            document.querySelectorAll('.toast-msg').forEach(function (el) {
+                setTimeout(function () { dismissToast(el); }, 5000);
+            });
+        })();
+        </script>
         {% endif %}
+
 
         {% block content %}{% endblock %}
     </main>

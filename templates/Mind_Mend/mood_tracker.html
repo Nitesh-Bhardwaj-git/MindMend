@@ -8,14 +8,16 @@
   {% if messages %}
   <div class="max-w-7xl mx-auto px-6 pt-2">
     {% for message in messages %}
-    <div class="mb-3 px-5 py-3 rounded-xl text-sm font-medium
+    <div class="toast-msg mb-3 px-5 py-3 rounded-xl text-sm font-medium flex items-center justify-between transition-all duration-500 opacity-100
       {% if message.tags == 'error' %}bg-red-500/15 border border-red-500/30 text-red-400
       {% else %}bg-[#00d1b2]/10 border border-[#00d1b2]/30 text-[#00d1b2]{% endif %}">
-      {{ message }}
+      <span>{{ message }}</span>
+      <button type="button" class="text-lg hover:opacity-70 ml-4 shrink-0" onclick="dismissToast(this.parentElement)">×</button>
     </div>
     {% endfor %}
   </div>
   {% endif %}
+
 
   {% if crisis_alert %}
   <div class="max-w-7xl mx-auto px-6 pt-2">

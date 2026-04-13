@@ -3,7 +3,6 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Count
-from django.urls import reverse  # noqa: unused but kept for future use
 from ..models import ForumPost, ForumReply
 from ..forms import ForumPostForm, ForumReplyForm
 

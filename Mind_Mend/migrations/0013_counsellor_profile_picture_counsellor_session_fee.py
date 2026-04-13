@@ -10,14 +10,43 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='counsellor',
-            name='profile_picture',
-            field=models.ImageField(blank=True, null=True, upload_to='counsellors/'),
-        ),
-        migrations.AddField(
-            model_name='counsellor',
-            name='session_fee',
-            field=models.DecimalField(decimal_places=2, default=0.0, help_text='Session fee', max_digits=10),
+        # Use SeparateDatabaseAndState so the state always reflects the correct
+        # schema, but the DB operation uses IF NOT EXISTS to safely skip if the
+        # column was already created by a previous (manually-applied) migration.
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE "Mind_Mend_counsellor"
+                        ADD COLUMN IF NOT EXISTS "profile_picture" varchar(100) NULL;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE "Mind_Mend_counsellor"
+                        DROP COLUMN IF EXISTS "profile_picture";
+                    """,
+                ),
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE "Mind_Mend_counsellor"
+                        ADD COLUMN IF NOT EXISTS "session_fee" numeric(10, 2) NOT NULL DEFAULT 0.0;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE "Mind_Mend_counsellor"
+                        DROP COLUMN IF EXISTS "session_fee";
+                    """,
+                ),
+            ],
+            state_operations=[
+                migrations.AddField(
+                    model_name='counsellor',
+                    name='profile_picture',
+                    field=models.ImageField(blank=True, null=True, upload_to='counsellors/'),
+                ),
+                migrations.AddField(
+                    model_name='counsellor',
+                    name='session_fee',
+                    field=models.DecimalField(decimal_places=2, default=0.0, help_text='Session fee', max_digits=10),
+                ),
+            ],
         ),
     ]

@@ -10,9 +10,27 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='counsellorbooking',
-            name='is_paid',
-            field=models.BooleanField(default=False),
+        # Use SeparateDatabaseAndState with IF NOT EXISTS to safely handle the
+        # case where this column already exists in the production database.
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunSQL(
+                    sql="""
+                        ALTER TABLE "Mind_Mend_counsellorbooking"
+                        ADD COLUMN IF NOT EXISTS "is_paid" boolean NOT NULL DEFAULT false;
+                    """,
+                    reverse_sql="""
+                        ALTER TABLE "Mind_Mend_counsellorbooking"
+                        DROP COLUMN IF EXISTS "is_paid";
+                    """,
+                ),
+            ],
+            state_operations=[
+                migrations.AddField(
+                    model_name='counsellorbooking',
+                    name='is_paid',
+                    field=models.BooleanField(default=False),
+                ),
+            ],
         ),
     ]

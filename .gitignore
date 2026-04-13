@@ -1,2 +1,34 @@
 # Environment variables
 .env
+MindMend/.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyc
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Django collected static (auto-generated — do not commit)
+staticfiles/
+
+# SQLite local database (production uses PostgreSQL)
+db.sqlite3
+
+# Media uploads (user-uploaded files)
+media/
+
+# IDE & OS
+.vscode/
+.idea/
+*.DS_Store
+Thumbs.db
+
+# Build artifacts
+*.egg-info/
+dist/
+build/

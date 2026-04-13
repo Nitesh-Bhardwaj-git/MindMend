@@ -4,6 +4,7 @@ from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 from .models import Counsellor, CounsellorBooking, CounsellorChatMessage, CounsellorNotification
+from .models import get_display_name
 
 
 class CounsellorChatConsumer(AsyncWebsocketConsumer):
@@ -84,7 +85,7 @@ class CounsellorChatConsumer(AsyncWebsocketConsumer):
         )
         message_data = {
             'id': msg.id,
-            'sender': msg.sender.get_username(),
+            'sender': get_display_name(msg.sender),
             'sender_id': msg.sender_id,
             'content': msg.content,
             'created_at': msg.created_at.isoformat(),

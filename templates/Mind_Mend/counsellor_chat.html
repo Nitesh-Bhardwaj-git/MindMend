@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load profile_tags %}
 {% block title %}Chat with Counsellor{% endblock %}
 {% block content %}
 
@@ -97,7 +98,7 @@
                         bg-white/5 text-white border border-white/10
                       {% endif %}">
             <p class="text-xs opacity-75 mb-1">
-              {{ m.sender.get_username }}
+              {{ m.sender|display_name }}
               {% if m.sender_id == booking.counsellor.user_id %} (Counsellor){% else %} (Patient){% endif %}
             </p>
             <p class="whitespace-pre-wrap break-words text-sm sm:text-base">{{ m.content }}</p>

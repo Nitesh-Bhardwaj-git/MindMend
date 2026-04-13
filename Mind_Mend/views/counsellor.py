@@ -15,6 +15,7 @@ except ModuleNotFoundError:
     def get_channel_layer(): return None
 
 from ..models import Counsellor, CounsellorBooking, CounsellorChatMessage, CounsellorReview, CounsellorNotification
+from ..models import get_display_name
 from ..forms import CounsellorBookingForm, CounsellorReviewForm
 
 
@@ -358,7 +359,7 @@ def booking_messages_api(request, booking_id):
         return JsonResponse({
             'message': {
                 'id': msg.id,
-                'sender': msg.sender.get_username(),
+                'sender': get_display_name(msg.sender),
                 'sender_id': msg.sender_id,
                 'content': msg.content,
                 'created_at': msg.created_at.isoformat(),
@@ -384,7 +385,7 @@ def booking_messages_api(request, booking_id):
     messages_list = [
         {
             'id': m.id,
-            'sender': m.sender.get_username(),
+            'sender': get_display_name(m.sender),
             'sender_id': m.sender_id,
             'content': m.content,
             'created_at': m.created_at.isoformat(),

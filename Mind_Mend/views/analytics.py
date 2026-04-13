@@ -368,14 +368,265 @@ def dashboard(request):
 @login_required
 def download_progress_report_pdf(request):
     if not canvas:
-        messages.error(request, 'PDF dependency is missing.')
-        return redirect('my_progress')
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'attachment; filename="mindmend-report.pdf"'
-    p = canvas.Canvas(response, pagesize=A4)
-    p.drawString(45, A4[1] - 50, 'MindMend Progress Report')
-    p.showPage(); p.save()
+        messages.error(request, 'PDF dependency (reportlab) is missing. Please contact support.')
+        return redirect('dashboard')
+
+    from reportlab.lib import colors
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import mm
+    from reportlab.pdfgen import canvas as pdf_canvas
+
+    # ── Determine report period ──────────────────────────────────────────────
+    period = request.GET.get('period', 'monthly').strip().lower()
+    if period not in ('daily', 'weekly', 'monthly'):
+        period = 'monthly'
+    period_days = {'daily': 1, 'weekly': 7, 'monthly': 30}[period]
+    period_label = period.capitalize()
+
+    cutoff = timezone.now().date() - timedelta(days=period_days)
+
+    # ── User & Profile info ──────────────────────────────────────────────────
+    user = request.user
+    try:
+        profile = user.profile
+    except Exception:
+        profile = None
+
+    full_name = user.get_full_name().strip() or user.username
+    dob        = getattr(profile, 'dob', None)
+    gender     = getattr(profile, 'get_gender_display', lambda: '')() if profile else ''
+    occupation = getattr(profile, 'occupation', '') or ''
+
+    age = ''
+    if dob:
+        today = timezone.now().date()
+        age   = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+
+    # ── Mental health score ──────────────────────────────────────────────────
+    mh_score = _mental_health_score(user)
+
+    # ── Assessments ─────────────────────────────────────────────────────────
+    def last5(atype):
+        return list(
+            AssessmentResult.objects.filter(user=user, assessment_type=atype)
+            .order_by('-created_at')[:5]
+        )
+
+    phq9_list = last5('phq9')
+    gad7_list = last5('gad7')
+    pss_list  = last5('pss')
+
+    def trend_label(scores):
+        """Return 'Improving', 'Worsening', or 'Stable' for a list of scores (newest first)."""
+        vals = [s.total_score for s in scores]
+        if len(vals) < 2:
+            return 'Insufficient data'
+        if vals[0] < vals[-1]:
+            return 'Improving ↑'
+        if vals[0] > vals[-1]:
+            return 'Worsening ↓'
+        return 'Stable →'
+
+    # ── Mood trend ───────────────────────────────────────────────────────────
+    mood_entries = list(
+        MoodEntry.objects.filter(user=user, date__gte=cutoff)
+        .order_by('date')[:30]
+    )
+    avg_mood = (
+        sum(e.mood for e in mood_entries) / len(mood_entries)
+        if mood_entries else None
+    )
+
+    # ── Build PDF ────────────────────────────────────────────────────────────
+    buf = io.BytesIO()
+    W, H = A4
+    p = pdf_canvas.Canvas(buf, pagesize=A4)
+
+    TEAL    = colors.HexColor('#00d1b2')
+    DARK    = colors.HexColor('#050b1a')
+    GRAY    = colors.HexColor('#555555')
+    LGRAY   = colors.HexColor('#cccccc')
+    WHITE   = colors.white
+    BLACK   = colors.black
+    RED     = colors.HexColor('#e74c3c')
+    ORANGE  = colors.HexColor('#e67e22')
+    GREEN   = colors.HexColor('#27ae60')
+
+    MARGIN  = 20 * mm
+    y       = H - 20 * mm   # current drawing y-position
+
+    def rule(col=TEAL, lw=0.5):
+        nonlocal y
+        p.setStrokeColor(col)
+        p.setLineWidth(lw)
+        p.line(MARGIN, y, W - MARGIN, y)
+        y -= 6
+
+    def section_title(text):
+        nonlocal y
+        maybe_new_page(18)
+        y -= 4
+        p.setFont('Helvetica-Bold', 12)
+        p.setFillColor(TEAL)
+        p.drawString(MARGIN, y, text)
+        y -= 4
+        rule(TEAL, 0.8)
+
+    def body(text, indent=0, bold=False, color=None):
+        nonlocal y
+        maybe_new_page(10)
+        p.setFont('Helvetica-Bold' if bold else 'Helvetica', 10)
+        p.setFillColor(color or BLACK)
+        p.drawString(MARGIN + indent, y, text)
+        y -= 14
+
+    def maybe_new_page(need=30):
+        nonlocal y
+        if y < MARGIN + need:
+            p.showPage()
+            y = H - MARGIN
+            draw_header()
+
+    def draw_header():
+        nonlocal y
+        p.setFillColor(DARK)
+        p.rect(0, H - 30 * mm, W, 30 * mm, fill=1, stroke=0)
+        p.setFont('Helvetica-Bold', 20)
+        p.setFillColor(WHITE)
+        p.drawString(MARGIN, H - 16 * mm, 'MindMend')
+        p.setFont('Helvetica', 10)
+        p.setFillColor(TEAL)
+        p.drawString(MARGIN + 80, H - 15.5 * mm, 'Mental Health Progress Report')
+        p.setFont('Helvetica', 8)
+        p.setFillColor(LGRAY)
+        p.drawRightString(W - MARGIN, H - 16 * mm,
+                          f'Generated: {timezone.now().strftime("%d %b %Y %H:%M")}')
+        y = H - 34 * mm
+
+    # --- PAGE 1 ---
+    draw_header()
+
+    # Report period banner
+    p.setFillColor(colors.HexColor('#0b162d'))
+    p.roundRect(MARGIN, y - 18, W - 2 * MARGIN, 22, 6, fill=1, stroke=0)
+    p.setFont('Helvetica-Bold', 10)
+    p.setFillColor(TEAL)
+    p.drawString(MARGIN + 8, y - 10, f'Report Period:  {period_label}  '
+                 f'({cutoff.strftime("%d %b %Y")} – {timezone.now().strftime("%d %b %Y")})')
+    y -= 26
+
+    # ── User Info ────────────────────────────────────────────────────────────
+    section_title('👤  Patient Information')
+    body(f'Name         :  {full_name}')
+    if age:
+        body(f'Age          :  {age} years')
+    if dob:
+        body(f'Date of Birth:  {dob.strftime("%d %B %Y")}')
+    if gender:
+        body(f'Gender       :  {gender}')
+    if occupation:
+        body(f'Occupation   :  {occupation}')
+    body(f'Username     :  @{user.username}')
+    body(f'Email        :  {user.email}')
+
+    # ── Mental Health Score ──────────────────────────────────────────────────
+    section_title('🧠  Overall Mental Health Score')
+    score_color = GREEN if mh_score >= 70 else ORANGE if mh_score >= 45 else RED
+    body(f'Score  :  {mh_score} / 100', bold=True, color=score_color)
+    if mh_score >= 70:
+        body('Status :  Good — Keep maintaining your healthy habits!', color=GREEN)
+    elif mh_score >= 45:
+        body('Status :  Fair — Consider small daily wellness steps.', color=ORANGE)
+    else:
+        body('Status :  Needs Attention — Please consider speaking to a counsellor.', color=RED)
+
+    # ── Assessment Results ────────────────────────────────────────────────────
+    label_map = {
+        'phq9': ('PHQ-9 (Depression)', phq9_list),
+        'gad7': ('GAD-7 (Anxiety)',    gad7_list),
+        'pss':  ('PSS   (Stress)',     pss_list),
+    }
+    MOOD_LABELS = {1: 'Very Low', 2: 'Low', 3: 'Neutral', 4: 'Good', 5: 'Very Good'}
+
+    section_title('📋  Assessment Scores (Last 5 Each)')
+
+    for atype, (title, alist) in label_map.items():
+        maybe_new_page(60)
+        p.setFont('Helvetica-Bold', 10)
+        p.setFillColor(DARK)
+        p.drawString(MARGIN, y, f'  {title}')
+        y -= 14
+
+        if not alist:
+            body('  No assessments recorded yet.', indent=8, color=GRAY)
+        else:
+            for i, a in enumerate(alist, 1):
+                date_str = a.created_at.strftime('%d %b %Y')
+                body(f'  {i}.  Score: {a.total_score:>3}   Level: {a.result_level:<20}  Date: {date_str}',
+                     indent=8)
+            trend = trend_label(alist)
+            t_color = GREEN if 'Improv' in trend else RED if 'Wors' in trend else GRAY
+            body(f'  Trend: {trend}', indent=8, bold=True, color=t_color)
+        y -= 4
+
+    # ── Mood Trend ────────────────────────────────────────────────────────────
+    section_title(f'😊  Mood Trend ({period_label})')
+
+    if not mood_entries:
+        body('No mood entries in this period.', color=GRAY)
+    else:
+        body(f'Total entries logged : {len(mood_entries)}')
+        body(f'Average mood         : {avg_mood:.1f} / 5  ({MOOD_LABELS.get(round(avg_mood), "")})')
+        # Trend direction from mood
+        first_mood = mood_entries[0].mood
+        last_mood  = mood_entries[-1].mood
+        if last_mood > first_mood:
+            mood_trend_txt, mt_color = 'Improving ↑  (your mood is getting better)', GREEN
+        elif last_mood < first_mood:
+            mood_trend_txt, mt_color = 'Worsening ↓  (your mood has declined recently)', RED
+        else:
+            mood_trend_txt, mt_color = 'Stable →  (your mood is consistent)', GRAY
+        body(f'Trend direction      : {mood_trend_txt}', bold=True, color=mt_color)
+
+        y -= 4
+        p.setFont('Helvetica-Bold', 9)
+        p.setFillColor(TEAL)
+        p.drawString(MARGIN, y, '  Recent entries:')
+        y -= 14
+
+        for e in mood_entries[-10:][::-1]:   # up to 10 most recent
+            maybe_new_page(12)
+            bar = '█' * e.mood + '░' * (5 - e.mood)
+            body(f'  {e.date.strftime("%d %b")}  {bar}  {MOOD_LABELS.get(e.mood, e.mood)}',
+                 indent=8, color=GRAY)
+
+    # ── Wellness Suggestions ──────────────────────────────────────────────────
+    section_title('💡  Wellness Suggestions')
+    suggestions = _wellness_suggestions(user, mh_score)
+    for s in suggestions:
+        body(f'  • {s}', indent=4, color=DARK)
+
+    # ── Footer ───────────────────────────────────────────────────────────────
+    maybe_new_page(25)
+    y -= 10
+    rule(LGRAY, 0.3)
+    p.setFont('Helvetica', 8)
+    p.setFillColor(GRAY)
+    p.drawCentredString(W / 2, y,
+        'This report is generated by MindMend and is for personal wellness tracking only.')
+    y -= 12
+    p.drawCentredString(W / 2, y,
+        'It does not constitute medical advice. Please consult a licensed professional for clinical support.')
+
+    p.showPage()
+    p.save()
+
+    buf.seek(0)
+    fname = f'mindmend-report-{period}-{timezone.now().strftime("%Y%m%d")}.pdf'
+    response = HttpResponse(buf, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{fname}"'
     return response
+
 
 
 def _fetch_survey_data():

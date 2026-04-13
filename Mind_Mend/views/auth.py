@@ -103,3 +103,25 @@ def doctor_login_view(request):
 def logout_view(request):
     logout(request)
     return redirect('home')
+
+
+@login_required
+def user_profile(request):
+    from ..forms import UserProfileForm
+    from ..models import UserProfile
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, instance=profile, user=request.user)
+        if form.is_valid():
+            request.user.first_name = form.cleaned_data.get('first_name', '')
+            request.user.last_name  = form.cleaned_data.get('last_name', '')
+            request.user.save()
+            form.save()
+            messages.success(request, 'Profile updated successfully!')
+            return redirect('user_profile')
+    else:
+        form = UserProfileForm(instance=profile, user=request.user)
+
+    return render(request, 'Mind_Mend/user_profile.html', {'form': form, 'profile': profile})
+

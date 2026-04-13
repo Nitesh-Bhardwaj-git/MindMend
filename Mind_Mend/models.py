@@ -1,6 +1,62 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+
+class UserProfile(models.Model):
+    """Extended profile for a registered user."""
+    GENDER_CHOICES = [
+        ('male', 'Male'),
+        ('female', 'Female'),
+        ('other', 'Other'),
+        ('prefer_not', 'Prefer not to say'),
+    ]
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    dob = models.DateField(null=True, blank=True, verbose_name='Date of Birth')
+    occupation = models.CharField(max_length=150, blank=True)
+    gender = models.CharField(max_length=20, choices=GENDER_CHOICES, blank=True)
+    show_real_name = models.BooleanField(
+        default=False,
+        help_text='If checked, your real name is visible to others. Otherwise your username is used.'
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Profile({self.user.username})"
+
+    def display_name(self):
+        if self.show_real_name and self.user.get_full_name():
+            return self.user.get_full_name()
+        return self.user.username
+
+
+def get_display_name(user):
+    """Standalone helper for views/consumers: respects the user's privacy setting."""
+    if not user:
+        return "Anonymous"
+    try:
+        profile = user.profile
+        if profile.show_real_name:
+            full = user.get_full_name().strip()
+            return full if full else user.username
+        return user.username
+    except Exception:
+        return user.username
+
+
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.get_or_create(user=instance)
+
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    if hasattr(instance, 'profile'):
+        instance.profile.save()
+
 
 
 class Counsellor(models.Model):

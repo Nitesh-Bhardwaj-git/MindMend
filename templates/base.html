@@ -1,4 +1,5 @@
 {% load static %}
+{% load profile_tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -90,7 +91,8 @@
 
                         <div id="dashboardDropdownMenu" class="absolute right-0 mt-2 w-56 bg-[#0a1428] rounded-xl border border-white/10 shadow-xl opacity-0 invisible transition-all duration-200 z-[9999]">
                             <a href="{% url 'dashboard' %}" class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5 rounded-t-xl">Dashboard</a>
-
+                            
+                            
                             <a href="{% url 'doctor_dashboard' %}" class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">Doctor Panel</a>
                             <a href="{% url 'forum_list' %}" class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">Support Forum</a>
                             <a href="{% url 'location_map' %}" class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">Location Map</a>
@@ -98,6 +100,13 @@
                             <a href="{% url 'survey_analytics' %}" class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">Survey Analytics</a>
                             <a href="{% url 'survey_sentiment_dashboard' %}" class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">Survey Sentiment</a>
                             <a href="{% url 'resources' %}" class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">Helplines</a>
+                            <div class="border-t border-white/10"></div>
+                            <a href="{% url 'user_profile' %}" class="px-4 py-3 flex items-center gap-2 text-[#00d1b2] text-sm font-semibold hover:bg-white/5 transition">
+                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                {{ user|display_name }}
+                            </a>
                             <div class="border-t border-white/10"></div>
                             <a href="{% url 'logout' %}" class="block px-4 py-3 text-red-400 hover:bg-white/5 rounded-b-xl">Logout</a>
                         </div>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load profile_tags %}
 {% block title %}Doctor Dashboard{% endblock %}
 
 {% block content %}
@@ -14,7 +15,7 @@
     <div class="flex flex-wrap items-center justify-between gap-4">
       <div>
         <p class="text-[10px] text-[#00d1b2] uppercase tracking-widest mb-2">DOCTOR PORTAL</p>
-        <h2 class="text-4xl text-white font-bold">Doctor Dashboard</h2>
+        <h2 class="text-2xl md:text-4xl text-white font-bold">Doctor Dashboard</h2>
         <p class="text-gray-400">{{ counsellor.name }} • {{ counsellor.specialization }}</p>
       </div>
 
@@ -38,7 +39,7 @@
             <div class="flex flex-wrap justify-between items-center gap-4">
 
               <div>
-                <p class="text-white font-bold text-lg">{{ b.user.get_username }}</p>
+                <p class="text-white font-bold text-lg">{{ b.user|display_name }}</p>
                 <p class="text-gray-400 text-sm">{{ b.date|date:"l, M d, Y" }} at {{ b.time_slot|time:"H:i" }}</p>
                 {% if b.notes %}
                 <p class="text-gray-500 text-sm mt-2">Notes: {{ b.notes }}</p>
@@ -78,7 +79,7 @@
             <div class="flex flex-wrap justify-between items-center gap-4">
 
               <div>
-                <p class="text-white font-bold text-lg">{{ b.user.get_username }}</p>
+                <p class="text-white font-bold text-lg">{{ b.user|display_name }}</p>
                 <p class="text-gray-400 text-sm">{{ b.date|date:"l, M d, Y" }} at {{ b.time_slot|time:"H:i" }}</p>
 
                 <span class="inline-block mt-3 px-3 py-1 text-xs rounded-full font-medium

@@ -2,7 +2,30 @@ from django import forms
 from datetime import timedelta, datetime
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import MoodEntry, ForumPost, ForumReply, CounsellorBooking, Counsellor, CounsellorReview
+from .models import MoodEntry, ForumPost, ForumReply, CounsellorBooking, Counsellor, CounsellorReview, UserProfile
+
+
+class UserProfileForm(forms.ModelForm):
+    first_name = forms.CharField(max_length=150, required=False, label='First Name')
+    last_name  = forms.CharField(max_length=150, required=False, label='Last Name')
+
+    class Meta:
+        model = UserProfile
+        fields = ['dob', 'occupation', 'gender', 'show_real_name']
+        widgets = {
+            'dob': forms.DateInput(attrs={'type': 'date'}),
+            'occupation': forms.TextInput(attrs={'placeholder': 'e.g. Student, Engineer'}),
+            'gender': forms.Select(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user:
+            self.fields['first_name'].initial = user.first_name
+            self.fields['last_name'].initial  = user.last_name
+
+
 from .assessment_data import PHQ9_QUESTIONS, GAD7_QUESTIONS, PSS_QUESTIONS
 
 

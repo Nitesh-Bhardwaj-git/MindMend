@@ -199,9 +199,19 @@
         </p>
       </div>
       <div class="flex items-center gap-3">
-        <a href="{% url 'download_progress_report_pdf' %}" class="px-6 py-3 rounded-xl bg-[#00d1b2] text-[#050b1a] font-bold text-sm tracking-wide hover:bg-[#00b8a5] transition-all flex items-center gap-2">
-          ⬇️ Download PDF Report
-        </a>
+        <!-- PDF download with period selector -->
+        <div class="flex items-center rounded-xl overflow-hidden border border-[#00d1b2]/40">
+          <a id="pdfDownloadBtn" href="{% url 'download_progress_report_pdf' %}?period=monthly"
+             class="px-5 py-3 bg-[#00d1b2] text-[#050b1a] font-bold text-sm tracking-wide hover:bg-[#00b8a5] transition-all flex items-center gap-2">
+            ⬇️ Download PDF
+          </a>
+          <select id="pdfPeriodSelect" onchange="document.getElementById('pdfDownloadBtn').href='{% url 'download_progress_report_pdf' %}?period='+this.value"
+            class="bg-[#00b8a5] text-[#050b1a] font-bold text-sm px-2 py-3 border-l border-[#00d1b2]/40 cursor-pointer focus:outline-none">
+            <option value="monthly">Monthly</option>
+            <option value="weekly">Weekly</option>
+            <option value="daily">Daily</option>
+          </select>
+        </div>
         <a href="{% url 'survey_sentiment_dashboard' %}" class="px-6 py-3 rounded-xl bg-[#081a20] text-[#00d1b2] font-bold text-sm tracking-wide hover:bg-[#0a232b] transition-all flex items-center gap-2">
           📊 Survey Sentiment
         </a>

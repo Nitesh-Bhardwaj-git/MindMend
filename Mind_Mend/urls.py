@@ -7,6 +7,7 @@ urlpatterns = [
     path('login/', auth.login_view, name='login'),
     path('doctor/login/', auth.doctor_login_view, name='doctor_login'),
     path('logout/', auth.logout_view, name='logout'),
+    path('profile/', auth.user_profile, name='user_profile'),
 
     # AI Chatbot
     path('chat/', core.chat, name='chat'),

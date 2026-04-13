@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %}
+{% load profile_tags %}
 
 {% block title %}Anonymous Support Forum{% endblock %}
 
@@ -101,7 +102,7 @@
                 {% if post.is_anonymous %}
                   👤 Anonymous
                 {% else %}
-                  👤 {{ post.author.username }}
+                  👤 {{ post.author|display_name }}
                 {% endif %}
               </span>
               <a href="{% url 'forum_detail' post.pk %}?focus=replies" class="hover:text-[#00d1b2] transition-colors">

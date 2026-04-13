@@ -1,0 +1,213 @@
+{% extends 'base.html' %}
+{% block title %}My Profile{% endblock %}
+{% block show_back_button %}{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-6 pb-16 px-4">
+
+  <!-- Background Glows -->
+  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse pointer-events-none"></div>
+  <div class="absolute top-0 left-1/4 w-[400px] h-[400px] bg-[#00d1b2]/5 rounded-full blur-[120px] pointer-events-none"></div>
+
+  <div class="max-w-2xl mx-auto relative z-10">
+
+    <!-- Header -->
+    <div class="mb-8 text-center">
+      <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#00d1b2] to-purple-500 flex items-center justify-center text-3xl font-bold text-[#050b1a] shadow-lg">
+        {{ user.username|first|upper }}
+      </div>
+      <h1 class="text-3xl font-bold text-white">My Profile</h1>
+      <p class="text-gray-400 mt-1 text-sm">@{{ user.username }}</p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% if messages %}
+      {% for msg in messages %}
+        <div class="mb-6 px-4 py-3 rounded-xl text-sm font-semibold
+          {% if msg.tags == 'success' %}bg-[#00d1b2]/10 text-[#00d1b2] border border-[#00d1b2]/20
+          {% else %}bg-red-500/10 text-red-400 border border-red-500/20{% endif %}">
+          {{ msg }}
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <!-- ══════════════ VIEW MODE ══════════════ -->
+    <div id="viewMode" class="bg-[#0b162d]/80 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-2xl space-y-5">
+
+      <!-- Edit Button -->
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-xs font-bold uppercase tracking-widest text-gray-400">Profile Details</p>
+        <button onclick="switchToEdit()" id="editBtn"
+          class="flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-widest text-[#00d1b2] border border-[#00d1b2]/30 rounded-xl hover:bg-[#00d1b2]/10 transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536M9 13l6.586-6.586a2 2 0 112.828 2.828L11.828 15.828A2 2 0 019 16H7v-2a2 2 0 01.586-1.414z"/>
+          </svg>
+          Edit Profile
+        </button>
+      </div>
+
+      <!-- Details Grid -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+        <div class="bg-white/5 rounded-xl px-5 py-4">
+          <p class="text-[10px] uppercase tracking-widest text-gray-500 mb-1">Full Name</p>
+          <p class="text-white font-semibold">{{ user.get_full_name|default:"—" }}</p>
+        </div>
+
+        <div class="bg-white/5 rounded-xl px-5 py-4">
+          <p class="text-[10px] uppercase tracking-widest text-gray-500 mb-1">Username</p>
+          <p class="text-white font-semibold">@{{ user.username }}</p>
+        </div>
+
+        <div class="bg-white/5 rounded-xl px-5 py-4">
+          <p class="text-[10px] uppercase tracking-widest text-gray-500 mb-1">Date of Birth</p>
+          <p class="text-white font-semibold">{{ profile.dob|date:"d M Y"|default:"—" }}</p>
+        </div>
+
+        <div class="bg-white/5 rounded-xl px-5 py-4">
+          <p class="text-[10px] uppercase tracking-widest text-gray-500 mb-1">Occupation</p>
+          <p class="text-white font-semibold">{{ profile.occupation|default:"—" }}</p>
+        </div>
+
+        <div class="bg-white/5 rounded-xl px-5 py-4 sm:col-span-2">
+          <p class="text-[10px] uppercase tracking-widest text-gray-500 mb-1">Gender</p>
+          <p class="text-white font-semibold">{{ profile.get_gender_display|default:"—" }}</p>
+        </div>
+
+      </div>
+
+      <!-- Privacy Status -->
+      <div class="bg-white/5 rounded-xl px-5 py-4 flex items-center gap-3">
+        {% if profile.show_real_name %}
+          <span class="w-2.5 h-2.5 rounded-full bg-[#00d1b2] inline-block shrink-0"></span>
+          <p class="text-sm text-gray-300">Your <span class="text-[#00d1b2] font-semibold">real name</span> is shown publicly.</p>
+        {% else %}
+          <span class="w-2.5 h-2.5 rounded-full bg-gray-500 inline-block shrink-0"></span>
+          <p class="text-sm text-gray-300">You appear <span class="text-white font-semibold">anonymously</span> as @{{ user.username }}.</p>
+        {% endif %}
+      </div>
+
+      <!-- Account Info -->
+      <div class="border-t border-white/10 pt-4 space-y-2">
+        <p class="text-[10px] uppercase tracking-widest text-gray-500 mb-3">Account Info</p>
+        <div class="flex items-center gap-2 text-sm text-gray-300">
+          <svg class="w-4 h-4 text-[#00d1b2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"/>
+          </svg>
+          {{ user.email }}
+        </div>
+        <div class="flex items-center gap-2 text-sm text-gray-300">
+          <svg class="w-4 h-4 text-[#00d1b2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+          </svg>
+          Joined {{ user.date_joined|date:"F Y" }}
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ EDIT MODE ══════════════ -->
+    <form id="editMode" method="post" class="hidden bg-[#0b162d]/80 backdrop-blur-xl border border-[#00d1b2]/20 rounded-[2rem] p-8 shadow-2xl space-y-6">
+      {% csrf_token %}
+
+      <div class="flex items-center justify-between mb-2">
+        <p class="text-xs font-bold uppercase tracking-widest text-[#00d1b2]">Edit Profile</p>
+        <button type="button" onclick="switchToView()"
+          class="text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-white transition px-3 py-1.5 rounded-xl hover:bg-white/5">
+          ✕ Cancel
+        </button>
+      </div>
+
+      <!-- Name -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">First Name</label>
+          <input type="text" name="first_name" value="{{ form.first_name.value|default:'' }}"
+            placeholder="First name"
+            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#00d1b2]/50 transition">
+        </div>
+        <div>
+          <label class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Last Name</label>
+          <input type="text" name="last_name" value="{{ form.last_name.value|default:'' }}"
+            placeholder="Last name"
+            class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#00d1b2]/50 transition">
+        </div>
+      </div>
+
+      <!-- DOB -->
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Date of Birth</label>
+        <input type="date" name="dob" value="{{ form.dob.value|default:'' }}"
+          class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00d1b2]/50 transition [color-scheme:dark]">
+      </div>
+
+      <!-- Occupation -->
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Occupation</label>
+        <input type="text" name="occupation" value="{{ form.occupation.value|default:'' }}"
+          placeholder="e.g. Student, Engineer, Teacher"
+          class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-[#00d1b2]/50 transition">
+      </div>
+
+      <!-- Gender -->
+      <div>
+        <label class="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2">Gender</label>
+        <select name="gender"
+          class="w-full bg-[#0b162d] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#00d1b2]/50 transition">
+          <option value="">-- Select --</option>
+          {% for val, label in form.fields.gender.choices %}
+            <option value="{{ val }}" {% if form.gender.value == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Privacy Toggle -->
+      <div class="border-t border-white/10 pt-5">
+        <p class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Privacy Setting</p>
+        <label class="flex items-start gap-4 cursor-pointer">
+          <div class="relative mt-1 shrink-0">
+            <input type="checkbox" name="show_real_name" id="show_real_name"
+              {% if form.show_real_name.value %}checked{% endif %}
+              class="sr-only peer">
+            <div class="w-11 h-6 bg-white/10 rounded-full peer peer-checked:bg-[#00d1b2] transition-all duration-300"></div>
+            <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow peer-checked:translate-x-5 transition-all duration-300"></div>
+          </div>
+          <div>
+            <p class="text-white font-semibold text-sm">Show my real name publicly</p>
+            <p class="text-gray-400 text-xs mt-1 leading-relaxed">
+              <span class="text-[#00d1b2]">ON</span> = real name visible · <span class="text-gray-300">OFF</span> = shown as @{{ user.username }}
+            </p>
+          </div>
+        </label>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex gap-3 pt-2">
+        <button type="submit"
+          class="flex-1 py-3 bg-gradient-to-r from-[#00d1b2] to-purple-500 text-[#050b1a] font-bold rounded-xl hover:opacity-90 transition text-sm uppercase tracking-widest">
+          Save Changes
+        </button>
+        <button type="button" onclick="switchToView()"
+          class="px-6 py-3 bg-white/5 border border-white/10 text-gray-400 font-bold rounded-xl hover:bg-white/10 transition text-sm uppercase tracking-widest">
+          Cancel
+        </button>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+<script>
+  function switchToEdit() {
+    document.getElementById('viewMode').classList.add('hidden');
+    document.getElementById('editMode').classList.remove('hidden');
+  }
+  function switchToView() {
+    document.getElementById('editMode').classList.add('hidden');
+    document.getElementById('viewMode').classList.remove('hidden');
+  }
+  // If form had errors on submit, stay in edit mode
+  {% if form.errors %}
+    switchToEdit();
+  {% endif %}
+</script>
+{% endblock %}

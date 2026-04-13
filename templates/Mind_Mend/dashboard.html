@@ -210,9 +210,9 @@
 
 
 <!-- Trend Selector -->
-    <div class="relative z-[60] bg-[#0a1428]/40 backdrop-blur-sm rounded-[40px] border border-white/5 p-10 flex flex-col md:flex-row items-center justify-between gap-8">
+    <div class="relative z-[60] bg-[#0a1428]/40 backdrop-blur-sm rounded-[40px] border border-white/5 p-6 md:p-10 flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8">
       <div class="relative">
-        <button id="trend-mode-btn" type="button" class="px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-bold text-sm uppercase tracking-widest flex items-center gap-4 hover:bg-white/10 transition-all min-w-[220px] justify-between">
+        <button id="trend-mode-btn" type="button" class="px-6 md:px-8 py-3 md:py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-bold text-sm uppercase tracking-widest flex items-center gap-4 hover:bg-white/10 transition-all w-full md:min-w-[220px] md:w-auto justify-between">
           Daily Trend ⌄
         </button>
         <div id="trend-mode-menu" class="hidden absolute top-full left-0 right-0 mt-2 bg-[#0a1428] border border-white/10 rounded-2xl overflow-hidden z-50 shadow-2xl">
@@ -234,7 +234,7 @@
 
     <!-- Cards Section -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-      <div class="bg-[#0a1428]/40 backdrop-blur-sm rounded-[40px] border border-white/5 p-10 space-y-6">
+      <div class="bg-[#0a1428]/40 backdrop-blur-sm rounded-[40px] border border-white/5 p-6 md:p-10 space-y-6">
         <div class="h-14 w-14 rounded-2xl bg-[#00d1b2]/10 flex items-center justify-center">⚡</div>
         <div class="space-y-1">
           <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Mood Streak</p>
@@ -242,15 +242,15 @@
         </div>
       </div>
 
-      <div class="bg-[#0a1428]/40 backdrop-blur-sm rounded-[40px] border border-white/5 p-10 space-y-6">
+      <div class="bg-[#0a1428]/40 backdrop-blur-sm rounded-[40px] border border-white/5 p-6 md:p-10 space-y-6">
         <div class="h-14 w-14 rounded-2xl bg-[#7c3aed]/10 flex items-center justify-center">⭐</div>
         <div class="space-y-1">
           <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Mental Health Score</p>
-          <p class="text-4xl font-bold text-white tracking-tight">{{ mental_health_score|default_if_none:"—" }}/100</p>
+          <p class="text-3xl md:text-4xl font-bold text-white tracking-tight">{{ mental_health_score|default_if_none:"—" }}/100</p>
         </div>
       </div>
 
-      <div class="bg-[#0a1428]/40 backdrop-blur-sm rounded-[40px] border border-white/5 p-10 space-y-4">
+      <div class="bg-[#0a1428]/40 backdrop-blur-sm rounded-[40px] border border-white/5 p-6 md:p-10 space-y-4">
         <div class="h-14 w-14 rounded-2xl bg-white/5 flex items-center justify-center">📈</div>
         <p class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Overall Trend</p>
         <div class="flex flex-wrap gap-2">

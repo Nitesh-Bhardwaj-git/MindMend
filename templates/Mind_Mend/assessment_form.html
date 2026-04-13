@@ -10,11 +10,6 @@
 
   <div class="max-w-4xl mx-auto px-6 relative z-10">
 
-    <!-- Back Button -->
-    <a href="{% url 'assessments' %}" class="inline-flex items-center gap-2 text-gray-400 hover:text-[#00d1b2] mb-6 text-sm font-bold uppercase tracking-[0.18em] transition">
-      ← Back to Assessments
-    </a>
-
     <div class="assessment-card bg-[#0b162d]/80 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-6 md:p-8 shadow-2xl relative overflow-hidden">
 
       <!-- Progress -->
@@ -57,7 +52,7 @@
                   id="{{ input_prefix }}_{{ forloop.parentloop.counter0 }}_{{ value }}"
                 >
                 <div class="option-display w-full text-left px-6 md:px-8 py-4 rounded-2xl border border-white/10 font-semibold bg-[#111c33]/80 text-gray-300 transition duration-200 hover:bg-[#16213d]/80 hover:border-[#00d1b2]/30">
-                  <span class="block text-sm md:text-base">{{ value }} - {{ label }}</span>
+                  <span class="block text-sm md:text-base">{{ label }}</span>
                 </div>
               </label>
               {% endfor %}

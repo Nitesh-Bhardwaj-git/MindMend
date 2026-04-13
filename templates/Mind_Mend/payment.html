@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% load widget_tweaks %}
 {% block title %}Complete Payment{% endblock %}
+
 {% block content %}
 
 <div class="min-h-screen bg-[#050b1a] relative overflow-auto pt-4 md:pt-6 pb-20">
@@ -10,7 +11,7 @@
     
     <div class="text-center mb-10">
       <h1 class="text-3xl md:text-5xl font-bold text-white mb-4">
-        Checkout & Confirm
+        Checkout &amp; Confirm
       </h1>
       <p class="text-gray-400">
         Review your booking details and complete the payment to finalize your appointment.
@@ -62,44 +63,84 @@
       <div class="bg-[#0b162d] border border-emerald-500/20 rounded-[2rem] p-8 shadow-2xl relative overflow-hidden">
         <div class="absolute -top-10 -right-10 w-40 h-40 bg-[#00d1b2]/5 rounded-full blur-[50px]"></div>
         
-        <h3 class="text-xl font-bold text-white mb-6">Payment Method</h3>
+        <h3 class="text-xl font-bold text-white mb-6">Pay with Razorpay</h3>
 
-        <!-- Mock Card Element -->
-        <div class="w-full bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-5 mb-8 border border-white/5 shadow-inner">
-            <div class="flex justify-between items-center mb-6">
-                <div class="text-white/80 font-mono tracking-widest">VISA</div>
-                <div class="h-5 w-8 rounded-sm bg-gray-400/30"></div>
-            </div>
-            <div class="text-white/60 font-mono tracking-widest mb-4">
-                **** **** **** 4242
-            </div>
-            <div class="flex justify-between text-xs text-white/50 font-mono">
-                <span>CARDHOLDER</span>
-                <span>EXPIRES</span>
-            </div>
-            <div class="flex justify-between text-sm text-white/80 font-mono uppercase">
-                <span>{{ request.user.get_full_name|default:request.user.username }}</span>
-                <span>12/28</span>
-            </div>
+        <!-- Accepted methods strip -->
+        <div class="flex flex-wrap items-center gap-2 mb-8 p-3 bg-[#111c33] rounded-2xl border border-white/5">
+          <span class="text-[#3395FF] font-bold tracking-tight">razorpay</span>
+          <div class="ml-auto flex flex-wrap gap-1.5">
+            <span class="text-[10px] text-gray-400 bg-white/5 rounded-md px-2 py-1 whitespace-nowrap">UPI</span>
+            <span class="text-[10px] text-gray-400 bg-white/5 rounded-md px-2 py-1 whitespace-nowrap">Card</span>
+            <span class="text-[10px] text-gray-400 bg-white/5 rounded-md px-2 py-1 whitespace-nowrap">NetBanking</span>
+            <span class="text-[10px] text-gray-400 bg-white/5 rounded-md px-2 py-1 whitespace-nowrap">Wallet</span>
+          </div>
         </div>
 
-        <form method="post" action="{% url 'checkout_payment' booking.id %}">
+        <!-- Hidden verification form submitted by JS after payment -->
+        <form id="razorpay-verify-form" method="POST" action="{% url 'razorpay_payment_verify' booking.id %}">
           {% csrf_token %}
-          
-          <p class="text-xs text-gray-400 mb-6 text-center italic">
-            This is a secure simulated payment gateway. No actual card covers or details are processed.
-          </p>
-
-          <button type="submit" 
-                  class="w-full py-4 rounded-xl bg-[#00d1b2] text-[#050b1a] font-bold text-lg hover:bg-[#00b8a5] transition duration-300 shadow-[0_0_20px_rgba(0,209,178,0.3)] hover:shadow-[0_0_25px_rgba(0,209,178,0.5)]">
-            Pay ₹{{ booking.counsellor.session_fee|floatformat:"0" }} Now
-          </button>
+          <input type="hidden" name="razorpay_order_id"   id="rzp_order_id">
+          <input type="hidden" name="razorpay_payment_id" id="rzp_payment_id">
+          <input type="hidden" name="razorpay_signature"  id="rzp_signature">
         </form>
 
+        <p class="text-xs text-gray-400 mb-6 text-center">
+          Secured by Razorpay &mdash; your payment details are never stored on our servers.
+        </p>
+
+        <button id="rzp-pay-btn"
+class="w-full py-4 rounded-xl bg-[#00d1b2] text-[#050b1a] font-bold text-lg hover:bg-[#00b8a5] transition duration-300">          Pay ₹{{ booking.counsellor.session_fee|floatformat:"0" }} Now
+        </button>
+
+        <p id="rzp-error-msg" class="hidden mt-4 text-red-400 text-sm text-center"></p>
       </div>
       
     </div>
   </div>
 </div>
+
+<!-- Razorpay Checkout SDK -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+  var rzpOptions = {
+    key:         "{{ razorpay_key_id }}",
+    amount:      "{{ amount_paise }}",
+    currency:    "INR",
+    name:        "MindMend",
+    description: "Counsellor Session \u2013 {{ booking.counsellor.name }}",
+    order_id:    "{{ razorpay_order_id }}",
+    prefill: {
+      name:  "{{ user_name }}",
+      email: "{{ user_email }}"
+    },
+    theme: { color: "#00d1b2" },
+    handler: function(response) {
+      // Payment authorised — post IDs + signature for server-side verification
+      document.getElementById('rzp_order_id').value   = response.razorpay_order_id;
+      document.getElementById('rzp_payment_id').value = response.razorpay_payment_id;
+      document.getElementById('rzp_signature').value  = response.razorpay_signature;
+      document.getElementById('razorpay-verify-form').submit();
+    },
+    modal: {
+      ondismiss: function() {
+        var el = document.getElementById('rzp-error-msg');
+        el.textContent = 'Payment window closed. Click the button again to retry.';
+        el.classList.remove('hidden');
+      }
+    }
+  };
+
+  document.getElementById('rzp-pay-btn').addEventListener('click', function(e) {
+    e.preventDefault();
+    document.getElementById('rzp-error-msg').classList.add('hidden');
+    var rzp = new Razorpay(rzpOptions);
+    rzp.on('payment.failed', function(resp) {
+      var el = document.getElementById('rzp-error-msg');
+      el.textContent = 'Payment failed: ' + (resp.error.description || 'Please try again.');
+      el.classList.remove('hidden');
+    });
+    rzp.open();
+  });
+</script>
 
 {% endblock %}

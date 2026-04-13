@@ -16,7 +16,11 @@ from pathlib import Path
 from dotenv import load_dotenv
 from urllib.parse import urlparse, parse_qsl
 
-load_dotenv()
+# Explicitly load .env from the same directory as this settings file
+# (e.g. MindMend/.env) so the correct file is always found regardless
+# of the working directory, and a change here triggers a dev-server reload.
+# Keys last updated: 2026-04-13
+load_dotenv(Path(__file__).resolve().parent / '.env')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -227,3 +231,10 @@ MINDMEND_GOOGLE_SERVICE_ACCOUNT_JSON = os.environ.get('MINDMEND_GOOGLE_SERVICE_A
 
 # Optional public CSV fallback (less secure; keep empty if using private API)
 MINDMEND_GOOGLE_FORM_RESPONSES_CSV_URL = os.environ.get('MINDMEND_GOOGLE_FORM_RESPONSES_CSV_URL', 'https://docs.google.com/spreadsheets/d/1QfZ01IA4to-E_GHrlZZ35BVzOHFvlJfafWFlbuhGgl8/export?format=csv')
+
+
+# ── Razorpay Payment Gateway ────────────────────────────────────────────────
+# Get your keys from https://dashboard.razorpay.com/app/keys
+# Use Test keys for development, Live keys for production.
+RAZORPAY_KEY_ID     = os.environ.get('RAZORPAY_KEY_ID',     'rzp_test_REPLACE_ME')
+RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', 'REPLACE_ME_SECRET')

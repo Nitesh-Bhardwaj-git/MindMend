@@ -29,17 +29,22 @@ urlpatterns = [
 
     # Counsellor Booking
     path('book/', counsellor.counsellor_booking, name='counsellor_booking'),
+    path('book/how-to/', counsellor.how_to_book, name='how_to_book'),
     path('my-bookings/', counsellor.my_bookings, name='my_bookings'),
     path('counsellor/sessions/', counsellor.counsellor_sessions, name='counsellor_sessions'),
     path('doctor/dashboard/', counsellor.doctor_dashboard, name='doctor_dashboard'),
     path('doctor/booking/<int:booking_id>/action/', counsellor.doctor_booking_action, name='doctor_booking_action'),
     path('booking/<int:booking_id>/chat/', counsellor.counsellor_chat, name='counsellor_chat'),
     path('booking/<int:booking_id>/finish/', counsellor.finish_session, name='finish_session'),
+    path('booking/<int:booking_id>/cancel/', counsellor.booking_action, name='booking_action'),
+    path('booking/<int:booking_id>/delete/', counsellor.delete_booking, name='delete_booking'),
     path('api/booking/<int:booking_id>/messages/', counsellor.booking_messages_api, name='booking_messages_api'),
     path('api/doctor/notifications/', counsellor.doctor_notifications_api, name='doctor_notifications_api'),
     path('api/doctor/notifications/mark-read/', counsellor.doctor_notifications_mark_read_api, name='doctor_notifications_mark_read_api'),
     path('booking/<int:booking_id>/review/', counsellor.submit_review, name='submit_review'),
     path('payment/<int:booking_id>/', counsellor.checkout_payment, name='checkout_payment'),
+    path('payment/<int:booking_id>/verify/', counsellor.razorpay_payment_verify, name='razorpay_payment_verify'),
+    path('api/counsellor/<int:counsellor_id>/booked-slots/', counsellor.get_booked_slots, name='get_booked_slots'),
     # Mood
     path('mood/', analytics.mood_tracker, name='mood_tracker'),
 

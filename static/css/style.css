@@ -104,7 +104,6 @@ input[type="number"]:focus,
 textarea:focus,
 select:focus {
   border-color: #00d1b2 !important;
-  box-shadow: 0 0 0 3px rgba(0, 209, 178, 0.15);
 }
 
 /* Chat page inputs stay dark-themed (override the form rule) */

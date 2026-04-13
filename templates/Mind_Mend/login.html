@@ -29,7 +29,7 @@
 
       <!-- Toggle Buttons -->
       <div class="flex p-1 bg-white/5 rounded-2xl border border-white/5">
-        <button id="userLoginBtn" class="flex-1 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all bg-[#00d1b2] text-[#050b1a] shadow-lg">
+        <button id="userLoginBtn" class="flex-1 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all bg-[#00d1b2] text-[#050b1a]">
           User Login
         </button>
         <button id="doctorLoginBtn" class="flex-1 py-3 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all text-gray-500 hover:text-white">
@@ -81,7 +81,7 @@
         </div>
         {% endfor %}
 
-        <button type="submit" class="w-full py-6 rounded-2xl bg-[#00d1b2] text-[#050b1a] font-extrabold text-sm tracking-widest hover:scale-[1.02] transition-transform flex items-center justify-center gap-3 shadow-xl shadow-[#00d1b2]/20" id="submitBtn">
+        <button type="submit" class="w-full py-6 rounded-2xl bg-[#00d1b2] text-[#050b1a] font-extrabold text-sm tracking-widest hover:scale-[1.02] transition-transform flex items-center justify-center gap-3" id="submitBtn">
           Login to Account →
         </button>
 
@@ -125,8 +125,8 @@ function toggleLogin(isDoctor){
         signupText.style.display = 'none';
         loginForm.action = "{% url 'doctor_login' %}";
 
-        doctorLoginBtn.classList.add('bg-[#00d1b2]','text-[#050b1a]','shadow-lg');
-        userLoginBtn.classList.remove('bg-[#00d1b2]','text-[#050b1a]','shadow-lg');
+        doctorLoginBtn.classList.add('bg-[#00d1b2]','text-[#050b1a]');
+        userLoginBtn.classList.remove('bg-[#00d1b2]','text-[#050b1a]');
         doctorLoginBtn.classList.remove('text-gray-500');
         userLoginBtn.classList.add('text-gray-500');
     } else {
@@ -137,8 +137,8 @@ function toggleLogin(isDoctor){
         signupText.style.display = 'block';
         loginForm.action = "{% url 'login' %}";
 
-        userLoginBtn.classList.add('bg-[#00d1b2]','text-[#050b1a]','shadow-lg');
-        doctorLoginBtn.classList.remove('bg-[#00d1b2]','text-[#050b1a]','shadow-lg');
+        userLoginBtn.classList.add('bg-[#00d1b2]','text-[#050b1a]');
+        doctorLoginBtn.classList.remove('bg-[#00d1b2]','text-[#050b1a]');
         userLoginBtn.classList.remove('text-gray-500');
         doctorLoginBtn.classList.add('text-gray-500');
     }

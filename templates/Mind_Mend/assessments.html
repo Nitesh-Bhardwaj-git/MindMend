@@ -2,14 +2,16 @@
 {% block title %}Self-Assessments{% endblock %}
 {% block content %}
 
-<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-4 md:pt-6 pb-20">
+<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-12 md:pt-16 pb-20">
 
-  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse"></div>
+  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse">
+  </div>
 
   <div class="max-w-7xl mx-auto px-6 md:px-12 lg:px-20">
 
     <div class="text-center max-w-3xl mx-auto mb-16">
-      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#00d1b2]/30 bg-[#00d1b2]/5 text-[#00d1b2] text-[10px] font-bold tracking-[0.2em] mb-4">
+      <div
+        class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#00d1b2]/30 bg-[#00d1b2]/5 text-[#00d1b2] text-[10px] font-bold tracking-[0.2em] mb-4">
         ✨ CLINICAL TOOLS
       </div>
 
@@ -21,16 +23,19 @@
       </h1>
 
       <p class="text-gray-400 text-lg leading-relaxed">
-        Clinically recognized tools to evaluate your mental wellness. Results are private and can be saved to your dashboard when logged in.
+        Clinically recognized tools to evaluate your mental wellness. Results are private and can be saved to your
+        dashboard when logged in.
       </p>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
       <div class="group relative">
-        <div class="relative bg-[#0a1428]/60 backdrop-blur-xl rounded-[2.5rem] border border-white/10 p-10 flex flex-col shadow-2xl transition">
-          <div class="h-16 w-16 rounded-2xl bg-[#00d1b2]/10 text-purple-400 flex items-center justify-center text-3xl mb-8 group-hover:scale-110 group-hover:shadow-[0_0_20px_#a855f7] transition duration-300 ease-in-out">       
-             🧠
+        <div
+          class="relative bg-[#0a1428]/60 backdrop-blur-xl rounded-[2.5rem] border border-white/10 p-10 flex flex-col shadow-2xl transition">
+          <div
+            class="h-16 w-16 rounded-2xl bg-[#00d1b2]/10 text-purple-400 flex items-center justify-center text-3xl mb-8 group-hover:scale-110 group-hover:shadow-[0_0_20px_#a855f7] transition duration-300 ease-in-out">
+            🧠
           </div>
           <div class="flex items-center gap-3 mb-4">
             <span class="text-blue-400 text-xs font-bold uppercase">PHQ-9</span>
@@ -40,10 +45,9 @@
           <p class="text-gray-400 mb-10">
             Patient Health Questionnaire for depression scale. 9 questions.
           </p>
-          <a href="{% url 'assessment_phq9' %}"
-            class="px-8 py-4 rounded-2xl bg-white/5 hover:bg-[#00d1b2] text-white font-bold text-center flex justify-center items-center gap-2
-            transform transition duration-300 ease-in-out hover:scale-110">
-           Start Assessment →
+          <a href="{% url 'assessment_phq9' %}" 
+          class="px-8 py-4 rounded-2xl bg-white/5 hover:bg-[#00d1b2] text-white font-bold text-center flex justify-center items-center gap-2">
+            Start Assessment →
           </a>
         </div>
         {% if last_results.phq9 %}
@@ -57,11 +61,12 @@
       </div>
 
       <div class="group relative">
-        <div class="relative bg-[#0a1428]/60 backdrop-blur-xl rounded-[2.5rem] border border-white/10 p-10 flex flex-col shadow-2xl transition">
-          <div class="h-16 w-16 rounded-2xl bg-[#00d1b2]/10 text-purple-400 flex items-center justify-center text-3xl mb-8 group-hover:scale-110 group-hover:shadow-[0_0_20px_#a855f7] transition duration-300 ease-in-out">
+        <div
+          class="relative bg-[#0a1428]/60 backdrop-blur-xl rounded-[2.5rem] border border-white/10 p-10 flex flex-col shadow-2xl transition">
+          <div
+            class="h-16 w-16 rounded-2xl bg-[#00d1b2]/10 text-purple-400 flex items-center justify-center text-3xl mb-8 group-hover:scale-110 group-hover:shadow-[0_0_20px_#a855f7] transition duration-300 ease-in-out">
             ⚡
           </div>
-
           <div class="flex items-center gap-3 mb-4">
             <span class="text-purple-400 text-xs font-bold uppercase">GAD-7</span>
             <div class="h-1 w-1 bg-white/20 rounded-full"></div>
@@ -71,7 +76,7 @@
             Generalized Anxiety Disorder scale. 7 questions, ~1 minute.
           </p>
           <a href="{% url 'assessment_gad7' %}"
-             class="px-8 py-4 rounded-2xl bg-white/5 hover:bg-[#00d1b2] text-white font-bold text-center transition flex justify-center items-center gap-2">
+            class="px-8 py-4 rounded-2xl bg-white/5 hover:bg-[#00d1b2] text-white font-bold text-center transition flex justify-center items-center gap-2">
             Start Assessment →
           </a>
         </div>
@@ -86,8 +91,10 @@
       </div>
 
       <div class="group relative">
-        <div class="relative bg-[#0a1428]/60 backdrop-blur-xl rounded-[2.5rem] border border-white/10 p-10 flex flex-col shadow-2xl transition">
-          <div class="h-16 w-16 rounded-2xl bg-[#00d1b2]/10 text-purple-400 flex items-center justify-center text-3xl mb-8 group-hover:scale-110 group-hover:shadow-[0_0_20px_#a855f7] transition duration-300 ease-in-out">
+        <div
+          class="relative bg-[#0a1428]/60 backdrop-blur-xl rounded-[2.5rem] border border-white/10 p-10 flex flex-col shadow-2xl transition">
+          <div
+            class="h-16 w-16 rounded-2xl bg-[#00d1b2]/10 text-purple-400 flex items-center justify-center text-3xl mb-8 group-hover:scale-110 group-hover:shadow-[0_0_20px_#a855f7] transition duration-300 ease-in-out">
             📊
           </div>
           <div class="flex items-center gap-3 mb-4">
@@ -99,7 +106,7 @@
             Perceived Stress Scale. 10 questions about the past month.
           </p>
           <a href="{% url 'assessment_pss' %}"
-             class="px-8 py-4 rounded-2xl bg-white/5 hover:bg-[#00d1b2] text-white font-bold text-center transition flex justify-center items-center gap-2">
+            class="px-8 py-4 rounded-2xl bg-white/5 hover:bg-[#00d1b2] text-white font-bold text-center transition flex justify-center items-center gap-2">
             Start Assessment →
           </a>
         </div>
@@ -154,11 +161,13 @@
 
     {% endif %}
 
-    <div class="mt-24 p-12 rounded-[3rem] bg-gradient-to-br from-[#0a1428]/80 to-[#050b1a]/80 border border-white/5 text-center relative">
+    <div
+      class="mt-24 p-12 rounded-[3rem] bg-gradient-to-br from-[#0a1428]/80 to-[#050b1a]/80 border border-white/5 text-center relative">
       <div class="absolute top-0 right-0 w-64 h-64 bg-[#00d1b2]/5 rounded-full blur-3xl"></div>
       <h3 class="text-2xl font-bold text-white mb-4">Privacy & Security</h3>
       <p class="text-gray-400 max-w-2xl mx-auto">
-        Your mental health data is encrypted and stored securely. We do not share your individual assessment results with third parties. These tools are for screening purposes and do not replace professional diagnosis.
+        Your mental health data is encrypted and stored securely. We do not share your individual assessment results
+        with third parties. These tools are for screening purposes and do not replace professional diagnosis.
       </p>
     </div>
 

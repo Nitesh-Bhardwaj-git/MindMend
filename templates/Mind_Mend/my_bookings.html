@@ -55,6 +55,14 @@
 
           <!-- Actions -->
           <div class="flex flex-wrap items-center justify-center gap-4 w-full md:w-auto">
+
+            {% if b.status == 'pending' and not b.is_paid %}
+              <a href="{% url 'checkout_payment' b.id %}"
+                 class="w-full sm:w-auto px-8 py-4 rounded-xl bg-amber-500/10 text-amber-400 font-bold text-xs uppercase tracking-widest hover:bg-amber-500/20 flex items-center justify-center gap-2 border border-amber-500/20">
+                💳 Complete Payment
+              </a>
+            {% endif %}
+
             {% if b.status == 'confirmed' or b.status == 'completed' %}
               <a href="{% url 'counsellor_chat' b.id %}" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-[#00d1b2]/10 text-[#00d1b2] font-bold text-xs uppercase tracking-widest hover:bg-[#00d1b2]/20 flex items-center justify-center gap-2">
                 💬 Chat
@@ -83,7 +91,61 @@
               {% endif %}
             {% endif %}
 
-            <button class="p-4 rounded-xl bg-white/5 text-gray-500 hover:text-white">⋮</button>
+            <!-- ⋮ Three-dot dropdown menu -->
+            <div class="relative" id="menu-wrapper-{{ b.id }}">
+              <button
+                type="button"
+                onclick="toggleMenu({{ b.id }})"
+                class="p-4 rounded-xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all focus:outline-none"
+                aria-label="More options"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/>
+                </svg>
+              </button>
+
+              <!-- Dropdown panel (opens upward to avoid overflow) -->
+              <div
+                id="menu-{{ b.id }}"
+                class="hidden absolute right-0 bottom-full mb-2 w-52 bg-[#0d1f3c] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
+              >
+                {% if b.status == 'pending' and not b.is_paid %}
+                  <!-- Cancel Session: only before payment is completed -->
+                  <form method="post" action="{% url 'booking_action' b.id %}"
+                        onsubmit="return confirm('Cancel this session? This cannot be undone.');">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="cancel">
+                    <button type="submit"
+                      class="w-full flex items-center gap-3 px-5 py-4 text-sm font-semibold text-amber-400 hover:bg-amber-500/10 transition-colors text-left">
+                      <span class="text-lg leading-none">⊘</span>
+                      Cancel Session
+                    </button>
+                  </form>
+                {% endif %}
+
+                {% if b.status == 'completed' or b.status == 'cancelled' %}
+                  <!-- Delete Session: after session ended OR after it was cancelled -->
+                  <form method="post" action="{% url 'delete_booking' b.id %}"
+                        onsubmit="return confirm('Permanently delete this session record? This cannot be undone.');"
+                  >
+                    {% csrf_token %}
+                    <button type="submit"
+                      class="w-full flex items-center gap-3 px-5 py-4 text-sm font-semibold text-red-400 hover:bg-red-500/10 transition-colors text-left">
+                      <span class="text-lg leading-none">🗑</span>
+                      Delete Session
+                    </button>
+                  </form>
+                {% endif %}
+
+                {% if b.status == 'confirmed' %}
+                  <div class="px-5 py-4 text-xs text-gray-500 italic select-none">
+                    No actions available
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+            <!-- end three-dot -->
+
           </div>
 
         </div>
@@ -116,4 +178,27 @@
   </div>
 
 </div>
+
+<script>
+  function toggleMenu(id) {
+    // Close all other open menus first
+    document.querySelectorAll('[id^="menu-"]').forEach(function(el) {
+      if (!el.id.startsWith('menu-wrapper-') && el.id !== 'menu-' + id) {
+        el.classList.add('hidden');
+      }
+    });
+    const menu = document.getElementById('menu-' + id);
+    if (menu) menu.classList.toggle('hidden');
+  }
+
+  // Close dropdown when clicking anywhere outside a menu wrapper
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('[id^="menu-wrapper-"]')) {
+      document.querySelectorAll('[id^="menu-"]').forEach(function(el) {
+        if (!el.id.startsWith('menu-wrapper-')) el.classList.add('hidden');
+      });
+    }
+  });
+</script>
+
 {% endblock %}

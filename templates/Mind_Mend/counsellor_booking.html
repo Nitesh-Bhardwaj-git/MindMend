@@ -27,18 +27,23 @@
         </p>
       </div>
 
-      {% if user.is_authenticated %}
-      <div class="mt-12">
+      <div class="mt-4 md:mt-12 flex flex-wrap items-start gap-3">
+        <!-- How to Book button -->
+        <a href="{% url 'how_to_book' %}"
+           class="px-5 py-3 rounded-2xl border border-purple-400/30 bg-purple-500/10 text-purple-300 font-bold text-sm inline-flex items-center gap-2 hover:bg-purple-500/20 transition">
+          📖 How to Book?
+        </a>
+        {% if user.is_authenticated %}
         <a href="{% url 'my_bookings' %}"
-           class="px-8 py-4 rounded-2xl border border-white/10 bg-white/5 text-white font-bold uppercase inline-flex items-center gap-3 hover:bg-white/10 transition">
+           class="px-5 py-3 rounded-2xl border border-white/10 bg-white/5 text-white font-bold uppercase inline-flex items-center gap-3 hover:bg-white/10 transition">
           📅 My Bookings →
         </a>
+        {% endif %}
       </div>
-      {% endif %}
     </div>
 
     <!-- MAIN GRID -->
-    <div class="grid grid-cols-1 md:grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,680px)] gap-6 md:gap-8 lg:gap-12">
+    <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,680px)] gap-6 md:gap-8 lg:gap-12">
 
       <!-- BOOKING FORM -->
       <div class="bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 sm:p-8 md:p-10 lg:p-12 shadow-2xl relative overflow-visible">
@@ -46,7 +51,7 @@
 
         <h3 class="text-2xl font-bold text-white mb-8">Schedule Session</h3>
 
-        <form method="post">
+        <form method="post" id="bookingForm">
           {% csrf_token %}
 
           {% if form.non_field_errors %}
@@ -57,32 +62,78 @@
           </div>
           {% endif %}
 
-          {% for field in form %}
+          <!-- Counsellor field -->
           <div class="mb-6">
-            <label class="block text-sm font-medium text-gray-300 mb-2">
-              {{ field.label }}
+            <label class="block text-sm font-medium text-gray-300 mb-2" for="id_counsellor">
+              Counsellor
             </label>
-
-            {{ field|add_class:"w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-black placeholder-gray-500 outline-none hover:bg-white/10 focus:border-[#00d1b2]/50" }}
-
-            {% if field.errors %}
-            <div class="mt-2 text-sm text-red-400">
-              {{ field.errors }}
-            </div>
+            {{ form.counsellor|add_class:"w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder-gray-500 outline-none hover:bg-white/10 focus:border-[#00d1b2]/50" }}
+            {% if form.counsellor.errors %}
+            <div class="mt-2 text-sm text-red-400">{{ form.counsellor.errors }}</div>
             {% endif %}
           </div>
-          {% endfor %}
+
+          <!-- Date field -->
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-300 mb-2" for="id_date">
+              Date
+            </label>
+            {{ form.date|add_class:"w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder-gray-500 outline-none hover:bg-white/10 focus:border-[#00d1b2]/50" }}
+            {% if form.date.errors %}
+            <div class="mt-2 text-sm text-red-400">{{ form.date.errors }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Time Slot — visual grid picker (hidden input for actual submission) -->
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-300 mb-2">
+              Time Slot
+              <span class="ml-2 text-xs text-gray-500 font-normal">(30-min sessions)</span>
+            </label>
+
+            <!-- Hidden input that Django reads on submit -->
+            <input type="hidden" name="time_slot" id="id_time_slot"
+                   value="{{ form.time_slot.value|default:'' }}">
+
+            {% if form.time_slot.errors %}
+            <div class="mb-3 text-sm text-red-400">{{ form.time_slot.errors }}</div>
+            {% endif %}
+
+            <!-- Slot grid will be injected here by JS -->
+            <div id="slotGrid" class="min-h-[64px] flex items-center justify-center">
+              <p class="text-sm text-gray-500 italic">Select a counsellor and date to see available time slots.</p>
+            </div>
+
+            <!-- Legend -->
+            <div class="flex flex-wrap items-center gap-4 mt-4 text-xs text-gray-500">
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-[#00d1b2] inline-block"></span> Available</span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span> Booked</span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-[#00d1b2] ring-2 ring-[#00d1b2]/50 inline-block"></span> Selected</span>
+            </div>
+          </div>
+
+          <!-- Notes field -->
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-300 mb-2" for="id_notes">
+              Notes <span class="text-gray-500 font-normal text-xs">(optional)</span>
+            </label>
+            {{ form.notes|add_class:"w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder-gray-500 outline-none hover:bg-white/10 focus:border-[#00d1b2]/50" }}
+          </div>
 
           <div class="flex justify-center mt-4">
-            <button type="submit" class="px-6 py-4 rounded-2xl bg-[#00d1b2] text-[#050b1a] font-bold transition cursor-pointer hover:bg-[#00b8a5]">
+            <button type="submit"
+                    id="submitBtn"
+                    disabled
+                    class="px-8 py-4 rounded-2xl bg-[#00d1b2] text-[#050b1a] font-bold transition cursor-not-allowed opacity-50 hover:bg-[#00b8a5]"
+                    title="Please select a time slot first">
               Book Appointment
             </button>
           </div>
-          <p class="text-sm text-center text-gray-400 mt-6 tracking-wide">📅 Feel free to book appointment</p>
+          <p class="text-sm text-center text-gray-500 mt-4 tracking-wide" id="slotHint">Select a time slot above to continue.</p>
         </form>
       </div>
 
-      <!-- COUNSELLORS -->
+      <!-- COUNSELLORS LIST -->
       <div class="bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 rounded-[2rem] p-1 sm:p-3 md:p-5 lg:p-7 shadow-2xl">
         <h3 class="text-2xl font-bold text-white mb-6">Available Counsellors</h3>
 
@@ -116,7 +167,6 @@
                   </span>
                   {% endif %}
                 </div>
-
                 <p class="text-[#00d1b2] text-xs font-semibold tracking-[0.3em] uppercase mt-2">
                   {{ c.specialization }}
                 </p>
@@ -127,8 +177,8 @@
                 <div class="text-right min-w-0">
                   <p class="text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-2">Availability</p>
                   <div class="px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white font-semibold text-sm text-center w-full min-w-0 leading-snug break-words">
-                    {{ c.available_days }},<br>
-                    {{ c.available_time_start|time:"H:i" }} - {{ c.available_time_end|time:"H:i" }}
+                    {{ c.available_days }}<br>
+                    {{ c.available_time_start|time:"H:i" }} – {{ c.available_time_end|time:"H:i" }}
                   </div>
                 </div>
                 <div class="flex items-center gap-3">
@@ -137,7 +187,7 @@
                     ₹{{ c.session_fee|floatformat:"0" }}/session
                   </p>
                   {% endif %}
-                  <div class="h-11 w-11 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/70 group-hover:bg-[#00d1b2] group-hover:text-[#04111d] transition">
+                  <div class="h-11 w-11 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/70 transition">
                     →
                   </div>
                 </div>
@@ -145,13 +195,11 @@
             </div>
 
             {% if c.bio %}
-            <!-- Bio - full width below -->
             <p class="text-gray-400 text-sm mt-4 leading-relaxed border-t border-white/5 pt-4">
               {{ c.bio|truncatewords:24 }}
             </p>
             {% endif %}
           </div>
-
           {% empty %}
           <div class="bg-[#0a1428]/60 backdrop-blur-xl border border-white/10 p-8 rounded-[2rem] text-gray-400">
             No counsellors available. Check back later or contact admin.
@@ -166,10 +214,180 @@
 
 {% if form.non_field_errors %}
 <script>
-  (function () {
-    alert('The counsellor is not available on this day or time.');
-  })();
+  document.addEventListener('DOMContentLoaded', function () {
+    const errBox = document.getElementById('bookingFormError');
+    if (errBox) errBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
 </script>
 {% endif %}
+
+<script>
+(function () {
+  // ── Counsellor availability data from server ────────────────────────────
+  const COUNSELLORS = {{ counsellors_json|safe }};
+  const SESSION_MIN = 30;
+
+  const counsellorSel = document.getElementById('id_counsellor');
+  const dateSel       = document.getElementById('id_date');
+  const hiddenTime    = document.getElementById('id_time_slot');
+  const slotGrid      = document.getElementById('slotGrid');
+  const submitBtn     = document.getElementById('submitBtn');
+  const slotHint      = document.getElementById('slotHint');
+
+  let selectedSlot    = hiddenTime.value || '';   // preserve on re-render after error
+  let bookedStartTimes = new Set();               // "HH:MM" strings
+
+  // ── Helpers ────────────────────────────────────────────────────────────
+  function getCounsellorData(id) {
+    return COUNSELLORS.find(c => String(c.id) === String(id)) || null;
+  }
+
+  function timeToMinutes(hhmm) {
+    const [h, m] = hhmm.split(':').map(Number);
+    return h * 60 + m;
+  }
+
+  function minutesToHHMM(mins) {
+    const h = String(Math.floor(mins / 60)).padStart(2, '0');
+    const m = String(mins % 60).padStart(2, '0');
+    return `${h}:${m}`;
+  }
+
+  function generateSlots(start, end) {
+    const slots = [];
+    let cur = timeToMinutes(start);
+    const endMin = timeToMinutes(end);
+    while (cur + SESSION_MIN <= endMin) {
+      slots.push(minutesToHHMM(cur));
+      cur += SESSION_MIN;
+    }
+    return slots;
+  }
+
+  // ── Render slot grid ────────────────────────────────────────────────────
+  function renderSlots(slots) {
+    if (!slots.length) {
+      slotGrid.innerHTML = '<p class="text-sm text-gray-500 italic">No slots available for this counsellor\'s hours.</p>';
+      return;
+    }
+
+    slotGrid.innerHTML = '';
+    const grid = document.createElement('div');
+    grid.className = 'grid grid-cols-3 sm:grid-cols-4 gap-2';
+
+    slots.forEach(slot => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.dataset.slot = slot;
+      btn.textContent = slot;
+      applySlotStyle(btn, slot);
+      btn.addEventListener('click', () => selectSlot(slot));
+      grid.appendChild(btn);
+    });
+
+    slotGrid.appendChild(grid);
+  }
+
+  function applySlotStyle(btn, slot) {
+    const isBooked   = bookedStartTimes.has(slot);
+    const isSelected = slot === selectedSlot;
+
+    btn.disabled = isBooked;
+    btn.className = [
+      'px-3 py-2.5 rounded-xl text-sm font-bold transition-all focus:outline-none',
+      isBooked
+        ? 'bg-red-500/10 text-red-400 border border-red-500/30 line-through cursor-not-allowed opacity-60'
+        : isSelected
+          ? 'bg-[#00d1b2] text-[#050b1a] border border-[#00d1b2] ring-2 ring-[#00d1b2]/40 scale-105'
+          : 'bg-white/5 text-white border border-white/10 hover:bg-[#00d1b2]/20 hover:border-[#00d1b2]/40 cursor-pointer'
+    ].join(' ');
+  }
+
+  function selectSlot(slot) {
+    selectedSlot = slot;
+    hiddenTime.value = slot;
+
+    // Enable submit
+    submitBtn.disabled = false;
+    submitBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    submitBtn.classList.add('cursor-pointer');
+    submitBtn.title = '';
+    slotHint.textContent = `✅ Selected: ${slot} – ${minutesToHHMM(timeToMinutes(slot) + SESSION_MIN)}`;
+    slotHint.className = 'text-sm text-center text-[#00d1b2] mt-4 tracking-wide font-semibold';
+
+    // Re-style all buttons
+    slotGrid.querySelectorAll('button[data-slot]').forEach(btn => {
+      applySlotStyle(btn, btn.dataset.slot);
+    });
+  }
+
+  // ── Fetch booked slots & rebuild grid ──────────────────────────────────
+  function refresh() {
+    const cId  = counsellorSel.value;
+    const date = dateSel.value;
+    const cData = getCounsellorData(cId);
+
+    if (!cId || !date || !cData) {
+      slotGrid.innerHTML = '<p class="text-sm text-gray-500 italic">Select a counsellor and date to see available time slots.</p>';
+      disableSubmit();
+      return;
+    }
+
+    slotGrid.innerHTML = '<p class="text-sm text-gray-400 animate-pulse">Loading slots…</p>';
+
+    fetch(`/api/counsellor/${cId}/booked-slots/?date=${date}`, {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(r => r.json())
+    .then(data => {
+      bookedStartTimes = new Set((data.booked_slots || []).map(s => s.start));
+      const allSlots = generateSlots(cData.start, cData.end);
+      renderSlots(allSlots);
+
+      // If a slot was previously selected (e.g. after form error), re-validate it
+      if (selectedSlot) {
+        if (bookedStartTimes.has(selectedSlot) || !allSlots.includes(selectedSlot)) {
+          selectedSlot = '';
+          hiddenTime.value = '';
+          disableSubmit();
+        } else {
+          selectSlot(selectedSlot);
+        }
+      }
+    })
+    .catch(() => {
+      slotGrid.innerHTML = '<p class="text-sm text-red-400">Could not load slots. Please try again.</p>';
+    });
+  }
+
+  function disableSubmit() {
+    submitBtn.disabled = true;
+    submitBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    submitBtn.classList.remove('cursor-pointer');
+    submitBtn.title = 'Please select a time slot first';
+    slotHint.textContent = 'Select a time slot above to continue.';
+    slotHint.className = 'text-sm text-center text-gray-500 mt-4 tracking-wide';
+  }
+
+  // ── Events ─────────────────────────────────────────────────────────────
+  if (counsellorSel) counsellorSel.addEventListener('change', () => {
+    selectedSlot = '';
+    hiddenTime.value = '';
+    disableSubmit();
+    refresh();
+  });
+  if (dateSel) dateSel.addEventListener('change', () => {
+    selectedSlot = '';
+    hiddenTime.value = '';
+    disableSubmit();
+    refresh();
+  });
+
+  // On page load — trigger if values are prefilled (e.g. after form error)
+  if (counsellorSel && counsellorSel.value && dateSel && dateSel.value) {
+    refresh();
+  }
+})();
+</script>
 
 {% endblock %}

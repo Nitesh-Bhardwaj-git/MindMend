@@ -74,7 +74,7 @@
         <div class="bg-[#0a1428]/50 border border-white/10 rounded-3xl p-6 shadow-xl">
           <div class="flex justify-between items-center mb-4">
             <h4 class="text-white font-semibold">📅 Upcoming Appointments</h4>
-            <a href="#" class="text-sm text-purple-400 hover:underline">Book New</a>
+            <a href="{% url 'counsellor_booking' %}" class="text-sm text-purple-400 hover:underline">Book New</a>
           </div>
 
           {% if upcoming_appointment %}
@@ -103,7 +103,7 @@
         <div class="bg-[#0a1428]/50 border border-white/10 rounded-3xl p-6 shadow-xl">
           <div class="flex justify-between mb-4">
             <h4 class="text-white font-semibold">Recent Assessments</h4>
-            <a href="#" class="text-sm text-[#00d1b2] hover:underline">View All</a>
+            <a href="{% url 'assessments' %}" class="text-sm text-[#00d1b2] hover:underline">View All</a>
           </div>
 
           {% for a in assessments|slice:":2" %}

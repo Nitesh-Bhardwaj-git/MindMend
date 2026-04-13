@@ -1,4 +1,5 @@
 from django import forms
+from datetime import timedelta, datetime
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from .models import MoodEntry, ForumPost, ForumReply, CounsellorBooking, Counsellor, CounsellorReview
@@ -100,8 +101,34 @@ class CounsellorBookingForm(forms.ModelForm):
         if not (day_available and time_available):
             raise forms.ValidationError('The counsellor is not available on this day or time.')
 
-        if CounsellorBooking.objects.filter(counsellor=counsellor, date=booking_date, time_slot=time_slot).exists():
-            raise forms.ValidationError('This counsellor is already booked for this specific date and time slot.')
+        # ── 30-minute session conflict check ────────────────────────────────
+        # Each session lasts 30 minutes. A new booking at T conflicts with any
+        # existing booking B when the windows [T, T+30) and [B, B+30) overlap,
+        # i.e. when  B < T+30  AND  T < B+30  →  |T - B| < 30 minutes.
+        SESSION_MINUTES = 30
+        session_delta = timedelta(minutes=SESSION_MINUTES)
+
+        # Convert time_slot to a full datetime for arithmetic.
+        requested_dt = datetime.combine(booking_date, time_slot)
+        window_start = requested_dt - session_delta  # exclusive lower bound
+        window_end   = requested_dt + session_delta  # exclusive upper bound
+
+        # Fetch all active bookings for this counsellor on this day.
+        existing_bookings = CounsellorBooking.objects.filter(
+            counsellor=counsellor,
+            date=booking_date,
+        ).exclude(status='cancelled')
+
+        for booking in existing_bookings:
+            existing_dt = datetime.combine(booking_date, booking.time_slot)
+            if window_start < existing_dt < window_end:
+                booked_time = booking.time_slot.strftime('%H:%M')
+                next_available = (existing_dt + session_delta).strftime('%H:%M')
+                raise forms.ValidationError(
+                    f'This counsellor already has a session at {booked_time}. '
+                    f'Each session is {SESSION_MINUTES} minutes. '
+                    f'The next available slot is {next_available} or later.'
+                )
 
         return cleaned
 

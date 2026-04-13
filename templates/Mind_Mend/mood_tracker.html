@@ -5,6 +5,34 @@
 {% block content %}
 <div class="min-h-screen bg-[#050b1a] pt-4 md:pt-6 pb-20 relative overflow-hidden">
 
+  {% if messages %}
+  <div class="max-w-7xl mx-auto px-6 pt-2">
+    {% for message in messages %}
+    <div class="mb-3 px-5 py-3 rounded-xl text-sm font-medium
+      {% if message.tags == 'error' %}bg-red-500/15 border border-red-500/30 text-red-400
+      {% else %}bg-[#00d1b2]/10 border border-[#00d1b2]/30 text-[#00d1b2]{% endif %}">
+      {{ message }}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if crisis_alert %}
+  <div class="max-w-7xl mx-auto px-6 pt-2">
+    <div class="flex items-start gap-3 bg-red-500/10 border border-red-500/30 rounded-2xl px-5 py-4 mb-4">
+      <span class="text-xl mt-0.5">🚨</span>
+      <div>
+        <p class="text-red-400 text-sm font-semibold">We noticed you've been feeling very low for {{ very_low_streak }} days in a row.</p>
+        <p class="text-gray-400 text-xs mt-0.5 leading-relaxed">It's okay to reach out for support. Consider talking to a counsellor or calling a helpline — you don't have to face this alone.</p>
+        <div class="flex gap-3 mt-2">
+          <a href="{% url 'book_session' %}" class="text-xs font-semibold text-red-400 hover:text-red-300 transition underline">Book a Counsellor</a>
+          <a href="{% url 'resources' %}" class="text-xs font-semibold text-gray-400 hover:text-white transition underline">View Helplines</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
   <!-- Glow Background -->
   <div class="absolute bottom-0 right-1/3 w-[500px] h-[500px] bg-purple-500/10 blur-[120px] rounded-full pointer-events-none -z-10"></div>
 
@@ -109,12 +137,21 @@
 
           <!-- NOTES -->
           <div class="mb-4">
-            {{ form.notes|add_class:"bg-white/5 text-black rounded-xl p-4 w-full" }}
+            {{ form.notes|add_class:"bg-white/5 text-white rounded-xl p-4 w-full" }}
           </div>
 
           <button class="w-full py-3 bg-[#00d1b2] text-black rounded-xl font-semibold hover:bg-[#00b8a5]">
             + Save Entry
           </button>
+
+          <!-- Thank You Note -->
+          <div class="mt-4 flex items-start gap-3 bg-[#00d1b2]/5 border border-[#00d1b2]/20 rounded-2xl px-5 py-4">
+            <span class="text-xl mt-0.5">💚</span>
+            <div>
+              <p class="text-[#00d1b2] text-sm font-semibold">Thank you for checking in!</p>
+              <p class="text-gray-400 text-xs mt-0.5 leading-relaxed">Taking a moment to reflect on how you feel is a meaningful step towards better mental wellbeing. Keep it up — every entry counts.</p>
+            </div>
+          </div>
 
         </form>
       </div>
@@ -137,9 +174,9 @@
           <div class="flex justify-between items-center mb-4">
             <h3 class="text-white font-semibold">Recent Entries</h3>
             {% if show_all_entries %}
-              <a href="{% url 'mood_tracker' %}#recent-entries" class="text-xs font-semibold uppercase tracking-widest text-gray-400 hover:text-white transition"></a>
+              <a href="{% url 'mood_tracker' %}#recent-entries" class="text-xs font-semibold uppercase tracking-widest text-gray-400 hover:text-white transition">Show Less</a>
             {% else %}
-              <a href="{% url 'mood_tracker' %}?all=1#recent-entries" class="text-xs font-semibold uppercase tracking-widest text-[#00d1b2] hover:text-[#7ef5df] transition"></a>
+              <a href="{% url 'mood_tracker' %}?all=1#recent-entries" class="text-xs font-semibold uppercase tracking-widest text-[#00d1b2] hover:text-[#7ef5df] transition">View All</a>
             {% endif %}
           </div>
 

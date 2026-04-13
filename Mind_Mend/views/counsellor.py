@@ -1,4 +1,5 @@
 import json
+from datetime import timedelta, datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -19,9 +20,12 @@ from ..forms import CounsellorBookingForm, CounsellorReviewForm
 
 @login_required
 def counsellor_booking(request):
+    import json as _json
     from django.db.models import Avg
-    counsellors = Counsellor.objects.filter(is_active=True).annotate(
-        avg_rating=Avg('counsellorbooking__counsellorreview__rating')
+    counsellors = list(
+        Counsellor.objects.filter(is_active=True).annotate(
+            avg_rating=Avg('counsellorbooking__counsellorreview__rating')
+        )
     )
     if request.method == 'POST':
         form = CounsellorBookingForm(request.POST)
@@ -29,7 +33,7 @@ def counsellor_booking(request):
             booking = form.save(commit=False)
             booking.user = request.user
             booking.save()
-            
+
             if booking.counsellor.session_fee > 0:
                 return redirect('checkout_payment', booking_id=booking.id)
             else:
@@ -47,9 +51,26 @@ def counsellor_booking(request):
                 return redirect('my_bookings')
     else:
         form = CounsellorBookingForm(initial={'date': timezone.localdate()})
+
+    # Build counsellor availability data for the JS slot picker
+    counsellors_json = _json.dumps([
+        {
+            'id': c.id,
+            'start': c.available_time_start.strftime('%H:%M'),
+            'end': c.available_time_end.strftime('%H:%M'),
+            'days': [
+                t.strip().lower()[:3]
+                for t in (c.available_days or '').replace('/', ',').replace(' ', ',').split(',')
+                if t.strip()
+            ],
+        }
+        for c in counsellors
+    ])
+
     return render(request, 'Mind_Mend/counsellor_booking.html', {
         'form': form,
         'counsellors': counsellors,
+        'counsellors_json': counsellors_json,
     })
 
 
@@ -110,10 +131,23 @@ def my_bookings(request):
 def booking_action(request, booking_id):
     booking = get_object_or_404(CounsellorBooking, pk=booking_id, user=request.user)
     action = request.POST.get('action')
-    if action == 'cancel' and booking.status in ('pending', 'confirmed'):
+    if action == 'cancel' and booking.status in ('pending', 'confirmed') and not booking.is_paid:
         booking.status = 'cancelled'
         booking.save(update_fields=['status'])
         messages.info(request, 'Booking cancelled.')
+    return redirect('my_bookings')
+
+
+@login_required
+@require_http_methods(['POST'])
+def delete_booking(request, booking_id):
+    """Hard-delete a completed or cancelled booking. Only the patient can delete."""
+    booking = get_object_or_404(CounsellorBooking, pk=booking_id, user=request.user)
+    if booking.status not in ('completed', 'cancelled'):
+        messages.error(request, 'Only completed or cancelled sessions can be deleted.')
+        return redirect('my_bookings')
+    booking.delete()
+    messages.success(request, 'Session record deleted successfully.')
     return redirect('my_bookings')
 
 
@@ -387,27 +421,137 @@ def submit_review(request, booking_id):
 @login_required
 @require_http_methods(['GET', 'POST'])
 def checkout_payment(request, booking_id):
+    """
+    GET  → create a Razorpay order and render the payment page.
+    POST → (safety fallback) redirect back to GET.
+    """
+    import razorpay
+    from django.conf import settings
+
     booking = get_object_or_404(CounsellorBooking, pk=booking_id, user=request.user)
-    
+
     if booking.is_paid or booking.status != 'pending':
         messages.info(request, "This booking has already been processed.")
         return redirect('my_bookings')
-        
+
     if request.method == 'POST':
-        booking.is_paid = True
-        booking.status = 'confirmed'
-        booking.save(update_fields=['is_paid', 'status'])
-        
-        _notify_counsellor(
-            booking.counsellor,
-            'booking_created',
-            'New appointment booked',
-            f'{request.user.get_username()} booked {booking.date} at {booking.time_slot.strftime("%H:%M")}.',
-            booking=booking,
-            actor=request.user
-        )
-        
-        messages.success(request, "Payment successful! Your appointment is confirmed.")
+        return redirect('checkout_payment', booking_id=booking_id)
+
+    # Amount in paise (Razorpay requires smallest currency unit)
+    amount_paise = int(booking.counsellor.session_fee * 100)
+
+    client = razorpay.Client(
+        auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
+    )
+    razorpay_order = client.order.create({
+        'amount': amount_paise,
+        'currency': 'INR',
+        'payment_capture': 1,
+        'notes': {
+            'booking_id': booking.id,
+            'user_id': request.user.id,
+        },
+    })
+
+    return render(request, 'Mind_Mend/payment.html', {
+        'booking': booking,
+        'razorpay_order_id': razorpay_order['id'],
+        'razorpay_key_id': settings.RAZORPAY_KEY_ID,
+        'amount_paise': amount_paise,
+        'user_name': request.user.get_full_name() or request.user.username,
+        'user_email': request.user.email,
+    })
+
+
+@login_required
+@require_http_methods(['POST'])
+def razorpay_payment_verify(request, booking_id):
+    """
+    Called by our JS after Razorpay handler fires.
+    Verifies the payment signature and confirms the booking.
+    """
+    import hmac
+    import hashlib
+    from django.conf import settings
+
+    booking = get_object_or_404(CounsellorBooking, pk=booking_id, user=request.user)
+
+    if booking.is_paid:
+        messages.info(request, "Payment already recorded.")
         return redirect('my_bookings')
-        
-    return render(request, 'Mind_Mend/payment.html', {'booking': booking})
+
+    razorpay_order_id   = request.POST.get('razorpay_order_id', '')
+    razorpay_payment_id = request.POST.get('razorpay_payment_id', '')
+    razorpay_signature  = request.POST.get('razorpay_signature', '')
+
+    # HMAC-SHA256 signature verification
+    message = f"{razorpay_order_id}|{razorpay_payment_id}".encode()
+    generated_signature = hmac.new(
+        settings.RAZORPAY_KEY_SECRET.encode(),
+        message,
+        hashlib.sha256
+    ).hexdigest()
+
+    if not hmac.compare_digest(generated_signature, razorpay_signature):
+        messages.error(request, "Payment verification failed. Please contact support.")
+        return redirect('checkout_payment', booking_id=booking_id)
+
+    # Signature valid — confirm booking
+    booking.is_paid = True
+    booking.status  = 'confirmed'
+    booking.save(update_fields=['is_paid', 'status'])
+
+    _notify_counsellor(
+        booking.counsellor,
+        'booking_created',
+        'New appointment booked',
+        f'{request.user.get_username()} booked {booking.date} at {booking.time_slot.strftime("%H:%M")}.',
+        booking=booking,
+        actor=request.user
+    )
+
+    messages.success(request, "Payment successful! Your appointment is confirmed.")
+    return redirect('my_bookings')
+
+
+
+@login_required
+@require_http_methods(['GET'])
+def get_booked_slots(request, counsellor_id):
+    """
+    Returns the list of 30-minute blocked windows for a counsellor on a date.
+    Query param: ?date=YYYY-MM-DD
+    Response: {"booked_slots": [{"start": "12:00", "end": "12:30"}, ...]}
+    """
+    from django.utils.dateparse import parse_date
+
+    counsellor = get_object_or_404(Counsellor, pk=counsellor_id, is_active=True)
+    date_str = request.GET.get('date', '')
+    booking_date = parse_date(date_str)
+    if not booking_date:
+        return JsonResponse({'error': 'Invalid or missing date parameter.'}, status=400)
+
+    SESSION_MINUTES = 30
+    session_delta = timedelta(minutes=SESSION_MINUTES)
+
+    active_bookings = CounsellorBooking.objects.filter(
+        counsellor=counsellor,
+        date=booking_date,
+    ).exclude(status='cancelled').values_list('time_slot', flat=True)
+
+    booked_slots = []
+    for ts in active_bookings:
+        start_dt = datetime.combine(booking_date, ts)
+        end_dt = start_dt + session_delta
+        booked_slots.append({
+            'start': start_dt.strftime('%H:%M'),
+            'end': end_dt.strftime('%H:%M'),
+        })
+
+    booked_slots.sort(key=lambda s: s['start'])
+    return JsonResponse({'booked_slots': booked_slots})
+
+
+def how_to_book(request):
+    """Static guide page explaining how to book a session."""
+    return render(request, 'Mind_Mend/how_to_book.html')

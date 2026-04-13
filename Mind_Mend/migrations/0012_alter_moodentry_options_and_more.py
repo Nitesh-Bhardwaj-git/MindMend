@@ -14,8 +14,18 @@ class Migration(migrations.Migration):
             name='moodentry',
             options={'ordering': ['-date', '-created_at']},
         ),
-        migrations.AlterUniqueTogether(
-            name='moodentry',
-            unique_together=set(),
+        # SeparateDatabaseAndState: the unique_together on (user, date) may or
+        # may not exist in the target DB depending on deployment history.
+        # We update Django's migration state here but skip the actual
+        # DB-level DROP CONSTRAINT to prevent the crash on Render:
+        # "Found wrong number (0) of constraints for Mind_Mend_moodentry(user_id, date)"
+        migrations.SeparateDatabaseAndState(
+            database_operations=[],   # <-- skip any DB schema change
+            state_operations=[
+                migrations.AlterUniqueTogether(
+                    name='moodentry',
+                    unique_together=set(),
+                ),
+            ],
         ),
     ]

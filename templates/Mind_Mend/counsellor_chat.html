@@ -98,7 +98,7 @@
                         bg-white/5 text-white border border-white/10
                       {% endif %}">
             <p class="text-xs opacity-75 mb-1">
-              {{ m.sender|display_name }}
+              {{ m.sender_label }}
               {% if m.sender_id == booking.counsellor.user_id %} (Counsellor){% else %} (Patient){% endif %}
             </p>
             <p class="whitespace-pre-wrap break-words text-sm sm:text-base">{{ m.content }}</p>

@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Privacy Policy{% endblock %}
+
+{% block content %}
+{% block show_back_button %}{% endblock %}
+
+<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pb-20">
+
+  <!-- Background Glows -->
+  <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#00d1b2]/5 rounded-full blur-[130px] pointer-events-none"></div>
+  <div class="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-purple-500/8 rounded-full blur-[120px] pointer-events-none"></div>
+
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 relative z-10">
+
+    <!-- Header -->
+    <div class="text-center mb-14">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#00d1b2]/30 bg-[#00d1b2]/5 text-[#00d1b2] text-[0.625rem] font-bold tracking-[0.2em] mb-6">
+        🛡️ PRIVACY &amp; SECURITY
+      </div>
+      <h1 class="text-4xl sm:text-5xl font-extrabold text-white mb-4 tracking-tight">
+        Privacy <span class="bg-gradient-to-r from-[#00d1b2] to-purple-400 bg-clip-text text-transparent">Policy</span>
+      </h1>
+      <p class="text-gray-400 text-lg max-w-2xl mx-auto leading-relaxed">
+        Your mental health data is personal. This policy explains exactly what we collect, how we protect it, and the controls you have.
+      </p>
+      <p class="text-gray-500 text-xs mt-4">Last updated: April 2026</p>
+    </div>
+
+    <!-- Encrypted Messaging Notice -->
+    <div class="mb-8 flex items-start gap-4 p-6 rounded-2xl bg-[#00d1b2]/5 border border-[#00d1b2]/20">
+      <div class="h-10 w-10 shrink-0 rounded-xl bg-[#00d1b2]/10 text-[#00d1b2] flex items-center justify-center text-xl">🔐</div>
+      <div>
+        <h3 class="text-white font-bold mb-1">Encrypted Messaging</h3>
+        <p class="text-gray-400 text-sm leading-relaxed">
+          All counsellor chat messages and AI chatbot conversations are encrypted at rest using
+          <strong class="text-white">AES-128 (Fernet / HMAC-SHA256)</strong>. Messages stored in our database are
+          unreadable without the private encryption key. All traffic is encrypted in transit over HTTPS.
+        </p>
+      </div>
+    </div>
+
+    <!-- Policy Sections -->
+    <div class="space-y-6">
+
+      <!-- Section 1 -->
+      <div class="bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 p-8">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="h-9 w-9 rounded-xl bg-[#00d1b2]/10 text-[#00d1b2] flex items-center justify-center font-bold text-sm">1</div>
+          <h2 class="text-xl font-bold text-white">What we collect</h2>
+        </div>
+        <div class="space-y-4 text-gray-400 text-sm leading-relaxed">
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div class="bg-white/3 rounded-xl p-4">
+              <p class="text-white font-semibold mb-2">Account information</p>
+              <p>Username, email address, and optional profile details (first/last name, date of birth, gender, occupation). Your real name is <em>never</em> displayed publicly unless you explicitly enable it.</p>
+            </div>
+            <div class="bg-white/3 rounded-xl p-4">
+              <p class="text-white font-semibold mb-2">Mental health data</p>
+              <p>Mood entries, assessment responses (PHQ-9, GAD-7, PSS), and AI chatbot conversations. This data is tied to your account and never shared with third parties.</p>
+            </div>
+            <div class="bg-white/3 rounded-xl p-4">
+              <p class="text-white font-semibold mb-2">Location data (optional)</p>
+              <p>Approximate region (country, state, city) derived from your IP address or GPS (if you consent). Used only for aggregate analytics. You can opt out any time in your <a href="{% url 'user_profile' %}" class="text-[#00d1b2] hover:underline">profile settings</a>.</p>
+            </div>
+            <div class="bg-white/3 rounded-xl p-4">
+              <p class="text-white font-semibold mb-2">Session &amp; cookies</p>
+              <p>A session cookie to keep you logged in, and a CSRF cookie that protects against cross-site attacks. No third-party tracking cookies are set without your consent.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2 -->
+      <div class="bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 p-8">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="h-9 w-9 rounded-xl bg-[#00d1b2]/10 text-[#00d1b2] flex items-center justify-center font-bold text-sm">2</div>
+          <h2 class="text-xl font-bold text-white">How we protect your data</h2>
+        </div>
+        <div class="space-y-3 text-gray-400 text-sm leading-relaxed">
+          <div class="flex items-start gap-3">
+            <span class="text-[#00d1b2] text-lg shrink-0 mt-0.5">✓</span>
+            <p><strong class="text-white">Encryption at rest</strong> — counsellor chat messages and AI chatbot history are encrypted in the database using Fernet symmetric encryption (AES-128-CBC + HMAC-SHA256). Raw ciphertext is meaningless without the private key.</p>
+          </div>
+          <div class="flex items-start gap-3">
+            <span class="text-[#00d1b2] text-lg shrink-0 mt-0.5">✓</span>
+            <p><strong class="text-white">Encryption in transit</strong> — all data is transmitted over HTTPS with HSTS headers enforced in production, preventing downgrade attacks.</p>
+          </div>
+          <div class="flex items-start gap-3">
+            <span class="text-[#00d1b2] text-lg shrink-0 mt-0.5">✓</span>
+            <p><strong class="text-white">CSRF protection</strong> — every form and API request is protected against cross-site request forgery using Django's CSRF middleware.</p>
+          </div>
+          <div class="flex items-start gap-3">
+            <span class="text-[#00d1b2] text-lg shrink-0 mt-0.5">✓</span>
+            <p><strong class="text-white">Password hashing</strong> — passwords are hashed using Django's PBKDF2-SHA256 algorithm and are never stored in plain text.</p>
+          </div>
+          <div class="flex items-start gap-3">
+            <span class="text-[#00d1b2] text-lg shrink-0 mt-0.5">✓</span>
+            <p><strong class="text-white">Single-device sessions</strong> — logging in on a new device automatically invalidates all other active sessions for your account.</p>
+          </div>
+          <div class="flex items-start gap-3">
+            <span class="text-[#00d1b2] text-lg shrink-0 mt-0.5">✓</span>
+            <p><strong class="text-white">Razorpay payment security</strong> — payments are processed by Razorpay with HMAC-SHA256 signature verification. We never store card details.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3 -->
+      <div class="bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 p-8">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="h-9 w-9 rounded-xl bg-[#00d1b2]/10 text-[#00d1b2] flex items-center justify-center font-bold text-sm">3</div>
+          <h2 class="text-xl font-bold text-white">Your privacy controls</h2>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-4 text-sm text-gray-400">
+          <div class="bg-white/3 rounded-xl p-4 flex items-start gap-3">
+            <span class="text-2xl">🎭</span>
+            <div>
+              <p class="text-white font-semibold mb-1">Anonymous posting</p>
+              <p>Forum posts and replies are anonymous by default. Your username is only shown if you opt in per post.</p>
+            </div>
+          </div>
+          <div class="bg-white/3 rounded-xl p-4 flex items-start gap-3">
+            <span class="text-2xl">👤</span>
+            <div>
+              <p class="text-white font-semibold mb-1">Display name control</p>
+              <p>Your real name is hidden by default. Enable it only if you want it visible in chats and reviews.</p>
+            </div>
+          </div>
+          <div class="bg-white/3 rounded-xl p-4 flex items-start gap-3">
+            <span class="text-2xl">📍</span>
+            <div>
+              <p class="text-white font-semibold mb-1">Location tracking opt-out</p>
+              <p>Go to <a href="{% url 'user_profile' %}" class="text-[#00d1b2] hover:underline">My Profile</a> → Privacy Settings and enable "Opt out of location tracking" to disable all geolocation logging.</p>
+            </div>
+          </div>
+          <div class="bg-white/3 rounded-xl p-4 flex items-start gap-3">
+            <span class="text-2xl">🍪</span>
+            <div>
+              <p class="text-white font-semibold mb-1">Cookie consent</p>
+              <p>You can decline cookies on the consent banner. Declining disables geolocation sharing from your browser.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 4 -->
+      <div class="bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 p-8">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="h-9 w-9 rounded-xl bg-[#00d1b2]/10 text-[#00d1b2] flex items-center justify-center font-bold text-sm">4</div>
+          <h2 class="text-xl font-bold text-white">Data sharing &amp; retention</h2>
+        </div>
+        <div class="space-y-3 text-gray-400 text-sm leading-relaxed">
+          <div class="flex items-start gap-3">
+            <span class="text-red-400 text-lg shrink-0 mt-0.5">✗</span>
+            <p>We <strong class="text-white">do not sell</strong> your data to any third party.</p>
+          </div>
+          <div class="flex items-start gap-3">
+            <span class="text-red-400 text-lg shrink-0 mt-0.5">✗</span>
+            <p>We <strong class="text-white">do not share</strong> your mental health data with employers, insurers, or advertisers.</p>
+          </div>
+          <div class="flex items-start gap-3">
+            <span class="text-[#00d1b2] text-lg shrink-0 mt-0.5">✓</span>
+            <p>Counsellors can only see messages within their own booked sessions. No cross-session access is possible.</p>
+          </div>
+          <div class="flex items-start gap-3">
+            <span class="text-[#00d1b2] text-lg shrink-0 mt-0.5">✓</span>
+            <p>You may request deletion of your account and all associated data at any time by contacting us via the <a href="{% url 'contact_us' %}" class="text-[#00d1b2] hover:underline">Contact page</a>.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 5 -->
+      <div class="bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 p-8">
+        <div class="flex items-center gap-3 mb-5">
+          <div class="h-9 w-9 rounded-xl bg-[#00d1b2]/10 text-[#00d1b2] flex items-center justify-center font-bold text-sm">5</div>
+          <h2 class="text-xl font-bold text-white">Third-party services</h2>
+        </div>
+        <div class="space-y-2 text-gray-400 text-sm leading-relaxed">
+          <p>We use the following third-party services. Each has its own privacy policy:</p>
+          <ul class="mt-3 space-y-2 list-none">
+            <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-[#00d1b2] shrink-0"></span><strong class="text-white">Razorpay</strong> — payment processing (PCI-DSS compliant)</li>
+            <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-[#00d1b2] shrink-0"></span><strong class="text-white">Google Gemini / OpenAI</strong> — AI chatbot (only your message text is sent, not your identity)</li>
+            <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-[#00d1b2] shrink-0"></span><strong class="text-white">Google Analytics</strong> — aggregate page-view metrics (consent banner controls this)</li>
+            <li class="flex items-center gap-2"><span class="w-2 h-2 rounded-full bg-[#00d1b2] shrink-0"></span><strong class="text-white">Render.com</strong> — hosting infrastructure</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Contact block -->
+      <div class="text-center bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-[#00d1b2]/20 p-8">
+        <div class="text-4xl mb-4">📬</div>
+        <h3 class="text-xl font-bold text-white mb-2">Questions about your privacy?</h3>
+        <p class="text-gray-400 text-sm mb-6">Reach out and we'll respond within 48 hours.</p>
+        <a href="{% url 'contact_us' %}"
+           class="inline-flex items-center gap-2 px-8 py-3 bg-[#00d1b2] text-[#050b1a] font-bold rounded-xl hover:opacity-90 transition text-sm tracking-wider">
+          Contact Us →
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

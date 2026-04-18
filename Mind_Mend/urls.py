@@ -3,11 +3,14 @@ from .views import auth, core, assessments, forum, counsellor, analytics
 
 urlpatterns = [
     path('', core.home, name='home'),
+    path('privacy/', core.privacy_policy, name='privacy_policy'),
     path('register/', auth.register, name='register'),
     path('login/', auth.login_view, name='login'),
     path('doctor/login/', auth.doctor_login_view, name='doctor_login'),
     path('logout/', auth.logout_view, name='logout'),
     path('profile/', auth.user_profile, name='user_profile'),
+    path('profile/delete-data/', auth.delete_my_data, name='delete_my_data'),
+    path('profile/delete-account/', auth.delete_my_account, name='delete_my_account'),
 
     # AI Chatbot
     path('chat/', core.chat, name='chat'),
@@ -45,6 +48,7 @@ urlpatterns = [
     path('booking/<int:booking_id>/review/', counsellor.submit_review, name='submit_review'),
     path('payment/<int:booking_id>/', counsellor.checkout_payment, name='checkout_payment'),
     path('payment/<int:booking_id>/verify/', counsellor.razorpay_payment_verify, name='razorpay_payment_verify'),
+    path('payment/webhook/', counsellor.razorpay_webhook, name='razorpay_webhook'),
     path('api/counsellor/<int:counsellor_id>/booked-slots/', counsellor.get_booked_slots, name='get_booked_slots'),
     # Mood
     path('mood/', analytics.mood_tracker, name='mood_tracker'),

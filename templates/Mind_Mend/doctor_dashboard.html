@@ -39,7 +39,14 @@
             <div class="flex flex-wrap justify-between items-center gap-4">
 
               <div>
-                <p class="text-white font-bold text-lg">{{ b.user|display_name }}</p>
+                <div class="flex flex-wrap items-center gap-2">
+                  <p class="text-white font-bold text-lg">{{ b.patient_display_name }}</p>
+                  {% if b.is_anonymous %}
+                  <span class="px-2 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                    Anonymous Session
+                  </span>
+                  {% endif %}
+                </div>
                 <p class="text-gray-400 text-sm">{{ b.date|date:"l, M d, Y" }} at {{ b.time_slot|time:"H:i" }}</p>
                 {% if b.notes %}
                 <p class="text-gray-500 text-sm mt-2">Notes: {{ b.notes }}</p>
@@ -79,7 +86,14 @@
             <div class="flex flex-wrap justify-between items-center gap-4">
 
               <div>
-                <p class="text-white font-bold text-lg">{{ b.user|display_name }}</p>
+                <div class="flex flex-wrap items-center gap-2">
+                  <p class="text-white font-bold text-lg">{{ b.patient_display_name }}</p>
+                  {% if b.is_anonymous %}
+                  <span class="px-2 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                    Anonymous Session
+                  </span>
+                  {% endif %}
+                </div>
                 <p class="text-gray-400 text-sm">{{ b.date|date:"l, M d, Y" }} at {{ b.time_slot|time:"H:i" }}</p>
 
                 <span class="inline-block mt-3 px-3 py-1 text-xs rounded-full font-medium

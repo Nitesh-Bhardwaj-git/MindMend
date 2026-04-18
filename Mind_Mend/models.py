@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+from .encryption import EncryptedTextField
 
 
 class UserProfile(models.Model):
@@ -20,6 +21,10 @@ class UserProfile(models.Model):
     show_real_name = models.BooleanField(
         default=False,
         help_text='If checked, your real name is visible to others. Otherwise your username is used.'
+    )
+    location_opt_out = models.BooleanField(
+        default=False,
+        help_text='If checked, location tracking is disabled for this user.'
     )
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -84,6 +89,10 @@ class CounsellorBooking(models.Model):
     date = models.DateField()
     time_slot = models.TimeField()
     notes = models.TextField(blank=True)
+    is_anonymous = models.BooleanField(
+        default=False,
+        help_text='If checked, the counsellor sees this booking as Anonymous Patient.'
+    )
     status = models.CharField(
         max_length=20,
         choices=[
@@ -101,12 +110,17 @@ class CounsellorBooking(models.Model):
         unique_together = ['counsellor', 'date', 'time_slot']
         ordering = ['date', 'time_slot']
 
+    def patient_display_name(self):
+        if self.is_anonymous:
+            return 'Anonymous Patient'
+        return get_display_name(self.user)
+
 
 class CounsellorChatMessage(models.Model):
     """Live chat messages between user and counsellor for a booking."""
     booking = models.ForeignKey(CounsellorBooking, on_delete=models.CASCADE)
     sender = models.ForeignKey(User, on_delete=models.CASCADE)
-    content = models.TextField()
+    content = EncryptedTextField()  # Encrypted at rest with Fernet (AES-128/HMAC-SHA256)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -247,7 +261,7 @@ class ChatMessage(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     session_id = models.CharField(max_length=100)
     role = models.CharField(max_length=10, choices=[('user', 'User'), ('assistant', 'Assistant')])
-    content = models.TextField()
+    content = EncryptedTextField()  # Encrypted at rest with Fernet (AES-128/HMAC-SHA256)
     sentiment = models.CharField(max_length=50, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -289,4 +303,3 @@ class UserAccessLocation(models.Model):
     def __str__(self):
         loc = ', '.join(filter(None, [self.city, self.state, self.country]))
         return loc or self.ip_address or 'Unknown'
-

@@ -223,12 +223,49 @@
     </div>
   </section>
 
+  <!-- Trust Section -->
+  <section class="max-w-7xl mx-auto px-6 md:px-12 lg:px-20">
+    <div class="rounded-[2.5rem] border border-white/5 bg-[#0a1428]/60 backdrop-blur-sm p-8 md:p-10">
+      <div class="max-w-2xl mb-8">
+        <p class="text-[0.625rem] font-bold uppercase tracking-[0.3em] text-[#00d1b2] mb-4 home-section-eyebrow">YOUR CONTROLS</p>
+        <h2 class="text-3xl md:text-4xl font-bold text-white mb-4 tracking-tight">Support that protects your privacy</h2>
+        <p class="text-gray-400 text-base md:text-lg leading-relaxed">
+          MindMend is designed to feel safe from the first visit. You control how you appear, what you share, and whether location-based insights are used for anonymous regional analytics.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="rounded-3xl border border-white/5 bg-[#08101f]/80 p-6">
+          <div class="h-12 w-12 rounded-2xl bg-[#00d1b2]/10 text-[#00d1b2] flex items-center justify-center text-xl mb-4">🎭</div>
+          <h3 class="text-lg font-bold text-white mb-2">Anonymous community</h3>
+          <p class="text-sm text-gray-400 leading-relaxed">
+            Forum posts and replies can stay anonymous, so you can ask for support without revealing your identity.
+          </p>
+        </div>
+
+        <div class="rounded-3xl border border-white/5 bg-[#08101f]/80 p-6">
+          <div class="h-12 w-12 rounded-2xl bg-[#00d1b2]/10 text-[#00d1b2] flex items-center justify-center text-xl mb-4">👤</div>
+          <h3 class="text-lg font-bold text-white mb-2">Display name control</h3>
+          <p class="text-sm text-gray-400 leading-relaxed">
+            Your real name stays hidden by default. You can choose to appear publicly by name or continue using your username.
+          </p>
+        </div>
+
+        <div class="rounded-3xl border border-white/5 bg-[#08101f]/80 p-6">
+          <div class="h-12 w-12 rounded-2xl bg-[#00d1b2]/10 text-[#00d1b2] flex items-center justify-center text-xl mb-4">📍</div>
+          <h3 class="text-lg font-bold text-white mb-2">Location opt-out</h3>
+          <p class="text-sm text-gray-400 leading-relaxed">
+            Regional location insights are optional. You can turn location tracking off anytime from your profile privacy settings.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- FAQ Section -->
   <section class="max-w-5xl mx-auto px-6 md:px-12 lg:px-20 home-faq">
     <div class="flex items-center gap-4 mb-12">
-      <div class="h-12 w-12 rounded-2xl bg-[#00d1b2]/10 text-[#00d1b2] flex items-center justify-center shadow-[0_0_0.9375rem_rgba(0,209,178,0.2)]">
-        ✨
-      </div>
+      
       <div>
         <h2 class="text-3xl font-bold text-white tracking-tight">Q&A FAQ</h2>
         <p class="text-sm text-gray-500">Answers to common questions about MindMend.</p>
@@ -293,7 +330,7 @@
           <span class="text-lg">1. Is it confidential?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🔒 Yes, all your data and conversations are secure, encrypted, and completely private.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🔒 Yes. AI chat history and counsellor messages are encrypted at rest, and your account data is kept private inside your MindMend profile.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
@@ -301,7 +338,7 @@
           <span class="text-lg">2. Can I delete my data anytime?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🗑️ Yes, you can request permanent deletion of your data at any time, and it will be securely removed from our system.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🗑️ Yes. Go to <a href="{% url 'user_profile' %}" class="text-[#00d1b2] font-medium hover:underline">My Profile</a> to permanently delete either your saved data only or your full account. Before deletion, MindMend shows a warning popup because deleted information cannot be recovered.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
@@ -309,7 +346,7 @@
           <span class="text-lg">3. How is my data protected on this platform?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🛡️ Your data is protected using advanced encryption, secure servers, and strict access controls.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🛡️ Your data is protected with encrypted storage for sensitive conversations, secure authentication, and access controls that keep session data limited to the right account.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
@@ -317,7 +354,23 @@
           <span class="text-lg">4. Will my data be shared with anyone?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🔐 No, your data is never shared without your consent.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🔐 No. MindMend does not sell your mental health data, and counsellors only see information tied to their own booked sessions.</p></div>
+      </div>
+
+      <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
+        <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
+          <span class="text-lg">5. What privacy controls do I have?</span>
+          <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
+        </button>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">⚙️ You can post anonymously in the forum, keep your real name hidden behind your username, and opt out of location tracking anytime from your profile settings.</p></div>
+      </div>
+
+      <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
+        <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
+          <span class="text-lg">6. Can I talk to the AI without sharing my exact location?</span>
+          <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
+        </button>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">📍 Yes. Location sharing is optional, and you can decline it on the cookie banner or turn it off later from your profile privacy settings. The AI chat can still be used without sharing exact GPS coordinates.</p></div>
       </div>
     </div>
 
@@ -370,6 +423,22 @@
         </button>
         <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">💸 Yes, basic features are free, while advanced services like counseling may have a cost.</p></div>
       </div>
+
+      <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
+        <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
+          <span class="text-lg">7. Do I need to sign in to use assessments, mood tracking, and booking?</span>
+          <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
+        </button>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🔐 Yes. Personalized tools like assessments, mood tracking, counsellor booking, dashboards, and saved progress require an account so your results stay linked to you securely.</p></div>
+      </div>
+
+      <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
+        <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
+          <span class="text-lg">8. Are assessments a diagnosis?</span>
+          <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
+        </button>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🩺 No. PHQ-9, GAD-7, and PSS-10 are screening tools that help you understand symptoms and patterns, but they do not replace a professional diagnosis.</p></div>
+      </div>
     </div>
 
     <!-- Counseling -->
@@ -387,7 +456,7 @@
           <span class="text-lg">2. How do I book a counseling session?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">📅 Go to the "Book Counselor" section, choose a counselor, select a time, and confirm your session.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">📅 Open the booking page, choose a counsellor, select an available date and 30-minute slot, add an optional note, and confirm your session. Paid sessions continue to checkout automatically.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
@@ -403,7 +472,7 @@
           <span class="text-lg">4. Are counseling sessions anonymous?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🕶️ Yes, sessions are private and confidential, and you may remain anonymous if allowed.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🕶️ Sessions are private and confidential. Your public display-name settings stay under your control, but counselling sessions themselves are tied to your logged-in account.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
@@ -412,6 +481,14 @@
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
         <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">💳 Yes, online counseling sessions may have a fee depending on the counselor and service.</p></div>
+      </div>
+
+      <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
+        <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
+          <span class="text-lg">6. What happens after I book a session?</span>
+          <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
+        </button>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🗂️ Your booking appears in <span class="text-white font-medium">My Bookings</span>, where you can track status, open the session chat, leave a review after completion, and manage eligible records later.</p></div>
       </div>
     </div>
 

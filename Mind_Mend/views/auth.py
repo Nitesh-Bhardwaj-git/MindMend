@@ -6,7 +6,19 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
 from django.contrib.sessions.models import Session
-from ..models import Counsellor
+from ..models import (
+    Counsellor,
+    AssessmentResult,
+    MoodEntry,
+    ForumPost,
+    ForumReply,
+    CounsellorBooking,
+    CounsellorReview,
+    ChatMessage,
+    UserMemory,
+    UserAccessLocation,
+    ContactMessage,
+)
 from ..forms import SignUpForm
 
 def enforce_single_device_login(request, user):
@@ -105,6 +117,42 @@ def logout_view(request):
     return redirect('home')
 
 
+def _delete_user_generated_data(user):
+    AssessmentResult.objects.filter(user=user).delete()
+    MoodEntry.objects.filter(user=user).delete()
+    ForumReply.objects.filter(author=user).delete()
+    ForumPost.objects.filter(author=user).delete()
+    CounsellorReview.objects.filter(user=user).delete()
+    CounsellorBooking.objects.filter(user=user).delete()
+    ChatMessage.objects.filter(user=user).delete()
+    UserMemory.objects.filter(user=user).delete()
+    UserAccessLocation.objects.filter(user=user).delete()
+    ContactMessage.objects.filter(email=user.email).delete()
+
+
+@login_required
+def delete_my_data(request):
+    if request.method != 'POST':
+        return redirect('user_profile')
+
+    _delete_user_generated_data(request.user)
+    messages.success(request, 'Your data has been permanently deleted. This action cannot be undone.')
+    return redirect('user_profile')
+
+
+@login_required
+def delete_my_account(request):
+    if request.method != 'POST':
+        return redirect('user_profile')
+
+    user = request.user
+    username = user.username
+    logout(request)
+    user.delete()
+    messages.success(request, f'Your account @{username} and all related data have been permanently deleted.')
+    return redirect('home')
+
+
 @login_required
 def user_profile(request):
     from ..forms import UserProfileForm
@@ -124,4 +172,3 @@ def user_profile(request):
         form = UserProfileForm(instance=profile, user=request.user)
 
     return render(request, 'Mind_Mend/user_profile.html', {'form': form, 'profile': profile})
-

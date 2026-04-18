@@ -238,3 +238,47 @@ MINDMEND_GOOGLE_FORM_RESPONSES_CSV_URL = os.environ.get('MINDMEND_GOOGLE_FORM_RE
 # Use Test keys for development, Live keys for production.
 RAZORPAY_KEY_ID     = os.environ.get('RAZORPAY_KEY_ID',     'rzp_test_REPLACE_ME')
 RAZORPAY_KEY_SECRET = os.environ.get('RAZORPAY_KEY_SECRET', 'REPLACE_ME_SECRET')
+RAZORPAY_WEBHOOK_SECRET = os.environ.get('RAZORPAY_WEBHOOK_SECRET', '')
+
+# ── Field-level Encryption (Fernet / AES-128-CBC + HMAC-SHA256) ─────────────
+# Store a URL-safe base64-encoded 32-byte key in your .env:
+#   MINDMEND_ENCRYPTION_KEY=<output of: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())">
+# WARNING: Changing this key renders all existing encrypted data unreadable.
+_enc_key = os.environ.get('MINDMEND_ENCRYPTION_KEY', '')
+if not _enc_key:
+    # Auto-generate a stable key for local dev so the server starts cleanly.
+    # In production, always set MINDMEND_ENCRYPTION_KEY in the environment.
+    import logging as _logging
+    try:
+        from cryptography.fernet import Fernet as _Fernet
+        _enc_key = _Fernet.generate_key().decode()
+        _logging.getLogger('django').warning(
+            'MINDMEND_ENCRYPTION_KEY not set — using an ephemeral key. '
+            'Set this env var in production or chat history will be unreadable after restarts.'
+        )
+    except ImportError:
+        _logging.getLogger('django').error(
+            'cryptography package not installed; field encryption disabled. '
+            'Run: pip install cryptography'
+        )
+MINDMEND_ENCRYPTION_KEY = _enc_key
+
+# ── Production Security Headers ──────────────────────────────────────────────
+# These settings are only active when deployed on Render (RENDER=true + DATABASE_URL).
+# They enforce HTTPS, prevent clickjacking, and secure cookies.
+if RENDER:
+    SECURE_SSL_REDIRECT          = True   # Force all HTTP → HTTPS
+    SECURE_HSTS_SECONDS          = 31536000  # 1 year HSTS header
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD          = True
+    SESSION_COOKIE_SECURE        = True   # Session cookie only over HTTPS
+    CSRF_COOKIE_SECURE           = True   # CSRF cookie only over HTTPS
+    SECURE_CONTENT_TYPE_NOSNIFF  = True   # Prevent MIME-type sniffing
+    SECURE_BROWSER_XSS_FILTER    = True   # Legacy XSS filter header
+else:
+    # Safe defaults for local development (HTTP is fine locally)
+    SECURE_SSL_REDIRECT          = False
+    SESSION_COOKIE_SECURE        = False
+    CSRF_COOKIE_SECURE           = False
+    SECURE_CONTENT_TYPE_NOSNIFF  = True
+    SECURE_BROWSER_XSS_FILTER    = True

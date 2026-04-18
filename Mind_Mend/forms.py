@@ -11,7 +11,7 @@ class UserProfileForm(forms.ModelForm):
 
     class Meta:
         model = UserProfile
-        fields = ['dob', 'occupation', 'gender', 'show_real_name']
+        fields = ['dob', 'occupation', 'gender', 'show_real_name', 'location_opt_out']
         widgets = {
             'dob': forms.DateInput(attrs={'type': 'date'}),
             'occupation': forms.TextInput(attrs={'placeholder': 'e.g. Student, Engineer'}),
@@ -161,7 +161,7 @@ class CounsellorBookingForm(forms.ModelForm):
 
     class Meta:
         model = CounsellorBooking
-        fields = ['counsellor', 'date', 'time_slot', 'notes']
+        fields = ['counsellor', 'date', 'time_slot', 'notes', 'is_anonymous']
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date'}),
             'time_slot': forms.TimeInput(attrs={'type': 'time'}),

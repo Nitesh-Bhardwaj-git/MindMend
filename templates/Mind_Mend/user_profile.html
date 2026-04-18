@@ -87,6 +87,17 @@
         {% endif %}
       </div>
 
+      <!-- Location Privacy Status -->
+      <div class="bg-white/5 rounded-xl px-5 py-4 flex items-center gap-3">
+        {% if profile.location_opt_out %}
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block shrink-0"></span>
+          <p class="text-sm text-gray-300">📍 <span class="text-amber-400 font-semibold">Location tracking is disabled</span> for your account.</p>
+        {% else %}
+          <span class="w-2.5 h-2.5 rounded-full bg-[#00d1b2] inline-block shrink-0"></span>
+          <p class="text-sm text-gray-300">📍 Location tracking is <span class="text-[#00d1b2] font-semibold">active</span> (opt out in settings).</p>
+        {% endif %}
+      </div>
+
       <!-- Account Info -->
       <div class="border-t border-white/10 pt-4 space-y-2">
         <p class="text-[10px] uppercase tracking-widest text-gray-500 mb-3">Account Info</p>
@@ -101,6 +112,33 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
           </svg>
           Joined {{ user.date_joined|date:"F Y" }}
+        </div>
+      </div>
+
+      <div class="border-t border-red-500/20 pt-5 space-y-4">
+        <p class="text-[10px] uppercase tracking-widest text-red-400">Danger Zone</p>
+        <div class="rounded-2xl border border-red-500/20 bg-red-500/5 p-5 space-y-4">
+          <p class="text-sm text-gray-300 leading-relaxed">
+            You can permanently delete either your personal data or your full account. Once deleted, this information cannot be recovered.
+          </p>
+          <div class="flex flex-col sm:flex-row gap-3">
+            <form method="post" action="{% url 'delete_my_data' %}" class="flex-1">
+              {% csrf_token %}
+              <button type="submit"
+                onclick="return confirm('Delete all your saved data permanently? This includes assessments, mood logs, bookings, chat history, forum content, and related records. This cannot be recovered.');"
+                class="w-full py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 font-bold text-xs uppercase tracking-widest hover:bg-red-500/20 transition">
+                Delete My Data
+              </button>
+            </form>
+            <form method="post" action="{% url 'delete_my_account' %}" class="flex-1">
+              {% csrf_token %}
+              <button type="submit"
+                onclick="return confirm('Delete your account and all associated data permanently? You will be logged out immediately and this account cannot be recovered.');"
+                class="w-full py-3 rounded-xl bg-red-500 text-white font-bold text-xs uppercase tracking-widest hover:bg-red-600 transition">
+                Delete My Account
+              </button>
+            </form>
+          </div>
         </div>
       </div>
     </div>
@@ -160,9 +198,11 @@
         </select>
       </div>
 
-      <!-- Privacy Toggle -->
-      <div class="border-t border-white/10 pt-5">
-        <p class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Privacy Setting</p>
+      <!-- Privacy Toggles -->
+      <div class="border-t border-white/10 pt-5 space-y-5">
+        <p class="text-xs font-bold uppercase tracking-widest text-gray-400 mb-4">Privacy Settings</p>
+
+        <!-- Show real name -->
         <label class="flex items-start gap-4 cursor-pointer">
           <div class="relative mt-1 shrink-0">
             <input type="checkbox" name="show_real_name" id="show_real_name"
@@ -175,6 +215,23 @@
             <p class="text-white font-semibold text-sm">Show my real name publicly</p>
             <p class="text-gray-400 text-xs mt-1 leading-relaxed">
               <span class="text-[#00d1b2]">ON</span> = real name visible · <span class="text-gray-300">OFF</span> = shown as @{{ user.username }}
+            </p>
+          </div>
+        </label>
+
+        <!-- Location opt-out -->
+        <label class="flex items-start gap-4 cursor-pointer">
+          <div class="relative mt-1 shrink-0">
+            <input type="checkbox" name="location_opt_out" id="location_opt_out"
+              {% if form.location_opt_out.value %}checked{% endif %}
+              class="sr-only peer">
+            <div class="w-11 h-6 bg-white/10 rounded-full peer peer-checked:bg-amber-400 transition-all duration-300"></div>
+            <div class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow peer-checked:translate-x-5 transition-all duration-300"></div>
+          </div>
+          <div>
+            <p class="text-white font-semibold text-sm">📍 Opt out of location tracking</p>
+            <p class="text-gray-400 text-xs mt-1 leading-relaxed">
+              <span class="text-amber-400">ON</span> = tracking disabled · <span class="text-gray-300">OFF</span> = regional analytics active (anonymous)
             </p>
           </div>
         </label>

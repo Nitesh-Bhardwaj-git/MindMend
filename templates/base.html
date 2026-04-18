@@ -211,21 +211,26 @@
         {% block content %}{% endblock %}
     </main>
 
-    <!-- ================= GDPR BANNER ================= -->
-    <div id="gdpr-banner" class="fixed bottom-0 left-0 right-0 bg-[#08101f]/95 backdrop-blur-md border-t border-[#00d1b2]/30 px-3 py-2.5 sm:p-4 z-[99999] hidden shadow-2xl">
-        <div class="max-w-7xl mx-auto flex flex-row items-center justify-between gap-3 sm:gap-4">
-            <p class="text-[11px] sm:text-sm text-gray-300 leading-tight">
-                We use cookies and location tracking for personalized analytics.
-            </p>
+    <!-- ================= COOKIE CONSENT BANNER ================= -->
+    <div id="gdpr-banner" class="fixed bottom-0 left-0 right-0 bg-[#08101f]/97 backdrop-blur-md border-t border-[#00d1b2]/30 px-4 py-4 z-[99999] hidden shadow-2xl">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-6">
+            <div class="flex items-start gap-3">
+                <span class="text-xl shrink-0 mt-0.5">🍪</span>
+                <p class="text-xs sm:text-sm text-gray-300 leading-relaxed">
+                    We use essential cookies for login sessions and optional location analytics for regional insights.
+                    All chat data is <strong class="text-white">encrypted at rest</strong>.
+                    <a href="{% url 'privacy_policy' %}" class="text-[#00d1b2] hover:underline font-medium ml-1">Privacy Policy →</a>
+                </p>
+            </div>
             <div class="flex items-center gap-2 shrink-0">
-                <button id="gdpr-decline" class="px-3 py-1.5 text-xs sm:text-sm text-gray-400 hover:text-white transition">Decline</button>
-                <button id="gdpr-accept" class="px-4 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm font-bold bg-[#00d1b2] text-[#04111f] rounded-lg hover:opacity-90 transition">Accept</button>
+                <button id="gdpr-decline" class="px-3 py-1.5 text-xs sm:text-sm text-gray-400 hover:text-white border border-white/10 rounded-lg transition">Decline</button>
+                <button id="gdpr-accept" class="px-5 py-1.5 sm:px-6 sm:py-2 text-xs sm:text-sm font-bold bg-[#00d1b2] text-[#04111f] rounded-lg hover:opacity-90 transition">Accept All</button>
             </div>
         </div>
     </div>
 
     <!-- ================= FOOTER ================= -->
-    <footer class="border-t border-white/10 py-8 text-center text-white/90 bg-[#08101f]">
+    <footer class="border-t border-white/10 py-5 text-center text-white/90 bg-[#08101f]">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex flex-col items-center gap-2">
                 <div class="flex items-center gap-3">
@@ -237,11 +242,18 @@
                         <p class="text-[0.625rem] font-bold tracking-[0.28em] text-[#00d1b2]">SAFE SPACE FOR HEALING</p>
                     </div>
                 </div>
-                <p class="text-gray-400 text-sm mt-2">
+                <p class="text-gray-400 text-xs mt-0.5">
                     Stigma-free mental health support. In crisis? Call
                     <strong class="text-white">KIRAN 1800-599-0019</strong> or
                     <strong class="text-white">Tele-MANAS 14416</strong> (24/7)
                 </p>
+                <div class="flex items-center gap-3 mt-1">
+                    <a href="{% url 'privacy_policy' %}" class="text-xs text-[#00d1b2] hover:underline flex items-center gap-1">🛡️ Privacy Policy</a>
+                    <span class="text-white/20">·</span>
+                    <a href="{% url 'contact_us' %}" class="text-xs text-gray-500 hover:text-gray-300 transition">Contact Us</a>
+                    <span class="text-white/20">·</span>
+                    <button onclick="localStorage.removeItem('gdpr_consent'); document.getElementById('gdpr-banner').classList.remove('hidden');" class="text-xs text-gray-500 hover:text-gray-300 transition">Cookie Settings</button>
+                </div>
             </div>
         </div>
     </footer>

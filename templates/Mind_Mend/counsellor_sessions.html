@@ -47,7 +47,12 @@
           <!-- LEFT -->
           <div class="flex-1 min-w-0">
             <div class="flex flex-wrap items-center gap-3 mb-3">
-              <h3 class="text-2xl font-bold text-white">{{ b.user|display_name }}</h3>
+              <h3 class="text-2xl font-bold text-white">{{ b.patient_display_name }}</h3>
+              {% if b.is_anonymous %}
+              <span class="px-2 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                Anonymous Session
+              </span>
+              {% endif %}
 
               <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
                 {% if b.status == 'confirmed' %}bg-green-500/15 text-green-300 border border-green-400/20

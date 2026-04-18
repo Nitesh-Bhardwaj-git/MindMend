@@ -14,6 +14,11 @@ def home(request):
     return render(request, 'Mind_Mend/home.html')
 
 
+def privacy_policy(request):
+    """Render the Privacy Policy page."""
+    return render(request, 'Mind_Mend/privacy_policy.html')
+
+
 def contact_us(request):
     if request.method == 'POST':
         form = ContactForm(request.POST)

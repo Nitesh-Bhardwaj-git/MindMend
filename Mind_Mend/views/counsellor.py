@@ -3,10 +3,11 @@ from datetime import timedelta, datetime
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.http import require_http_methods, require_POST
+from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from asgiref.sync import async_to_sync
 
 try:
@@ -17,6 +18,16 @@ except ModuleNotFoundError:
 from ..models import Counsellor, CounsellorBooking, CounsellorChatMessage, CounsellorReview, CounsellorNotification
 from ..models import get_display_name
 from ..forms import CounsellorBookingForm, CounsellorReviewForm
+
+
+def _booking_patient_name(booking):
+    return booking.patient_display_name()
+
+
+def _chat_sender_name(booking, sender):
+    if sender and booking.is_anonymous and sender.id == booking.user_id:
+        return booking.patient_display_name()
+    return get_display_name(sender)
 
 
 @login_required
@@ -45,7 +56,7 @@ def counsellor_booking(request):
                     booking.counsellor,
                     'booking_created',
                     'New appointment booked',
-                    f'{request.user.get_username()} booked {booking.date} at {booking.time_slot.strftime("%H:%M")}.',
+                    f'{_booking_patient_name(booking)} booked {booking.date} at {booking.time_slot.strftime("%H:%M")}.',
                     booking=booking,
                     actor=request.user
                 )
@@ -159,7 +170,9 @@ def counsellor_chat(request, booking_id):
     if not _user_can_access_booking(request.user, booking):
         messages.error(request, 'You do not have access to this chat.')
         return redirect('my_bookings')
-    chat_messages = CounsellorChatMessage.objects.filter(booking=booking).select_related('sender').order_by('created_at')
+    chat_messages = list(CounsellorChatMessage.objects.filter(booking=booking).select_related('sender').order_by('created_at'))
+    for msg in chat_messages:
+        msg.sender_label = _chat_sender_name(booking, msg.sender)
     if request.method == 'POST':
         content = (request.POST.get('content') or '').strip()
         if booking.status in ('completed', 'cancelled'):
@@ -173,7 +186,7 @@ def counsellor_chat(request, booking_id):
                     booking.counsellor,
                     'chat_started' if is_first_message else 'message_received',
                     'Patient started chat' if is_first_message else 'New patient message',
-                    f'{request.user.get_username()}: {content[:120]}',
+                    f'{_booking_patient_name(booking)}: {content[:120]}',
                     booking=booking,
                     actor=request.user
                 )
@@ -204,7 +217,7 @@ def finish_session(request, booking_id):
                 booking.counsellor,
                 'booking_status',
                 'Session marked completed',
-                f'{request.user.get_username()} marked the session as completed.',
+                f'{_booking_patient_name(booking)} marked the session as completed.',
                 booking=booking,
                 actor=request.user
             )
@@ -352,14 +365,14 @@ def booking_messages_api(request, booking_id):
                 booking.counsellor,
                 'chat_started' if is_first_message else 'message_received',
                 'Patient started chat' if is_first_message else 'New patient message',
-                f'{request.user.get_username()}: {content[:120]}',
+                f'{_booking_patient_name(booking)}: {content[:120]}',
                 booking=booking,
                 actor=request.user
             )
         return JsonResponse({
             'message': {
                 'id': msg.id,
-                'sender': get_display_name(msg.sender),
+                'sender': _chat_sender_name(booking, msg.sender),
                 'sender_id': msg.sender_id,
                 'content': msg.content,
                 'created_at': msg.created_at.isoformat(),
@@ -385,7 +398,7 @@ def booking_messages_api(request, booking_id):
     messages_list = [
         {
             'id': m.id,
-            'sender': get_display_name(m.sender),
+            'sender': _chat_sender_name(booking, m.sender),
             'sender_id': m.sender_id,
             'content': m.content,
             'created_at': m.created_at.isoformat(),
@@ -448,6 +461,7 @@ def checkout_payment(request, booking_id):
         'amount': amount_paise,
         'currency': 'INR',
         'payment_capture': 1,
+        'receipt': f"booking_{booking.id}",  # Traceable ID for Dashboard
         'notes': {
             'booking_id': booking.id,
             'user_id': request.user.id,
@@ -506,7 +520,7 @@ def razorpay_payment_verify(request, booking_id):
         booking.counsellor,
         'booking_created',
         'New appointment booked',
-        f'{request.user.get_username()} booked {booking.date} at {booking.time_slot.strftime("%H:%M")}.',
+        f'{_booking_patient_name(booking)} booked {booking.date} at {booking.time_slot.strftime("%H:%M")}.',
         booking=booking,
         actor=request.user
     )
@@ -514,6 +528,69 @@ def razorpay_payment_verify(request, booking_id):
     messages.success(request, "Payment successful! Your appointment is confirmed.")
     return redirect('my_bookings')
 
+
+@csrf_exempt
+@require_POST
+def razorpay_webhook(request):
+    """
+    Server-to-server callback from Razorpay.
+    Acts as a reliability fallback if the user closes the browser before redirection.
+    """
+    import hmac
+    import hashlib
+    from django.conf import settings
+
+    webhook_secret = settings.RAZORPAY_WEBHOOK_SECRET
+    if not webhook_secret:
+        return HttpResponse("Webhook secret not configured", status=400)
+
+    payload = request.body
+    signature = request.META.get('HTTP_X_RAZORPAY_SIGNATURE', '')
+
+    # Verify Webhook Signature
+    expected_signature = hmac.new(
+        webhook_secret.encode(),
+        payload,
+        hashlib.sha256
+    ).hexdigest()
+
+    if not hmac.compare_digest(expected_signature, signature):
+        return HttpResponse("Invalid signature", status=403)
+
+    # Process Event
+    try:
+        data = json.loads(payload)
+    except json.JSONDecodeError:
+        return HttpResponse("Invalid JSON", status=400)
+
+    event = data.get('event')
+    # Use order.paid (preferred for reliability) or payment.captured
+    if event == 'order.paid':
+        order_entity = data.get('payload', {}).get('order', {}).get('entity', {})
+        receipt = order_entity.get('receipt', '')
+        
+        if receipt and receipt.startswith('booking_'):
+            try:
+                booking_id = int(receipt.split('_')[1])
+                with transaction.atomic():
+                    booking = CounsellorBooking.objects.select_for_update().get(pk=booking_id)
+                    if not booking.is_paid:
+                        booking.is_paid = True
+                        booking.status = 'confirmed'
+                        booking.save(update_fields=['is_paid', 'status'])
+                        
+                        # Send notification if it wasn't already sent by browser view
+                        _notify_counsellor(
+                            booking.counsellor,
+                            'booking_created',
+                            'Appointment Confirmed (via Webhook)',
+                            f'Payment for booking on {booking.date} was confirmed via server notification.',
+                            booking=booking
+                        )
+            except (ValueError, IndexError, CounsellorBooking.DoesNotExist):
+                pass
+
+    return HttpResponse("Handled", status=200)
 
 
 @login_required

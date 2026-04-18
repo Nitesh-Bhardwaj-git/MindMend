@@ -85,7 +85,7 @@ class CounsellorChatConsumer(AsyncWebsocketConsumer):
         )
         message_data = {
             'id': msg.id,
-            'sender': get_display_name(msg.sender),
+            'sender': booking.patient_display_name() if booking.is_anonymous and msg.sender_id == booking.user_id else get_display_name(msg.sender),
             'sender_id': msg.sender_id,
             'content': msg.content,
             'created_at': msg.created_at.isoformat(),
@@ -98,7 +98,7 @@ class CounsellorChatConsumer(AsyncWebsocketConsumer):
                 actor_id=sender_id,
                 event_type='chat_started' if is_first_message else 'message_received',
                 title='Patient started chat' if is_first_message else 'New patient message',
-                body=f'{msg.sender.get_username()}: {msg.content[:120]}',
+                body=f'{booking.patient_display_name()}: {msg.content[:120]}',
             )
             notification_data = {
                 'target_user_id': booking.counsellor.user_id,

@@ -3,6 +3,8 @@ from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+import urllib.parse
+import urllib.request
 from ..models import ContactMessage, ChatMessage, UserAccessLocation, UserMemory
 from ..forms import ContactForm
 from ..services import get_chat_response, get_session_id, detect_emotion, detect_context_label, extract_topics, extract_activities, extract_name
@@ -253,3 +255,26 @@ def chat_api(request):
         'recommendations': recommendations,
         'session_id': session_id
     })
+
+
+@csrf_exempt
+def transliterate_api(request):
+    """Proxy for Google Input Tools Transliteration to bypass CORS"""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+    try:
+        data = json.loads(request.body) if request.body else {}
+        text = data.get('text', '').strip()
+        lang = data.get('lang', 'hi')
+        if not text:
+            return JsonResponse({'result': ''})
+            
+        url = f"https://inputtools.google.com/request?text={urllib.parse.quote(text)}&itc={lang}-t-i0-und&num=1"
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=3) as response:
+            res_data = json.loads(response.read().decode())
+            if res_data[0] == 'SUCCESS' and len(res_data[1]) > 0:
+                return JsonResponse({'result': res_data[1][0][1][0]})
+    except Exception as e:
+        print("Transliteration Error:", e)
+    return JsonResponse({'result': text})

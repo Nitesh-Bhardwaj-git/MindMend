@@ -1171,6 +1171,39 @@
 
     if (btn) btn.disabled = false;
   });
+
+  // Live Hindi keyboard transliteration
+  input.addEventListener('keyup', async function(e) {
+    if (e.key === ' ') {
+      const langEl = document.getElementById('chatLangSelect');
+      if (langEl && langEl.value === 'hi') {
+        const cursor = input.selectionStart;
+        const textUpToCursor = input.value.substring(0, cursor);
+        const match = textUpToCursor.match(/([a-zA-Z]+)(\s+)$/);
+        if (match) {
+          const word = match[1];
+          const spaces = match[2];
+          try {
+            const res = await fetch('{% url "transliterate_api" %}', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({text: word, lang: 'hi'})
+            });
+            const data = await res.json();
+            if (data.result) {
+               const startSegment = textUpToCursor.substring(0, textUpToCursor.length - match[0].length);
+               const newSegment = startSegment + data.result + spaces;
+               const endSegment = input.value.substring(cursor);
+               input.value = newSegment + endSegment;
+               input.selectionStart = input.selectionEnd = newSegment.length;
+            }
+          } catch(err) {
+            console.error("Transliteration failed", err);
+          }
+        }
+      }
+    }
+  });
 })();
 </script>
 {% endblock %}

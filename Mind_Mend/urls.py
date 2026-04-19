@@ -15,6 +15,7 @@ urlpatterns = [
     # AI Chatbot
     path('chat/', core.chat, name='chat'),
     path('api/chat/', core.chat_api, name='chat_api'),
+    path('api/chat/transliterate/', core.transliterate_api, name='transliterate_api'),
     path('api/share-location/', core.share_location_api, name='share_location_api'),
 
     # Assessments

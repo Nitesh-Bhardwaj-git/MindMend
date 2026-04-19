@@ -255,7 +255,7 @@ def _get_recommendations(sentiment, is_distress, is_high_risk, is_hi):
 # LLM SYSTEM PROMPT ENGINEERING
 # -----------------------------------------------------------------------------
 def _build_system_prompt(lang, context_meta, is_high_risk, is_violence_risk):
-    lang_instruction = "IMPORTANT: You must reply entirely in Hindi (हिन्दी) or Hinglish depending on what the user speaks." if lang == 'hi' else "IMPORTANT: You must reply entirely in English."
+    lang_instruction = "IMPORTANT: You MUST reply entirely in pure Hindi using the Devanagari script (हिंदी लिपि) absolutely no matter what. Do NOT use English letters or Hinglish." if lang == 'hi' else "IMPORTANT: You must reply entirely in English."
     
     # Base Persona
     prompt = (

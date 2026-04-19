@@ -444,13 +444,21 @@
 
       <!-- Main Chat -->
       <section class="flex flex-col min-w-0">
-        <div class="flex items-center gap-4 mb-4 shrink-0">
-          <div class="h-14 w-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl">
-            🤖
+        <div class="flex justify-between items-center mb-4 shrink-0">
+          <div class="flex items-center gap-4">
+            <div class="h-14 w-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-2xl">
+              🤖
+            </div>
+            <div class="min-w-0">
+              <h2 class="text-2xl font-bold text-white">MindMend AI</h2>
+              <p class="text-xs text-slate-400 uppercase tracking-[0.18em]">Always here for you</p>
+            </div>
           </div>
-          <div class="min-w-0">
-            <h2 class="text-2xl font-bold text-white">MindMend AI</h2>
-            <p class="text-xs text-slate-400 uppercase tracking-[0.18em]">Always here for you</p>
+          <div>
+            <select id="chatLangSelect" class="bg-[#0a1428] border border-white/10 text-white text-sm rounded-lg px-3 py-2 outline-none focus:border-[#00d1b2]">
+              <option value="en">English</option>
+              <option value="hi">हिंदी (Hindi)</option>
+            </select>
           </div>
         </div>
 
@@ -1081,12 +1089,16 @@
       saveChatStore(store);
       renderHistory();
 
+      const langEl = document.getElementById('chatLangSelect');
+      const langVal = langEl ? langEl.value : 'en';
+
       const res = await fetch('{% url "chat_api" %}', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(Object.assign({
           message: msg,
-          session_id: sessionId
+          session_id: sessionId,
+          lang: langVal
         }, getClientContext()))
       });
 

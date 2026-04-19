@@ -538,28 +538,60 @@
 {% if user.is_authenticated %}
 <script>
 (function(){
-    if (localStorage.getItem('mindmend_location_shared') || localStorage.getItem('mindmend_location_dismissed')) return;
     const banner = document.getElementById('locationShareBanner');
     if (!banner) return;
-    banner.classList.remove('hidden');
-    document.getElementById('dismissLocationBanner')?.addEventListener('click', function(){
+    let autoHideTimer = null;
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    function hideBanner() {
         banner.classList.add('hidden');
-        localStorage.setItem('mindmend_location_dismissed', '1');
+        if (autoHideTimer) {
+            clearTimeout(autoHideTimer);
+            autoHideTimer = null;
+        }
+    }
+
+    banner.classList.remove('hidden');
+    autoHideTimer = setTimeout(hideBanner, 5000);
+
+    document.getElementById('dismissLocationBanner')?.addEventListener('click', function(){
+        hideBanner();
     });
+
     document.getElementById('shareLocationBtn')?.addEventListener('click', function(){
         if (!navigator.geolocation) { alert('Geolocation not supported.'); return; }
         const btn = this;
+        hideBanner();
         btn.disabled = true;
-        btn.textContent = '...';
+        btn.textContent = 'Sharing...';
         navigator.geolocation.getCurrentPosition(
             function(pos){
                 fetch('{% url "share_location_api" %}', {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    },
                     body: JSON.stringify({lat: pos.coords.latitude, lon: pos.coords.longitude})
-                }).then(function(r){ return r.json(); }).then(function(data){
-                    banner.classList.add('hidden');
-                    localStorage.setItem('mindmend_location_shared', '1');
+                }).then(function(r){
+                    if (!r.ok) throw new Error('Location save failed');
+                    return r.json();
+                }).then(function(){
+                    localStorage.setItem('mindmend_geo_last_sent_at', String(Date.now()));
                 }).catch(function(){
                     btn.disabled = false;
                     btn.textContent = 'Share';

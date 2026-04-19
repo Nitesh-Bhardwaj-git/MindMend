@@ -1036,6 +1036,9 @@
         return;
       }
 
+      const langEl = document.getElementById('chatLangSelect');
+      recognition.lang = (langEl && langEl.value === 'hi') ? 'hi-IN' : 'en-IN';
+
       input.focus();
       recognition.start();
       isListening = true;

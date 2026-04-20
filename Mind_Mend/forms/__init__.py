@@ -2,7 +2,7 @@ from django import forms
 from datetime import timedelta, datetime
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from .models import MoodEntry, ForumPost, ForumReply, CounsellorBooking, Counsellor, CounsellorReview, UserProfile
+from ..models import MoodEntry, ForumPost, ForumReply, CounsellorBooking, Counsellor, CounsellorReview, UserProfile
 
 
 class UserProfileForm(forms.ModelForm):
@@ -26,7 +26,7 @@ class UserProfileForm(forms.ModelForm):
             self.fields['last_name'].initial  = user.last_name
 
 
-from .assessment_data import PHQ9_QUESTIONS, GAD7_QUESTIONS, PSS_QUESTIONS
+from ..assessment_data import PHQ9_QUESTIONS, GAD7_QUESTIONS, PSS_QUESTIONS
 
 
 class SignUpForm(UserCreationForm):

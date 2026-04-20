@@ -105,7 +105,7 @@ def assessments_home(request):
             'pss': AssessmentResult.objects.filter(user=request.user, assessment_type='pss').order_by('-created_at').first(),
         }
     combined_result = build_combined_result(last_results)
-    return render(request, 'Mind_Mend/assessments.html', {
+    return render(request, 'Mind_Mend/assessments/assessments.html', {
         'last_results': last_results,
         'combined_result': combined_result,
     })
@@ -125,7 +125,7 @@ def _process_phq9(request, form_class):
             answers=form.cleaned_data
         )
         return redirect('assessment_result', result_id=result.id)
-    return render(request, 'Mind_Mend/assessment_form.html', build_assessment_context(
+    return render(request, 'Mind_Mend/assessments/assessment_form.html', build_assessment_context(
         form,
         title='PHQ-9 (Depression Assessment)',
         heading='PHQ-9 (Depression Assessment)',
@@ -141,7 +141,7 @@ def assessment_phq9(request):
     PHQ9Form = make_assessment_form(PHQ9_QUESTIONS)
     if request.method == 'POST':
         return _process_phq9(request, PHQ9Form)
-    return render(request, 'Mind_Mend/assessment_form.html', build_assessment_context(
+    return render(request, 'Mind_Mend/assessments/assessment_form.html', build_assessment_context(
         PHQ9Form(),
         title='PHQ-9 (Depression Assessment)',
         heading='PHQ-9 (Depression Assessment)',
@@ -166,7 +166,7 @@ def _process_gad7(request, form_class):
             answers=form.cleaned_data
         )
         return redirect('assessment_result', result_id=result.id)
-    return render(request, 'Mind_Mend/assessment_form.html', build_assessment_context(
+    return render(request, 'Mind_Mend/assessments/assessment_form.html', build_assessment_context(
         form,
         title='GAD-7 (Anxiety Assessment)',
         heading='GAD-7 (Anxiety Assessment)',
@@ -182,7 +182,7 @@ def assessment_gad7(request):
     GAD7Form = make_assessment_form(GAD7_QUESTIONS)
     if request.method == 'POST':
         return _process_gad7(request, GAD7Form)
-    return render(request, 'Mind_Mend/assessment_form.html', build_assessment_context(
+    return render(request, 'Mind_Mend/assessments/assessment_form.html', build_assessment_context(
         GAD7Form(),
         title='GAD-7 (Anxiety Assessment)',
         heading='GAD-7 (Anxiety Assessment)',
@@ -208,7 +208,7 @@ def _process_pss(request, form_class):
         )
         return redirect('assessment_result', result_id=result.id)
     scale_labels = ['Never', 'Almost Never', 'Sometimes', 'Fairly Often', 'Very Often']
-    return render(request, 'Mind_Mend/assessment_form.html', build_assessment_context(
+    return render(request, 'Mind_Mend/assessments/assessment_form.html', build_assessment_context(
         form,
         title='PSS-10 (Perceived Stress Scale)',
         heading='PSS-10 (Perceived Stress Scale)',
@@ -226,7 +226,7 @@ def assessment_pss(request):
     PSSForm = make_assessment_form(PSS_QUESTIONS, scale_max=4, scale_labels=scale_labels)
     if request.method == 'POST':
         return _process_pss(request, PSSForm)
-    return render(request, 'Mind_Mend/assessment_form.html', build_assessment_context(
+    return render(request, 'Mind_Mend/assessments/assessment_form.html', build_assessment_context(
         PSSForm(),
         title='PSS-10 (Perceived Stress Scale)',
         heading='PSS-10 (Perceived Stress Scale)',
@@ -246,7 +246,7 @@ def assessment_result(request, result_id):
     max_score = max_scores.get(result.assessment_type, 100)
     percent = (result.total_score / max_score) * 100 if max_score > 0 else 0
 
-    return render(request, 'Mind_Mend/assessment_result.html', {
+    return render(request, 'Mind_Mend/assessments/assessment_result.html', {
         'result': result,
         'assessment_name': assessment_names.get(result.assessment_type, 'Assessment'),
         'score': result.total_score,

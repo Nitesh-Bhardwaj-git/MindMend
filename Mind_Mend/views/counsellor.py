@@ -79,7 +79,7 @@ def counsellor_booking(request):
         for c in counsellors
     ])
 
-    return render(request, 'Mind_Mend/counsellor_booking.html', {
+    return render(request, 'Mind_Mend/counsellor/counsellor_booking.html', {
         'form': form,
         'counsellors': counsellors,
         'counsellors_json': counsellors_json,
@@ -135,7 +135,7 @@ def my_bookings(request):
     bookings = list(bookings)
     for b in bookings:
         b.has_review = CounsellorReview.objects.filter(booking=b).exists()
-    return render(request, 'Mind_Mend/my_bookings.html', {'bookings': bookings})
+    return render(request, 'Mind_Mend/counsellor/my_bookings.html', {'bookings': bookings})
 
 
 @login_required
@@ -191,7 +191,7 @@ def counsellor_chat(request, booking_id):
                     actor=request.user
                 )
         return redirect('counsellor_chat', booking_id=booking.pk)
-    return render(request, 'Mind_Mend/counsellor_chat.html', {
+    return render(request, 'Mind_Mend/counsellor/counsellor_chat.html', {
         'booking': booking,
         'chat_messages': chat_messages,
         'chat_locked': booking.status in ('completed', 'cancelled'),
@@ -247,7 +247,7 @@ def counsellor_sessions(request):
     for b in bookings:
         b.review = reviews_by_booking.get(b.id)
         b.has_review = b.review is not None
-    return render(request, 'Mind_Mend/counsellor_sessions.html', {'bookings': bookings, 'counsellor': counsellor})
+    return render(request, 'Mind_Mend/counsellor/counsellor_sessions.html', {'bookings': bookings, 'counsellor': counsellor})
 
 
 @login_required
@@ -266,7 +266,7 @@ def doctor_dashboard(request):
         b.review = reviews_by_booking.get(b.id)
         b.has_review = b.review is not None
     notifications_qs = CounsellorNotification.objects.filter(counsellor=counsellor)
-    return render(request, 'Mind_Mend/doctor_dashboard.html', {
+    return render(request, 'Mind_Mend/counsellor/doctor_dashboard.html', {
         'counsellor': counsellor,
         'pending_bookings': [b for b in bookings if b.status == 'pending'],
         'bookings': bookings,
@@ -429,7 +429,7 @@ def submit_review(request, booking_id):
             return redirect('counsellor_booking')
     else:
         form = CounsellorReviewForm(instance=review)
-    return render(request, 'Mind_Mend/review_form.html', {'form': form, 'booking': booking})
+    return render(request, 'Mind_Mend/counsellor/review_form.html', {'form': form, 'booking': booking})
 
 
 @login_required
@@ -468,7 +468,7 @@ def checkout_payment(request, booking_id):
         },
     })
 
-    return render(request, 'Mind_Mend/payment.html', {
+    return render(request, 'Mind_Mend/counsellor/payment.html', {
         'booking': booking,
         'razorpay_order_id': razorpay_order['id'],
         'razorpay_key_id': settings.RAZORPAY_KEY_ID,
@@ -632,4 +632,4 @@ def get_booked_slots(request, counsellor_id):
 
 def how_to_book(request):
     """Static guide page explaining how to book a session."""
-    return render(request, 'Mind_Mend/how_to_book.html')
+    return render(request, 'Mind_Mend/counsellor/how_to_book.html')

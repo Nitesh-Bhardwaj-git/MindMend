@@ -24,7 +24,7 @@ def forum_list(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
-    return render(request, 'Mind_Mend/forum_list.html', {
+    return render(request, 'Mind_Mend/forum/forum_list.html', {
         'page_obj': page_obj,
         'posts': page_obj,
         'current_category': category,
@@ -38,7 +38,7 @@ def recovery_stories(request):
     paginator = Paginator(posts, 10)
     page = request.GET.get('page', 1)
     posts = paginator.get_page(page)
-    return render(request, 'Mind_Mend/forum_list.html', {'posts': posts, 'current_category': 'recovery'})
+    return render(request, 'Mind_Mend/forum/forum_list.html', {'posts': posts, 'current_category': 'recovery'})
 
 @login_required
 def forum_create(request):
@@ -52,14 +52,14 @@ def forum_create(request):
             return redirect('forum_detail', pk=post.pk)
     else:
         form = ForumPostForm(initial={'is_anonymous': True})
-    return render(request, 'Mind_Mend/forum_create.html', {'form': form})
+    return render(request, 'Mind_Mend/forum/forum_create.html', {'form': form})
 
 
 def forum_detail(request, pk):
     post = get_object_or_404(ForumPost.objects.annotate(reply_count=Count('forumreply')), pk=pk)
     replies = ForumReply.objects.filter(post=post).order_by('created_at')
     form = ForumReplyForm(initial={'is_anonymous': True}) if request.user.is_authenticated else None
-    return render(request, 'Mind_Mend/forum_detail.html', {
+    return render(request, 'Mind_Mend/forum/forum_detail.html', {
         'post': post,
         'replies': replies,
         'form': form,

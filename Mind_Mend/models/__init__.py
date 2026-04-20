@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from .encryption import EncryptedTextField
+from ..encryption import EncryptedTextField
 
 
 class UserProfile(models.Model):
@@ -303,3 +303,18 @@ class UserAccessLocation(models.Model):
     def __str__(self):
         loc = ', '.join(filter(None, [self.city, self.state, self.country]))
         return loc or self.ip_address or 'Unknown'
+
+
+class EmailVerificationOTP(models.Model):
+    """OTP validation codes for new account email verification."""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='email_otp')
+    otp = models.CharField(max_length=6)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_valid(self):
+        """Valid for 15 minutes."""
+        expiration_time = self.created_at + timezone.timedelta(minutes=15)
+        return timezone.now() <= expiration_time
+
+    def __str__(self):
+        return f"OTP({self.user.username})"

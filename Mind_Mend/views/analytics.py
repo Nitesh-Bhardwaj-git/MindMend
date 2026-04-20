@@ -74,7 +74,7 @@ def mood_tracker(request):
         else: break
     crisis_alert = very_low_streak >= 2
 
-    return render(request, 'Mind_Mend/mood_tracker.html', {
+    return render(request, 'Mind_Mend/dashboard/mood_tracker.html', {
         'form': form, 'entries': entries, 'avg_mood_7': round(avg_mood_7, 1) if avg_mood_7 else None,
         'mood_data': mood_data, 'chart_labels': json.dumps([d['date'] for d in mood_data]),
         'chart_data': json.dumps([d['mood'] for d in mood_data]), 'streak': streak,
@@ -128,7 +128,7 @@ def location_map(request):
         state_label = (loc.state or '').strip() or (loc.city or '').strip() or 'Unknown'
         by_state[(loc.country or '', state_label)] += 1
 
-    return render(request, 'Mind_Mend/location_map.html', {
+    return render(request, 'Mind_Mend/core/location_map.html', {
         'markers_json': json.dumps(markers),
         'stats': {'total': len(locations), 'countries': len({loc.country for loc in latest_by_identity.values() if loc.country and loc.country.lower() != 'local'}), 'visitors': len(latest_by_identity)},
         'days': days, 'active_now': len({_identity_key(loc) for loc in locations if loc.created_at >= active_cutoff}),
@@ -177,7 +177,7 @@ def mental_health_heatmap(request):
     stress.sort(key=lambda x: -x['avg'])
     depression.sort(key=lambda x: -x['avg'])
     mood.sort(key=lambda x: -x['avg'])
-    return render(request, 'Mind_Mend/heatmap.html', {'markers_json': json.dumps(markers), 'metric': metric, 'days': days, 'stress_by_region': stress[:15], 'depression_by_region': depression[:15], 'mood_by_region': mood[:15]})
+    return render(request, 'Mind_Mend/core/heatmap.html', {'markers_json': json.dumps(markers), 'metric': metric, 'days': days, 'stress_by_region': stress[:15], 'depression_by_region': depression[:15], 'mood_by_region': mood[:15]})
 
 
 # --- Dashboard & Progress Logic ---
@@ -353,7 +353,7 @@ def dashboard(request):
     charts = _generate_trend_charts(request.user)
     badges = _generate_badges(charts['daily'])
 
-    return render(request, 'Mind_Mend/dashboard.html', {
+    return render(request, 'Mind_Mend/dashboard/dashboard.html', {
         'mood_entries': mood_entries, 'avg_mood': round(avg_mood, 1) if avg_mood else None,
         'assessments': AssessmentResult.objects.filter(user=request.user).order_by('-created_at')[:5],
         'mood_data': mood_data, 'emotional_patterns': _emotional_patterns(request.user),
@@ -679,7 +679,7 @@ def _fetch_survey_data():
 @login_required
 def survey_analytics(request):
     survey_data = _fetch_survey_data()
-    return render(request, 'Mind_Mend/survey_analytics.html', {
+    return render(request, 'Mind_Mend/dashboard/survey_analytics.html', {
         'survey': survey_data,
         'survey_form_url': getattr(settings, 'MINDMEND_GOOGLE_FORM_URL', '')
     })
@@ -692,7 +692,7 @@ def survey_sentiment_dashboard(request):
     current_month = timezone.now().strftime('%b')
     last_month = (timezone.now() - timedelta(days=30)).strftime('%b')
     
-    return render(request, 'Mind_Mend/survey_sentiment_dashboard.html', {
+    return render(request, 'Mind_Mend/dashboard/survey_sentiment_dashboard.html', {
         'total_responses': total,
         'filters': {
             'age': ['18-24', '25-34', '35-44', '45+'],

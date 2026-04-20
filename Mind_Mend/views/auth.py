@@ -6,6 +6,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
 from django.contrib.sessions.models import Session
+import random
+from django.core.mail import send_mail
+from django.conf import settings
 from ..models import (
     Counsellor,
     AssessmentResult,
@@ -18,8 +21,31 @@ from ..models import (
     UserMemory,
     UserAccessLocation,
     ContactMessage,
+    EmailVerificationOTP,
 )
 from ..forms import SignUpForm
+
+def send_verification_otp(user):
+    otp_code = str(random.randint(100000, 999999))
+    EmailVerificationOTP.objects.update_or_create(
+        user=user,
+        defaults={'otp': otp_code}
+    )
+    if settings.EMAIL_HOST_USER:
+        try:
+            send_mail(
+                'MindMend - Verify your Email',
+                f'Your verification code is: {otp_code}. It is valid for 15 minutes.',
+                settings.EMAIL_HOST_USER,
+                [user.email],
+                fail_silently=True,
+            )
+        except Exception:
+            pass # Fails gracefully if SMTP not yet configured
+    else:
+        print(f"DEV OTP FOR {user.email}: {otp_code}")
+        
+    return otp_code
 
 def enforce_single_device_login(request, user):
     """
@@ -55,14 +81,18 @@ def register(request):
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
-            enforce_single_device_login(request, user)
-            return redirect('home')
+            user = form.save(commit=False)
+            user.is_active = False # Deactivate until verified
+            user.save()
+            
+            send_verification_otp(user)
+            request.session['registration_user_id'] = user.id
+            messages.success(request, f'Registration successful! We sent an OTP to {user.email}.')
+            return redirect('verify_otp')
     else:
         form = SignUpForm()
 
-    return render(request, 'Mind_Mend/register.html', {'form': form, 'feature_list': feature_list})
+    return render(request, 'Mind_Mend/auth/register.html', {'form': form, 'feature_list': feature_list})
 
 
 def login_view(request):
@@ -83,7 +113,7 @@ def login_view(request):
     else:
         form = AuthenticationForm()
         username_not_found = False
-    return render(request, 'Mind_Mend/login.html', {'form': form, 'username_not_found': username_not_found})
+    return render(request, 'Mind_Mend/auth/login.html', {'form': form, 'username_not_found': username_not_found})
 
 
 def doctor_login_view(request):
@@ -105,7 +135,7 @@ def doctor_login_view(request):
     else:
         form = AuthenticationForm()
         username_not_found = False
-    return render(request, 'Mind_Mend/login.html', {
+    return render(request, 'Mind_Mend/auth/login.html', {
         'form': form,
         'username_not_found': username_not_found,
         'is_doctor_login': True,
@@ -115,6 +145,55 @@ def doctor_login_view(request):
 def logout_view(request):
     logout(request)
     return redirect('home')
+
+
+def verify_otp(request):
+    """OTP Verification page step after sign up."""
+    user_id = request.session.get('registration_user_id')
+    if not user_id:
+        return redirect('login')
+        
+    user = get_object_or_404(User, id=user_id)
+    if user.is_active:
+        return redirect('home')
+        
+    if request.method == 'POST':
+        otp_entered = request.POST.get('otp', '').strip()
+        try:
+            otp_record = EmailVerificationOTP.objects.get(user=user)
+            if otp_record.is_valid() and otp_record.otp == otp_entered:
+                user.is_active = True
+                user.save()
+                otp_record.delete()
+                
+                login(request, user)
+                enforce_single_device_login(request, user)
+                if 'registration_user_id' in request.session:
+                    del request.session['registration_user_id']
+                    
+                messages.success(request, 'Email verified! Welcome to MindMend.')
+                return redirect('home')
+            else:
+                messages.error(request, 'Invalid or expired OTP. Please try again.')
+        except EmailVerificationOTP.DoesNotExist:
+            messages.error(request, 'Verification code not found. Please request a new one.')
+            
+    return render(request, 'Mind_Mend/auth/verify_otp.html', {'email': user.email})
+
+
+def resend_otp(request):
+    """Generates a new OTP and shoots it to the registering user."""
+    user_id = request.session.get('registration_user_id')
+    if not user_id:
+        return redirect('login')
+    
+    user = get_object_or_404(User, id=user_id)
+    if user.is_active:
+        return redirect('home')
+        
+    send_verification_otp(user)
+    messages.success(request, f'A new verification code was sent to {user.email}.')
+    return redirect('verify_otp')
 
 
 def _delete_user_generated_data(user):
@@ -171,4 +250,4 @@ def user_profile(request):
     else:
         form = UserProfileForm(instance=profile, user=request.user)
 
-    return render(request, 'Mind_Mend/user_profile.html', {'form': form, 'profile': profile})
+    return render(request, 'Mind_Mend/auth/user_profile.html', {'form': form, 'profile': profile})

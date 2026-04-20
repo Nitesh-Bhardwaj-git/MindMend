@@ -13,12 +13,12 @@ from django.utils import timezone
 
 
 def home(request):
-    return render(request, 'Mind_Mend/home.html')
+    return render(request, 'Mind_Mend/core/home.html')
 
 
 def privacy_policy(request):
     """Render the Privacy Policy page."""
-    return render(request, 'Mind_Mend/privacy_policy.html')
+    return render(request, 'Mind_Mend/core/privacy_policy.html')
 
 
 def contact_us(request):
@@ -35,7 +35,7 @@ def contact_us(request):
             return redirect('contact_us')
     else:
         form = ContactForm()
-    return render(request, 'Mind_Mend/contact_us.html', {'form': form})
+    return render(request, 'Mind_Mend/core/contact_us.html', {'form': form})
 
 
 def resources(request):
@@ -53,7 +53,7 @@ def resources(request):
             'languages': 'English and 20+ regional languages'
         },
     ]
-    return render(request, 'Mind_Mend/Helpline.html', {'helplines': helplines, 'features': []})
+    return render(request, 'Mind_Mend/core/Helpline.html', {'helplines': helplines, 'features': []})
 
 
 def share_location_api(request):
@@ -118,7 +118,7 @@ def chat(request):
     if request.user.is_authenticated:
         prior = list(ChatMessage.objects.filter(user=request.user).order_by('created_at')[:20])
         prior_messages = [{'role': m.role, 'content': m.content} for m in prior]
-    return render(request, 'Mind_Mend/chat.html', {
+    return render(request, 'Mind_Mend/core/chat.html', {
         'prior_messages_json': json.dumps(prior_messages) if prior_messages else '[]',
     })
 

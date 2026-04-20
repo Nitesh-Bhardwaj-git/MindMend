@@ -20,10 +20,10 @@ from urllib.parse import urlparse, parse_qsl
 # (e.g. MindMend/.env) so the correct file is always found regardless
 # of the working directory, and a change here triggers a dev-server reload.
 # Keys last updated: 2026-04-13
-load_dotenv(Path(__file__).resolve().parent / '.env')
+load_dotenv(Path(__file__).resolve().parent.parent / '.env')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # Production detection.
 # Treat as Render production only when both Render flag and DATABASE_URL are present.
@@ -282,3 +282,12 @@ else:
     CSRF_COOKIE_SECURE           = False
     SECURE_CONTENT_TYPE_NOSNIFF  = True
     SECURE_BROWSER_XSS_FILTER    = True
+
+# ── Email Configuration ──────────────────────────────────────────────────────
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+# Fallback to empty string locally if not present to avoid crashes
+EMAIL_HOST_USER = os.environ.get('MINDMEND_EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('MINDMEND_EMAIL_HOST_PASSWORD', '')

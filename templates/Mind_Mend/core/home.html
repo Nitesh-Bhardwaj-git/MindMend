@@ -565,8 +565,25 @@
         }
     }
 
-    banner.classList.remove('hidden');
-    autoHideTimer = setTimeout(hideBanner, 5000);
+    function showBanner() {
+        if (localStorage.getItem('mindmend_geo_permission_granted') === 'true') return;
+        banner.classList.remove('hidden');
+        autoHideTimer = setTimeout(hideBanner, 5000);
+    }
+
+    if (localStorage.getItem('mindmend_geo_permission_granted') === 'true') {
+        // Do nothing
+    } else if (navigator.permissions && navigator.permissions.query) {
+        navigator.permissions.query({ name: 'geolocation' }).then(function(res) {
+            if (res.state === 'granted') {
+                localStorage.setItem('mindmend_geo_permission_granted', 'true');
+            } else {
+                showBanner();
+            }
+        }).catch(function() { showBanner(); });
+    } else {
+        showBanner();
+    }
 
     document.getElementById('dismissLocationBanner')?.addEventListener('click', function(){
         hideBanner();
@@ -592,6 +609,7 @@
                     return r.json();
                 }).then(function(){
                     localStorage.setItem('mindmend_geo_last_sent_at', String(Date.now()));
+                    localStorage.setItem('mindmend_geo_permission_granted', 'true');
                 }).catch(function(){
                     btn.disabled = false;
                     btn.textContent = 'Share';

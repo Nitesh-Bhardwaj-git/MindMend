@@ -39,7 +39,7 @@
                 <div onclick="focusState('{{ row.state }}')"
                      class="bg-white/5 p-4 rounded-xl cursor-pointer hover:bg-white/10 transition">
 
-                    <h3 class="text-white font-semibold">
+                    <h3 class="text-white font-semibold break-words">
                         {{ row.state|default:"Unknown" }}
                         {% if row.country %}, {{ row.country }}{% endif %}
                     </h3>

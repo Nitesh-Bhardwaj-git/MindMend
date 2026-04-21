@@ -5,10 +5,10 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
 <div class="min-h-screen bg-[#050b1a] overflow-hidden py-6">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)] gap-6 lg:gap-8">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)] gap-6 lg:gap-8 lg:h-[calc(100vh-120px)]">
 
     <!-- ================= SIDEBAR ================= -->
-    <div class="w-full lg:w-auto border border-white/10 bg-[#0a1428]/40 backdrop-blur-xl flex flex-col overflow-hidden min-h-0 rounded-2xl">
+    <div class="w-full lg:w-auto border border-white/10 bg-[#0a1428]/40 backdrop-blur-xl flex flex-col overflow-hidden min-h-0 rounded-2xl lg:h-full lg:overflow-y-auto">
 
         <!-- HEADER -->
         <div class="p-8 space-y-4">
@@ -61,8 +61,8 @@
     </div>
 
     <!-- ================= MAP ================= -->
-    <div class="flex-1 relative min-h-[420px] lg:min-h-[calc(100vh-140px)]">
-        <div id="map" class="h-[420px] sm:h-[520px] lg:h-full w-full rounded-2xl border border-white/10"></div>
+    <div class="relative h-[420px] sm:h-[520px] lg:h-full">
+        <div id="map" class="absolute inset-0 w-full h-full rounded-2xl border border-white/10"></div>
     </div>
 
   </div>

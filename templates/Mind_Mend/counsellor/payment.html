@@ -57,6 +57,11 @@
              ₹{{ booking.counsellor.session_fee|floatformat:"0" }}
           </div>
         </div>
+
+        <div class="mt-4 p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 flex flex-col items-center justify-center">
+            <p class="text-orange-400 text-sm font-semibold mb-1">Time remaining to complete payment</p>
+            <p id="countdown-timer" class="text-2xl font-mono text-white tracking-widest">15:00</p>
+        </div>
       </div>
 
       <!-- Payment UI Column -->
@@ -143,4 +148,56 @@ class="w-full py-4 rounded-xl bg-[#00d1b2] text-[#050b1a] font-bold text-lg hove
   });
 </script>
 
+  </div>
+
+  <script>
+    (function initTimer() {
+      // Get the creation time in seconds (float) and convert to milliseconds
+      const createdAtSecs = parseFloat("{{ booking_timestamp|default:'0' }}");
+      if (!createdAtSecs) return;
+
+      const creationTime = new Date(createdAtSecs * 1000).getTime();
+      const expirationTime = creationTime + (15 * 60 * 1000); // 15 minutes limit
+      const timerDisplay = document.getElementById('countdown-timer');
+      const payBtn = document.getElementById('rzp-pay-btn');
+      const errorMsg = document.getElementById('rzp-error-msg');
+
+      function updateTimer() {
+        const now = new Date().getTime();
+        const distance = expirationTime - now;
+
+        if (distance <= 0) {
+          clearInterval(interval);
+          timerDisplay.textContent = "00:00";
+          timerDisplay.classList.add('text-red-500');
+          if (payBtn) {
+            payBtn.disabled = true;
+            payBtn.classList.add('opacity-50', 'cursor-not-allowed');
+          }
+          if (errorMsg) {
+            errorMsg.innerHTML = 'This reservation has expired. Please <a href="{% url "counsellor_booking" %}" class="underline text-red-300 hover:text-white">book a new session</a>.';
+            errorMsg.classList.remove('hidden');
+          }
+          return;
+        }
+
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        
+        const mStr = minutes < 10 ? "0" + minutes : minutes;
+        const sStr = seconds < 10 ? "0" + seconds : seconds;
+        
+        timerDisplay.textContent = mStr + ":" + sStr;
+
+        // Visual warning when under 2 minutes
+        if (minutes < 2) {
+           timerDisplay.classList.add('text-red-400');
+        }
+      }
+
+      // Initial call and start interval
+      updateTimer();
+      const interval = setInterval(updateTimer, 1000);
+    })();
+  </script>
 {% endblock %}

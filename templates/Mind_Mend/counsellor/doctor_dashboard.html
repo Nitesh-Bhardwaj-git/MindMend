@@ -20,9 +20,32 @@
       </div>
 
       <a href="{% url 'counsellor_sessions' %}"
-         class="px-5 py-2 rounded-xl bg-[#00d1b2]/10 border border-[#00d1b2]/20 text-[#00d1b2] font-bold hover:bg-[#00d1b2] hover:text-black transition">
+         class="px-5 py-2 rounded-xl bg-[#00d1b2]/10 border border-[#00d1b2]/20 text-[#00d1b2] font-bold hover:bg-[#00d1b2] hover:text-black transition active:scale-95">
          Sessions View
       </a>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+      <div class="bg-[#0a1428]/80 border border-[#00d1b2]/20 p-6 rounded-3xl backdrop-blur-xl transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-2xl hover:shadow-[#00d1b2]/10 hover:border-[#00d1b2]/40 group cursor-default">
+        <p class="text-gray-400 text-sm mb-1 group-hover:text-[#00d1b2] transition-colors">Today's Appts</p>
+        <p class="text-3xl font-bold text-white">{{ today_bookings_count|default:"0" }}</p>
+      </div>
+
+      <div class="bg-[#0a1428]/80 border border-yellow-500/20 p-6 rounded-3xl backdrop-blur-xl transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-2xl hover:shadow-yellow-500/10 hover:border-yellow-500/40 group cursor-default">
+        <p class="text-gray-400 text-sm mb-1 group-hover:text-yellow-400 transition-colors">Pending Requests</p>
+        <p class="text-3xl font-bold text-white">{{ pending_count|default:"0" }}</p>
+      </div>
+
+      <div class="bg-[#0a1428]/80 border border-blue-500/20 p-6 rounded-3xl backdrop-blur-xl transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/10 hover:border-blue-500/40 group cursor-default">
+        <p class="text-gray-400 text-sm mb-1 group-hover:text-blue-400 transition-colors">Completed Sessions</p>
+        <p class="text-3xl font-bold text-white">{{ total_completed_sessions|default:"0" }}</p>
+      </div>
+
+      <div class="bg-[#0a1428]/80 border border-purple-500/20 p-6 rounded-3xl backdrop-blur-xl transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-2xl hover:shadow-purple-500/10 hover:border-purple-500/40 group cursor-default">
+        <p class="text-gray-400 text-sm mb-1 group-hover:text-purple-400 transition-colors">Monthly Earnings</p>
+        <p class="text-3xl font-bold text-white">₹{{ monthly_revenue|default:"0.00" }}</p>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -30,59 +53,13 @@
       <!-- LEFT -->
       <div class="lg:col-span-2 space-y-10">
 
-        <!-- Pending Appointments -->
+        <!-- Active Appointments -->
         <section>
-          <h3 class="text-2xl text-white font-bold mb-6">Pending Appointments</h3>
-
-          {% for b in pending_bookings %}
-          <div class="bg-[#0a1428]/40 border border-white/10 p-6 rounded-3xl mb-4 backdrop-blur-xl">
-            <div class="flex flex-wrap justify-between items-center gap-4">
-
-              <div>
-                <div class="flex flex-wrap items-center gap-2">
-                  <p class="text-white font-bold text-lg">{{ b.patient_display_name }}</p>
-                  {% if b.is_anonymous %}
-                  <span class="px-2 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                    Anonymous Session
-                  </span>
-                  {% endif %}
-                </div>
-                <p class="text-gray-400 text-sm">{{ b.date|date:"l, M d, Y" }} at {{ b.time_slot|time:"H:i" }}</p>
-                {% if b.notes %}
-                <p class="text-gray-500 text-sm mt-2">Notes: {{ b.notes }}</p>
-                {% endif %}
-              </div>
-
-              <div class="flex flex-wrap gap-3">
-                <form method="post" action="{% url 'doctor_booking_action' b.id %}">
-                  {% csrf_token %}
-                  <input type="hidden" name="action" value="accept">
-                  <button type="submit" class="px-4 py-2 bg-green-500/10 text-green-400 rounded-xl border border-green-500/20 hover:bg-green-500 hover:text-white transition">
-                    Accept
-                  </button>
-                </form>
-
-                <form method="post" action="{% url 'doctor_booking_action' b.id %}">
-                  {% csrf_token %}
-                  <input type="hidden" name="action" value="reject">
-                  <button type="submit" class="px-4 py-2 bg-red-500/10 text-red-400 rounded-xl border border-red-500/20 hover:bg-red-500 hover:text-white transition">
-                    Reject
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
-          {% empty %}
-          <p class="text-gray-500">No pending bookings.</p>
-          {% endfor %}
-        </section>
-
-        <!-- All Appointments -->
-        <section>
-          <h3 class="text-2xl text-white font-bold mb-6">All Appointments</h3>
+          <h3 class="text-2xl text-white font-bold mb-6">Active Appointments</h3>
 
           {% for b in bookings %}
-          <div class="bg-[#0a1428]/40 border border-white/10 p-6 rounded-3xl mb-4 backdrop-blur-xl">
+          {% if b.status != 'completed' %}
+          <div class="bg-[#0a1428]/40 border border-white/10 p-6 rounded-3xl mb-4 backdrop-blur-xl transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-2xl hover:shadow-[#00d1b2]/5 hover:border-white/30 group">
             <div class="flex flex-wrap justify-between items-center gap-4">
 
               <div>
@@ -117,7 +94,7 @@
               <div class="flex flex-wrap gap-3">
                 {% if b.status == 'confirmed' or b.status == 'completed' %}
                 <a href="{% url 'counsellor_chat' b.id %}"
-                   class="px-4 py-2 rounded-xl bg-[#00d1b2]/10 border border-[#00d1b2]/20 text-[#00d1b2] font-bold hover:bg-[#00d1b2] hover:text-black transition">
+                   class="px-4 py-2 rounded-xl bg-[#00d1b2]/10 border border-[#00d1b2]/20 text-[#00d1b2] font-bold hover:bg-[#00d1b2] hover:text-black transition active:scale-95">
                    Open Chat
                 </a>
                 {% endif %}
@@ -126,7 +103,7 @@
                 <form method="post" action="{% url 'doctor_booking_action' b.id %}">
                   {% csrf_token %}
                   <input type="hidden" name="action" value="complete">
-                  <button type="submit" class="px-4 py-2 bg-white/10 text-white rounded-xl hover:bg-white hover:text-black transition">
+                  <button type="submit" class="px-4 py-2 bg-white/10 text-white rounded-xl hover:bg-white hover:text-black transition active:scale-95">
                     Mark Complete
                   </button>
                 </form>
@@ -134,9 +111,57 @@
               </div>
             </div>
           </div>
+          {% endif %}
           {% empty %}
           <p class="text-gray-500">No bookings found.</p>
           {% endfor %}
+        </section>
+
+        <!-- Completed Appointments Section -->
+        <section class="mt-8 mb-6 bg-[#0a1428]/60 border border-white/10 rounded-3xl p-6 backdrop-blur-xl">
+          <h3 class="text-white font-bold text-lg mb-4">Completed Appointments</h3>
+          <div class="h-[400px] overflow-y-auto pr-2 space-y-4">
+            {% for b in bookings %}
+            {% if b.status == 'completed' %}
+            <div class="bg-[#0a1428]/40 border border-white/10 p-6 rounded-3xl backdrop-blur-xl transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-2xl hover:shadow-[#00d1b2]/5 hover:border-white/30 group">
+              <div class="flex flex-wrap justify-between items-center gap-4">
+
+                <div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <p class="text-white font-bold text-lg">{{ b.patient_display_name }}</p>
+                    {% if b.is_anonymous %}
+                    <span class="px-2 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                      Anonymous Session
+                    </span>
+                    {% endif %}
+                  </div>
+                  <p class="text-gray-400 text-sm">{{ b.date|date:"l, M d, Y" }} at {{ b.time_slot|time:"H:i" }}</p>
+
+                  <span class="inline-block mt-3 px-3 py-1 text-xs rounded-full font-medium bg-gray-500/10 text-gray-300">
+                    {{ b.status|title }}
+                  </span>
+
+                  {% if b.review %}
+                  <div class="mt-3 bg-white/5 p-3 rounded-xl border border-white/10">
+                    <p class="text-amber-400 font-medium">Feedback: ★ {{ b.review.rating }}/5</p>
+                    {% if b.review.review_text %}
+                    <p class="text-gray-400 text-sm mt-1">{{ b.review.review_text }}</p>
+                    {% endif %}
+                  </div>
+                  {% endif %}
+                </div>
+
+                <div class="flex flex-wrap gap-3">
+                  <a href="{% url 'counsellor_chat' b.id %}"
+                     class="px-4 py-2 rounded-xl bg-[#00d1b2]/10 border border-[#00d1b2]/20 text-[#00d1b2] font-bold hover:bg-[#00d1b2] hover:text-black transition active:scale-95">
+                     Open Chat
+                  </a>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+          </div>
         </section>
       </div>
 
@@ -148,13 +173,13 @@
             <span id="doctorUnreadBadge" class="px-2 py-1 rounded-full bg-red-500/10 text-red-400 text-xs font-semibold border border-red-500/20">
               {{ unread_count }}
             </span>
-            <button id="markReadBtn" class="text-xs text-[#00d1b2] hover:underline">Mark all read</button>
+            <button id="markReadBtn" class="text-xs text-[#00d1b2] hover:underline transition hover:text-[#00e6c3] active:scale-95">Mark all read</button>
           </div>
         </div>
 
-        <div id="doctorNotifications" class="space-y-3 max-h-[520px] overflow-y-auto">
+        <div id="doctorNotifications" class="space-y-3 h-[520px] overflow-y-auto pr-2">
           {% for n in notifications %}
-          <div class="p-4 rounded-xl border {% if not n.is_read %}border-[#00d1b2]/30 bg-[#00d1b2]/10{% else %}border-white/10 bg-white/5{% endif %}">
+          <div class="p-4 rounded-xl border transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg {% if not n.is_read %}border-[#00d1b2]/40 bg-[#00d1b2]/10 hover:bg-[#00d1b2]/20{% else %}border-white/10 bg-white/5 hover:border-white/30 hover:bg-white/10{% endif %}">
             <p class="text-white font-medium text-sm">{{ n.title }}</p>
             {% if n.body %}
             <p class="text-gray-400 text-sm">{{ n.body }}</p>

@@ -30,8 +30,17 @@ def _chat_sender_name(booking, sender):
     return get_display_name(sender)
 
 
+def _cleanup_expired_pending_bookings():
+    """Delete unpaid 'pending' bookings older than 15 minutes to free the slots."""
+    expiration_limit = timezone.now() - timedelta(minutes=15)
+    CounsellorBooking.objects.filter(status='pending', created_at__lt=expiration_limit).delete()
+
+
+
 @login_required
 def counsellor_booking(request):
+    _cleanup_expired_pending_bookings()
+
     import json as _json
     from django.db.models import Avg
     counsellors = list(
@@ -266,12 +275,27 @@ def doctor_dashboard(request):
         b.review = reviews_by_booking.get(b.id)
         b.has_review = b.review is not None
     notifications_qs = CounsellorNotification.objects.filter(counsellor=counsellor)
+    
+    today_date = timezone.localdate()
+    today_bookings_count = len([b for b in bookings if b.date == today_date])
+    pending_count = len([b for b in bookings if b.status == 'pending'])
+    completed_bookings = [b for b in bookings if b.status == 'completed']
+    total_completed_sessions = len(completed_bookings)
+    monthly_revenue = sum(
+        b.counsellor.session_fee for b in completed_bookings 
+        if b.is_paid and b.date.month == today_date.month and b.date.year == today_date.year
+    )
+
     return render(request, 'Mind_Mend/counsellor/doctor_dashboard.html', {
         'counsellor': counsellor,
         'pending_bookings': [b for b in bookings if b.status == 'pending'],
         'bookings': bookings,
         'notifications': notifications_qs[:20],
         'unread_count': notifications_qs.filter(is_read=False).count(),
+        'today_bookings_count': today_bookings_count,
+        'pending_count': pending_count,
+        'total_completed_sessions': total_completed_sessions,
+        'monthly_revenue': monthly_revenue,
     })
 
 
@@ -439,6 +463,8 @@ def checkout_payment(request, booking_id):
     GET  → create a Razorpay order and render the payment page.
     POST → (safety fallback) redirect back to GET.
     """
+    _cleanup_expired_pending_bookings()
+
     import razorpay
     from django.conf import settings
 
@@ -475,6 +501,7 @@ def checkout_payment(request, booking_id):
         'amount_paise': amount_paise,
         'user_name': request.user.get_full_name() or request.user.username,
         'user_email': request.user.email,
+        'booking_timestamp': booking.created_at.timestamp(),
     })
 
 
@@ -602,6 +629,8 @@ def get_booked_slots(request, counsellor_id):
     Response: {"booked_slots": [{"start": "12:00", "end": "12:30"}, ...]}
     """
     from django.utils.dateparse import parse_date
+
+    _cleanup_expired_pending_bookings()
 
     counsellor = get_object_or_404(Counsellor, pk=counsellor_id, is_active=True)
     date_str = request.GET.get('date', '')

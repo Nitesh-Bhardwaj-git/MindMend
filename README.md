@@ -1,133 +1,126 @@
 # MindMend — AI-Enabled Mental Health Support Platform
 
-MindMend is a Django-based web platform for mental health awareness, self-assessment, peer support, counsellor booking, and guided recovery support.
+MindMend is a comprehensive, Django-based web platform designed to provide mental health awareness, self-assessment, peer support, and professional counsellor booking. It leverages modern web technologies and Artificial Intelligence to offer a secure, empathetic, and highly interactive user experience.
 
-## Core Features
+## ✨ Core Features
 
-- AI chatbot with rule-based mode and optional Gemini/OpenAI integration
-- Assessments: PHQ-9, GAD-7, PSS-10
-- Anonymous community forum and recovery stories
-- Counsellor booking and live chat
-- Doctor/counsellor dashboard with:
-- appointment management (accept/reject/complete)
-- live notifications for bookings and messages
-- Mood tracking and user dashboard analytics
-- Location analytics and mental health heatmap
-- Contact Us submissions stored in database and visible in admin
-- Session review/feedback flow (user -> counsellor)
-- Finish Session flow for both user and counsellor
+### 🧠 AI & Intelligent Support
+- **AI Chatbot**: Empathetic, memory-aware chatbot with safety filters for suicide/violence risk detection.
+- **Multiple LLM Fallback**: Natively supports multiple Gemini API keys (`MINDMEND_GEMINI_API_KEY="key1,key2"`) to seamlessly failover if quota exhausts. OpenAI fallback is also supported.
+- **Rule-based Fallback**: If no AI keys are configured, falls back to a deterministic rule-based chatbot.
 
-## Tech Stack
+### 🛡️ Security & Privacy
+- **Email OTP Registration**: Secure account creation with a 15-minute expiring Email OTP.
+- **Field-level Encryption**: Real-time Chat messages and AI Chatbot history are encrypted at rest using AES-128-CBC + HMAC-SHA256 (Fernet).
+- **Location Tracking (Opt-out)**: Track mental health trends via a geographic heatmap, with strict user opt-out controls.
+- **Data Deletion**: Users can permanently delete their account and all associated data at any time.
 
-- Backend: Django 6, Django Channels (WebSocket support)
-- Frontend: Django templates, Tailwind CSS (CDN), vanilla JavaScript
-- Database: SQLite (development), PostgreSQL-ready for deployment
-- Static serving: WhiteNoise
+### 🩺 Professional Counselling
+- **Counsellor Booking System**: Browse doctors, view real-time availability, and book 30-minute appointment intervals.
+- **Razorpay Integration**: End-to-end secure payment gateway with Server-to-Server Webhook verification (`order.paid`) for reliable transaction capture.
+- **Doctor Dashboard**: Dedicated interface for counsellors to accept/reject/complete appointments, view patient history, manage 15-minute auto-release slot holds, and track monthly revenue.
+- **Live Real-time Chat**: Secure WebSocket-based chat rooms for patients and doctors. Features include:
+  - Persistent chat history across multiple appointments with the same doctor.
+  - Automatic session completion (chats close 24 hours after the appointment slot).
+  - Live pop-up notifications for doctors when a patient messages them.
 
-## Quick Start
+### 📊 Assessments & Community
+- **Clinical Assessments**: Self-administered PHQ-9 (Depression), GAD-7 (Anxiety), and PSS-10 (Stress) tools.
+- **Community Forum**: Anonymous peer-support network where users can share struggles, discuss coping mechanisms, and post recovery stories.
+- **Mood Tracking**: Daily mood and energy logging.
+- **Live Survey Analytics**: Integrate Google Forms via a private Google Service Account for live, auto-refreshing pie/bar chart analytics of mental health surveys.
 
-1. Create and activate virtual environment
+---
 
+## 🛠️ Tech Stack
+
+- **Backend**: Django 6, Django Channels (WebSockets / ASGI)
+- **Frontend**: Django Templates, Tailwind CSS (CDN), Vanilla JavaScript, CSS Glassmorphism & Animations
+- **Database**: SQLite (Local Development), PostgreSQL-ready for deployment
+- **Static & Media**: WhiteNoise (Static), Local FileSystemStorage (Media)
+- **Deployment Ready**: Fully configured for Render with `gunicorn`, `daphne`, and `render_start.sh`.
+
+---
+
+## 🚀 Quick Start (Local Development)
+
+1. **Create and activate virtual environment**
 ```bash
 python -m venv .venv
+# Windows:
 .venv\Scripts\activate
+# Mac/Linux:
+source .venv/bin/activate
 ```
 
-2. Install dependencies
-
+2. **Install dependencies**
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Apply migrations
+3. **Set up Environment Variables (`.env`)**
+Create a `.env` file in the same directory as `manage.py` and configure the following:
+```env
+# Essential
+SECRET_KEY="your-django-secret-key"
+DEBUG=True
 
+# Email OTP Setup
+MINDMEND_EMAIL_HOST_USER="your-email@gmail.com"
+MINDMEND_EMAIL_HOST_PASSWORD="your-app-password"
+
+# Gemini AI (Comma-separated for fallback pool)
+MINDMEND_GEMINI_API_KEY="AIzaSy...Key1...,AIzaSy...Key2..."
+
+# Razorpay Payment Gateway (Test Mode)
+RAZORPAY_KEY_ID="rzp_test_yourkey"
+RAZORPAY_KEY_SECRET="your_razorpay_secret"
+RAZORPAY_WEBHOOK_SECRET="your_webhook_secret"
+
+# Encryption (Required for Chat History)
+# Generate via: python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+MINDMEND_ENCRYPTION_KEY="your-fernet-key="
+```
+
+4. **Apply migrations**
 ```bash
 python manage.py migrate
 ```
 
-4. Create admin user
-
+5. **Create an Admin user**
 ```bash
 python manage.py createsuperuser
 ```
 
-5. (Optional) Seed sample counsellors
-
+6. **(Optional) Seed sample counsellors**
 ```bash
 python manage.py seed_counsellors
 ```
 
-6. Run development server
-
+7. **Run the ASGI server (Required for WebSockets)**
 ```bash
-python manage.py runserver
+daphne -b 127.0.0.1 -p 8000 MindMend.asgi:application
+# OR use Django dev server (less stable for WebSockets):
+# python manage.py runserver
 ```
 
-Open: `http://127.0.0.1:8000`
+Open your browser and navigate to: `http://127.0.0.1:8000`
 
-## Optional LLM Setup
+---
 
-Set environment variables to enable LLM chat:
+## 👨‍⚕️ Doctor / Counsellor Workflow
 
-```powershell
-$env:MINDMEND_LLM_PROVIDER="gemini"
-$env:MINDMEND_GEMINI_API_KEY="your-api-key"
-```
+Doctors do not currently self-register through the public UI.
 
-Or for OpenAI:
+**Admin Onboarding Steps:**
+1. Go to `/admin/auth/user/` and create a User account.
+2. Go to `/admin/Mind_Mend/counsellor/` and create a Counsellor profile.
+3. Link the `Counsellor.user` field to the User account created in Step 1.
+4. The Doctor can now log in at `/doctor/login/` or via the standard login page to access the Doctor Dashboard.
 
-```powershell
-$env:MINDMEND_LLM_PROVIDER="openai"
-$env:MINDMEND_OPENAI_API_KEY="your-api-key"
-```
+---
 
-If no provider is configured, chatbot falls back to rule-based responses.
-
-## Google Form Survey Analytics (Live)
-
-MindMend can embed your Google Form and show live per-question chart analysis using a private Google Sheets API connection (recommended for sensitive mental-health data).
-
-1. Open your Google Form responses tab and link responses to a Google Sheet.
-2. In Google Cloud, create a Service Account and download its JSON key file.
-3. Share the response sheet with the service account email (`Viewer` access is enough).
-4. Copy the Google Sheet id from the sheet URL (`/spreadsheets/d/<sheet-id>/...`).
-5. Set environment variables:
-
-```powershell
-$env:MINDMEND_GOOGLE_FORM_URL="https://forms.gle/vRhdR86wsHfAkd24A"
-$env:MINDMEND_GOOGLE_SURVEY_SHEET_ID="<sheet-id>"
-$env:MINDMEND_GOOGLE_SURVEY_WORKSHEET="Form Responses 1"
-$env:MINDMEND_GOOGLE_SERVICE_ACCOUNT_FILE="E:\\MindMend\\secrets\\google-service-account.json"
-```
-
-6. Open `/survey-analytics/` in your app.
-
-Optional fallback (less secure):
-- `MINDMEND_GOOGLE_FORM_RESPONSES_CSV_URL` can still be used if you intentionally publish CSV.
-
-Notes:
-- Charts auto-refresh every 60 seconds.
-- Data is grouped question-wise (pie or bar chart automatically).
-- Private API mode reads previous + new responses automatically from the same linked sheet.
-
-## Doctor Workflow
-
-Doctors currently do not self-register through public UI.
-
-Admin onboarding steps:
-
-1. Create user in `/admin/auth/user/`
-2. Create counsellor in `/admin/Mind_Mend/counsellor/`
-3. Link `Counsellor.user` to that user account
-4. Doctor logs in at `/doctor/login/`
-
-## Admin Access
-
-- Admin URL: `/admin/`
-- Contact messages: `Mind_Mend -> Contact messages`
-- Counsellor reviews: `Mind_Mend -> Counsellor reviews`
-
-## Helplines (India)
-
-- KIRAN: `1800-599-0019`
-- Tele-MANAS: `14416` / `1-800-891-4416`
+## 📞 Helplines (India)
+MindMend enforces safety checks. If high-risk distress or violence is detected, it immediately recommends:
+- **KIRAN**: `1800-599-0019`
+- **Tele-MANAS**: `14416` / `1-800-891-4416`

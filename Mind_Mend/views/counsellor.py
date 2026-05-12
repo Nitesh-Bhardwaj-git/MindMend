@@ -36,6 +36,27 @@ def _cleanup_expired_pending_bookings():
     CounsellorBooking.objects.filter(status='pending', created_at__lt=expiration_limit).delete()
 
 
+def _autocomplete_past_bookings():
+    """Automatically mark 'confirmed' bookings as 'completed' 24 hours after their scheduled time."""
+    current_time = timezone.now()
+    # Find bookings that could be 24h old (date is yesterday or older)
+    # Using date__lte allows us to avoid checking future bookings unnecessarily.
+    candidate_bookings = CounsellorBooking.objects.filter(
+        status='confirmed',
+        date__lte=current_time.date()
+    )
+    for booking in candidate_bookings:
+        naive_dt = datetime.combine(booking.date, booking.time_slot)
+        if timezone.is_naive(naive_dt):
+            aware_dt = timezone.make_aware(naive_dt)
+        else:
+            aware_dt = naive_dt
+            
+        if current_time >= aware_dt + timedelta(hours=24):
+            booking.status = 'completed'
+            booking.save(update_fields=['status'])
+
+
 
 @login_required
 def counsellor_booking(request):
@@ -139,6 +160,7 @@ def _notify_counsellor(counsellor, event_type, title, body='', booking=None, act
 
 @login_required
 def my_bookings(request):
+    _autocomplete_past_bookings()
     bookings = CounsellorBooking.objects.filter(user=request.user).select_related('counsellor').order_by('-date', '-time_slot')
     # Prefetch reviews for completed bookings (to show "Leave review" or existing review)
     bookings = list(bookings)
@@ -175,11 +197,15 @@ def delete_booking(request, booking_id):
 @login_required
 def counsellor_chat(request, booking_id):
     """Live chat with counsellor for a booking. User or counsellor can access."""
+    _autocomplete_past_bookings()
     booking = get_object_or_404(CounsellorBooking, pk=booking_id)
     if not _user_can_access_booking(request.user, booking):
         messages.error(request, 'You do not have access to this chat.')
         return redirect('my_bookings')
-    chat_messages = list(CounsellorChatMessage.objects.filter(booking=booking).select_related('sender').order_by('created_at'))
+    chat_messages = list(CounsellorChatMessage.objects.filter(
+        booking__user=booking.user,
+        booking__counsellor=booking.counsellor
+    ).select_related('sender').order_by('created_at'))
     for msg in chat_messages:
         msg.sender_label = _chat_sender_name(booking, msg.sender)
     if request.method == 'POST':
@@ -244,6 +270,7 @@ def finish_session(request, booking_id):
 @login_required
 def counsellor_sessions(request):
     """List of sessions (bookings) for the logged-in counsellor."""
+    _autocomplete_past_bookings()
     counsellor = Counsellor.objects.filter(user=request.user).first()
     if not counsellor:
         messages.info(request, 'You are not registered as a counsellor.')
@@ -262,6 +289,7 @@ def counsellor_sessions(request):
 @login_required
 def doctor_dashboard(request):
     """Doctor-facing dashboard for appointments and notifications."""
+    _autocomplete_past_bookings()
     counsellor = Counsellor.objects.filter(user=request.user).first()
     if not counsellor:
         messages.info(request, 'You are not registered as a counsellor.')
@@ -405,7 +433,10 @@ def booking_messages_api(request, booking_id):
 
     since = request.GET.get('since')
     after_id = request.GET.get('after_id')
-    qs = CounsellorChatMessage.objects.filter(booking=booking).select_related('sender').order_by('id')
+    qs = CounsellorChatMessage.objects.filter(
+        booking__user=booking.user,
+        booking__counsellor=booking.counsellor
+    ).select_related('sender').order_by('id')
     if after_id:
         try:
             qs = qs.filter(id__gt=int(after_id))

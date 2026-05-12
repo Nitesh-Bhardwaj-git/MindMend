@@ -60,8 +60,14 @@ def _call_llm(messages, max_tokens=350):
                 gemini_key = openai_key # fallback if configured weirdly
             import google.generativeai as genai
             from google.api_core import exceptions as google_exceptions
+            gemini_keys = [k.strip() for k in gemini_key.split(',') if k.strip()]
+            if not gemini_keys:
+                # If absolutely no keys but it's set to gemini
+                gemini_keys = [openai_key] if openai_key else []
+
+            import google.generativeai as genai
+            from google.api_core import exceptions as google_exceptions
             import time
-            genai.configure(api_key=gemini_key)
             
             # Extract system prompt if any
             system_instruction = ""
@@ -87,25 +93,20 @@ def _call_llm(messages, max_tokens=350):
                 prompt += "MindMend: "
 
             for model_name in model_names:
-                try:
-                    model = genai.GenerativeModel(model_name)
-                    resp = model.generate_content(prompt)
-                    cleaned = _clean_llm_text(getattr(resp, 'text', None))
-                    if cleaned:
-                        return cleaned
-                except google_exceptions.ResourceExhausted as e:
-                    print(f"Gemini {model_name} rate limit. Waiting...")
-                    time.sleep(5)
+                for current_key in gemini_keys:
                     try:
+                        genai.configure(api_key=current_key)
+                        model = genai.GenerativeModel(model_name)
                         resp = model.generate_content(prompt)
                         cleaned = _clean_llm_text(getattr(resp, 'text', None))
                         if cleaned:
                             return cleaned
-                    except Exception as e2:
+                    except google_exceptions.ResourceExhausted as e:
+                        print(f"Gemini {model_name} rate limit on key ending in ...{current_key[-4:] if len(current_key)>4 else '?'}. Trying next key...")
                         continue
-                except Exception as e:
-                    print(f"Gemini {model_name} failed: {e}")
-                    continue
+                    except Exception as e:
+                        print(f"Gemini {model_name} failed on key ending in ...{current_key[-4:] if len(current_key)>4 else '?'}: {e}")
+                        continue
             
             # If all gemini models fail but openai key is available, fallback to openai
             if openai_key:

@@ -13,6 +13,8 @@ urlpatterns = [
     path('forgot-password/', auth.forgot_password, name='forgot_password'),
     path('forgot-password/verify/', auth.verify_reset_otp, name='verify_reset_otp'),
     path('forgot-password/reset/', auth.set_new_password, name='set_new_password'),
+    
+    path('test-email/', auth.test_email_view, name='test_email_view'),
     path('doctor/login/', auth.doctor_login_view, name='doctor_login'),
     path('logout/', auth.logout_view, name='logout'),
     path('profile/', auth.user_profile, name='user_profile'),

@@ -1,5 +1,6 @@
 import json
 import threading
+from django.http import HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import login, logout
@@ -300,6 +301,28 @@ def _delete_user_generated_data(user):
     UserMemory.objects.filter(user=user).delete()
     UserAccessLocation.objects.filter(user=user).delete()
     ContactMessage.objects.filter(email=user.email).delete()
+
+
+def test_email_view(request):
+    import traceback
+    try:
+        from django.core.mail import send_mail
+        from django.conf import settings
+        
+        if not settings.EMAIL_HOST_USER:
+            return HttpResponse("ERROR: EMAIL_HOST_USER is empty. Render is not picking up the environment variables. Please check your Render dashboard and ensure the variables are named MINDMEND_EMAIL_HOST_USER and MINDMEND_EMAIL_HOST_PASSWORD exactly, and that you have restarted the server.")
+            
+        send_mail(
+            'MindMend - Test Email',
+            'This is a test email to verify configuration.',
+            settings.EMAIL_HOST_USER,
+            [settings.EMAIL_HOST_USER],
+            fail_silently=False
+        )
+        return HttpResponse(f"SUCCESS: Email sent successfully to {settings.EMAIL_HOST_USER}!")
+    except Exception as e:
+        error_trace = traceback.format_exc()
+        return HttpResponse(f"ERROR: Email failed to send. Error details:<br><pre>{error_trace}</pre>")
 
 
 @login_required

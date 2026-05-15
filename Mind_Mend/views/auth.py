@@ -1,4 +1,5 @@
 import json
+import threading
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import login, logout
@@ -25,6 +26,12 @@ from ..models import (
 )
 from ..forms import SignUpForm
 
+def _send_email_async(subject, message, from_email, recipient_list):
+    try:
+        send_mail(subject, message, from_email, recipient_list, fail_silently=True)
+    except Exception:
+        pass
+
 def send_verification_otp(user):
     otp_code = str(random.randint(100000, 999999))
     EmailVerificationOTP.objects.update_or_create(
@@ -32,16 +39,15 @@ def send_verification_otp(user):
         defaults={'otp': otp_code}
     )
     if settings.EMAIL_HOST_USER:
-        try:
-            send_mail(
+        threading.Thread(
+            target=_send_email_async,
+            args=(
                 'MindMend - Verify your Email',
                 f'Your verification code is: {otp_code}. It is valid for 15 minutes.',
                 settings.EMAIL_HOST_USER,
-                [user.email],
-                fail_silently=True,
+                [user.email]
             )
-        except Exception:
-            pass # Fails gracefully if SMTP not yet configured
+        ).start()
     else:
         print(f"DEV OTP FOR {user.email}: {otp_code}")
         

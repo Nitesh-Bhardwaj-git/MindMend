@@ -80,6 +80,10 @@
           </div>
         </div>
         {% endfor %}
+        
+        <div class="flex justify-end -mt-4 mb-2">
+            <a href="{% url 'forgot_password' %}" class="text-[11px] text-[#00d1b2] hover:text-[#00e6c3] hover:underline transition-colors font-bold uppercase tracking-wider">Forgot Password?</a>
+        </div>
 
         <button type="submit" class="w-full py-6 rounded-2xl bg-[#00d1b2] text-[#050b1a] font-extrabold text-sm tracking-widest hover:scale-[1.02] transition-transform flex items-center justify-center gap-3" id="submitBtn">
           Login to Account →

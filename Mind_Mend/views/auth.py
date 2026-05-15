@@ -215,6 +215,80 @@ def resend_otp(request):
     return redirect('verify_otp')
 
 
+def forgot_password(request):
+    if request.method == 'POST':
+        email = request.POST.get('email', '').strip()
+        user = User.objects.filter(email=email).first()
+        if user:
+            otp_code = send_verification_otp(email)
+            request.session['reset_email'] = email
+            request.session['reset_otp'] = otp_code
+            request.session['reset_otp_expiry'] = (timezone.now() + timedelta(minutes=15)).isoformat()
+            request.session['reset_verified'] = False
+            
+            messages.success(request, f'An OTP has been sent to {email}.')
+            return redirect('verify_reset_otp')
+        else:
+            messages.error(request, 'No account found with that email address.')
+    return render(request, 'Mind_Mend/auth/forgot_password.html')
+
+
+def verify_reset_otp(request):
+    email = request.session.get('reset_email')
+    if not email:
+        return redirect('forgot_password')
+        
+    if request.method == 'POST':
+        otp_entered = request.POST.get('otp', '').strip()
+        reset_otp = request.session.get('reset_otp')
+        expiry_str = request.session.get('reset_otp_expiry')
+        
+        if reset_otp and expiry_str:
+            expiry_time = timezone.datetime.fromisoformat(expiry_str)
+            if timezone.now() > expiry_time:
+                messages.error(request, 'OTP has expired. Please request a new one.')
+            elif reset_otp == otp_entered:
+                request.session['reset_verified'] = True
+                messages.success(request, 'OTP verified. Please enter your new password.')
+                return redirect('set_new_password')
+            else:
+                messages.error(request, 'Invalid OTP. Please try again.')
+        else:
+            messages.error(request, 'Session expired. Please start over.')
+            return redirect('forgot_password')
+            
+    return render(request, 'Mind_Mend/auth/verify_reset_otp.html', {'email': email})
+
+
+def set_new_password(request):
+    if not request.session.get('reset_verified'):
+        return redirect('forgot_password')
+        
+    email = request.session.get('reset_email')
+    user = User.objects.filter(email=email).first()
+    if not user:
+        return redirect('login')
+        
+    if request.method == 'POST':
+        new_password = request.POST.get('password', '')
+        if len(new_password) < 6:
+            messages.error(request, 'Password must be at least 6 characters long.')
+        else:
+            user.set_password(new_password)
+            user.save()
+            
+            # Cleanup session
+            request.session.pop('reset_email', None)
+            request.session.pop('reset_otp', None)
+            request.session.pop('reset_otp_expiry', None)
+            request.session.pop('reset_verified', None)
+            
+            messages.success(request, 'Password reset successful! Please login with your new password.')
+            return redirect('login')
+            
+    return render(request, 'Mind_Mend/auth/set_new_password.html')
+
+
 def _delete_user_generated_data(user):
     AssessmentResult.objects.filter(user=user).delete()
     MoodEntry.objects.filter(user=user).delete()

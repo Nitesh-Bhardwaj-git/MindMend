@@ -40,9 +40,10 @@
             </form>
 
             <div class="mt-8 pt-6 border-t border-white/10">
-                <p class="text-sm text-gray-400 mb-0">
+                <p class="text-sm text-gray-400 mb-0" id="resendContainer">
                     Didn't receive the code? 
-                    <a href="{% url 'resend_otp' %}" class="font-bold text-[#00d1b2] hover:text-[#00e6c3] transition-colors ml-1 hover:underline">Resend OTP</a>
+                    <span id="resendTimer" class="font-bold text-gray-500 ml-1">Resend OTP (60s)</span>
+                    <a href="{% url 'resend_otp' %}" id="resendLink" class="hidden font-bold text-[#00d1b2] hover:text-[#00e6c3] transition-colors ml-1 hover:underline">Resend OTP</a>
                 </p>
             </div>
         </div>
@@ -59,6 +60,21 @@
                 this.value = this.value.replace(/[^0-9]/g, '');
             });
         }
+        
+        let timeLeft = 60;
+        const timerSpan = document.getElementById('resendTimer');
+        const resendLink = document.getElementById('resendLink');
+        
+        const countdown = setInterval(() => {
+            timeLeft--;
+            if (timeLeft <= 0) {
+                clearInterval(countdown);
+                timerSpan.classList.add('hidden');
+                resendLink.classList.remove('hidden');
+            } else {
+                timerSpan.textContent = `Resend OTP (${timeLeft}s)`;
+            }
+        }, 1000);
     });
 </script>
 {% endblock %}

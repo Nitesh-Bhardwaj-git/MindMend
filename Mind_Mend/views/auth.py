@@ -30,9 +30,9 @@ from ..forms import SignUpForm
 
 def _send_email_async(subject, message, from_email, recipient_list):
     try:
-        send_mail(subject, message, from_email, recipient_list, fail_silently=True)
-    except Exception:
-        pass
+        send_mail(subject, message, from_email, recipient_list, fail_silently=False)
+    except Exception as e:
+        print(f"EMAIL SENDING FAILED: {e}")
 
 def send_verification_otp(email):
     otp_code = str(random.randint(100000, 999999))

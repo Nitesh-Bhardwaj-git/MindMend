@@ -10,6 +10,8 @@ from django.contrib.sessions.models import Session
 import random
 from django.core.mail import send_mail
 from django.conf import settings
+from django.utils import timezone
+from datetime import timedelta
 from ..models import (
     Counsellor,
     AssessmentResult,
@@ -32,12 +34,8 @@ def _send_email_async(subject, message, from_email, recipient_list):
     except Exception:
         pass
 
-def send_verification_otp(user):
+def send_verification_otp(email):
     otp_code = str(random.randint(100000, 999999))
-    EmailVerificationOTP.objects.update_or_create(
-        user=user,
-        defaults={'otp': otp_code}
-    )
     if settings.EMAIL_HOST_USER:
         threading.Thread(
             target=_send_email_async,
@@ -45,11 +43,11 @@ def send_verification_otp(user):
                 'MindMend - Verify your Email',
                 f'Your verification code is: {otp_code}. It is valid for 15 minutes.',
                 settings.EMAIL_HOST_USER,
-                [user.email]
+                [email]
             )
         ).start()
     else:
-        print(f"DEV OTP FOR {user.email}: {otp_code}")
+        print(f"DEV OTP FOR {email}: {otp_code}")
         
     return otp_code
 
@@ -87,13 +85,21 @@ def register(request):
     if request.method == 'POST':
         form = SignUpForm(request.POST)
         if form.is_valid():
+            # Hash password but DO NOT save to DB
             user = form.save(commit=False)
-            user.is_active = False # Deactivate until verified
-            user.save()
             
-            send_verification_otp(user)
-            request.session['registration_user_id'] = user.id
-            messages.success(request, f'Registration successful! We sent an OTP to {user.email}.')
+            # Store in session
+            request.session['pending_user'] = {
+                'username': user.username,
+                'email': user.email,
+                'password': user.password,
+            }
+            
+            otp_code = send_verification_otp(user.email)
+            request.session['pending_otp'] = otp_code
+            request.session['pending_otp_expiry'] = (timezone.now() + timedelta(minutes=15)).isoformat()
+            
+            messages.success(request, f'Registration initiated! We sent an OTP to {user.email}.')
             return redirect('verify_otp')
     else:
         form = SignUpForm()
@@ -155,50 +161,57 @@ def logout_view(request):
 
 def verify_otp(request):
     """OTP Verification page step after sign up."""
-    user_id = request.session.get('registration_user_id')
-    if not user_id:
+    pending_user = request.session.get('pending_user')
+    if not pending_user:
         return redirect('login')
-        
-    user = get_object_or_404(User, id=user_id)
-    if user.is_active:
-        return redirect('home')
         
     if request.method == 'POST':
         otp_entered = request.POST.get('otp', '').strip()
-        try:
-            otp_record = EmailVerificationOTP.objects.get(user=user)
-            if otp_record.is_valid() and otp_record.otp == otp_entered:
-                user.is_active = True
-                user.save()
-                otp_record.delete()
+        pending_otp = request.session.get('pending_otp')
+        expiry_str = request.session.get('pending_otp_expiry')
+        
+        if pending_otp and expiry_str:
+            expiry_time = timezone.datetime.fromisoformat(expiry_str)
+            if timezone.now() > expiry_time:
+                messages.error(request, 'OTP has expired. Please request a new one.')
+            elif pending_otp == otp_entered:
+                # Create the user officially
+                user = User.objects.create(
+                    username=pending_user['username'],
+                    email=pending_user['email'],
+                    password=pending_user['password'],
+                    is_active=True
+                )
                 
                 login(request, user)
                 enforce_single_device_login(request, user)
-                if 'registration_user_id' in request.session:
-                    del request.session['registration_user_id']
-                    
+                
+                # Cleanup session
+                del request.session['pending_user']
+                del request.session['pending_otp']
+                del request.session['pending_otp_expiry']
+                
                 messages.success(request, 'Email verified! Welcome to MindMend.')
                 return redirect('home')
             else:
-                messages.error(request, 'Invalid or expired OTP. Please try again.')
-        except EmailVerificationOTP.DoesNotExist:
+                messages.error(request, 'Invalid OTP. Please try again.')
+        else:
             messages.error(request, 'Verification code not found. Please request a new one.')
             
-    return render(request, 'Mind_Mend/auth/verify_otp.html', {'email': user.email})
+    return render(request, 'Mind_Mend/auth/verify_otp.html', {'email': pending_user['email']})
 
 
 def resend_otp(request):
     """Generates a new OTP and shoots it to the registering user."""
-    user_id = request.session.get('registration_user_id')
-    if not user_id:
+    pending_user = request.session.get('pending_user')
+    if not pending_user:
         return redirect('login')
-    
-    user = get_object_or_404(User, id=user_id)
-    if user.is_active:
-        return redirect('home')
         
-    send_verification_otp(user)
-    messages.success(request, f'A new verification code was sent to {user.email}.')
+    otp_code = send_verification_otp(pending_user['email'])
+    request.session['pending_otp'] = otp_code
+    request.session['pending_otp_expiry'] = (timezone.now() + timedelta(minutes=15)).isoformat()
+    
+    messages.success(request, f'A new verification code was sent to {pending_user["email"]}.')
     return redirect('verify_otp')
 
 

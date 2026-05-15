@@ -267,6 +267,7 @@ MINDMEND_ENCRYPTION_KEY = _enc_key
 # These settings are only active when deployed on Render (RENDER=true + DATABASE_URL).
 # They enforce HTTPS, prevent clickjacking, and secure cookies.
 if RENDER:
+    SECURE_PROXY_SSL_HEADER      = ('HTTP_X_FORWARDED_PROTO', 'https')
     SECURE_SSL_REDIRECT          = True   # Force all HTTP → HTTPS
     SECURE_HSTS_SECONDS          = 31536000  # 1 year HSTS header
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True

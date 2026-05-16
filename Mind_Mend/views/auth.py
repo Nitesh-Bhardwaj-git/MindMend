@@ -29,24 +29,20 @@ from ..models import (
 )
 from ..forms import SignUpForm
 
-def _send_email_async(subject, message, from_email, recipient_list):
-    try:
-        send_mail(subject, message, from_email, recipient_list, fail_silently=False)
-    except Exception as e:
-        print(f"EMAIL SENDING FAILED: {e}")
-
 def send_verification_otp(email):
     otp_code = str(random.randint(100000, 999999))
     if settings.EMAIL_HOST_USER:
-        threading.Thread(
-            target=_send_email_async,
-            args=(
-                'MindMend - Verify your Email',
-                f'Your verification code is: {otp_code}. It is valid for 15 minutes.',
-                settings.EMAIL_HOST_USER,
-                [email]
+        try:
+            send_mail(
+                subject='MindMend - Verify your Email',
+                message=f'Your verification code is: {otp_code}. It is valid for 15 minutes.',
+                from_email=settings.EMAIL_HOST_USER,
+                recipient_list=[email],
+                fail_silently=False,
             )
-        ).start()
+            print("OTP email sent successfully")
+        except Exception as e:
+            print("EMAIL ERROR:", str(e))
     else:
         print(f"DEV OTP FOR {email}: {otp_code}")
         
@@ -301,28 +297,6 @@ def _delete_user_generated_data(user):
     UserMemory.objects.filter(user=user).delete()
     UserAccessLocation.objects.filter(user=user).delete()
     ContactMessage.objects.filter(email=user.email).delete()
-
-
-def test_email_view(request):
-    import traceback
-    try:
-        from django.core.mail import send_mail
-        from django.conf import settings
-        
-        if not settings.EMAIL_HOST_USER:
-            return HttpResponse("ERROR: EMAIL_HOST_USER is empty. Render is not picking up the environment variables. Please check your Render dashboard and ensure the variables are named MINDMEND_EMAIL_HOST_USER and MINDMEND_EMAIL_HOST_PASSWORD exactly, and that you have restarted the server.")
-            
-        send_mail(
-            'MindMend - Test Email',
-            'This is a test email to verify configuration.',
-            settings.EMAIL_HOST_USER,
-            [settings.EMAIL_HOST_USER],
-            fail_silently=False
-        )
-        return HttpResponse(f"SUCCESS: Email sent successfully to {settings.EMAIL_HOST_USER}!")
-    except Exception as e:
-        error_trace = traceback.format_exc()
-        return HttpResponse(f"ERROR: Email failed to send. Error details:<br><pre>{error_trace}</pre>")
 
 
 @login_required

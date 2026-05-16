@@ -1,5 +1,6 @@
 from django import forms
 from datetime import timedelta, datetime
+from django.utils import timezone
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from ..models import MoodEntry, ForumPost, ForumReply, CounsellorBooking, Counsellor, CounsellorReview, UserProfile
@@ -55,6 +56,12 @@ class MoodEntryForm(forms.ModelForm):
         self.fields['energy_level'].required = False
         self.fields['activities'].required = True
 
+    def clean_date(self):
+        date = self.cleaned_data.get('date')
+        if date and date != timezone.now().date():
+            raise forms.ValidationError("You can only log your mood for the current day.")
+        return date
+
     class Meta:
         model = MoodEntry
         fields = ['mood', 'energy_level', 'activities', 'notes', 'date']
@@ -63,7 +70,7 @@ class MoodEntryForm(forms.ModelForm):
             'energy_level': forms.RadioSelect(),
             'activities': forms.TextInput(attrs={'placeholder': 'e.g. work, sleep, exercise'}),
             'notes': forms.Textarea(attrs={'rows': 3, 'placeholder': 'What\'s on your mind? (optional)'}),
-            'date': forms.DateInput(attrs={'type': 'date'}),
+            'date': forms.DateInput(attrs={'type': 'date', 'readonly': 'readonly'}),
         }
 
 

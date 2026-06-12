@@ -12,7 +12,7 @@ class UserProfileForm(forms.ModelForm):
 
     class Meta:
         model = UserProfile
-        fields = ['dob', 'occupation', 'gender', 'show_real_name', 'location_opt_out']
+        fields = ['dob', 'occupation', 'gender', 'show_real_name', 'show_username', 'location_opt_out']
         widgets = {
             'dob': forms.DateInput(attrs={'type': 'date'}),
             'occupation': forms.TextInput(attrs={'placeholder': 'e.g. Student, Engineer'}),
@@ -25,7 +25,6 @@ class UserProfileForm(forms.ModelForm):
         if user:
             self.fields['first_name'].initial = user.first_name
             self.fields['last_name'].initial  = user.last_name
-
 
 from ..assessment_data import PHQ9_QUESTIONS, GAD7_QUESTIONS, PSS_QUESTIONS
 
@@ -96,14 +95,24 @@ class ForumReplyForm(forms.ModelForm):
 
 class CounsellorBookingForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
+        self.is_instant = kwargs.pop('is_instant', False)
         super().__init__(*args, **kwargs)
-        self.fields['counsellor'].queryset = Counsellor.objects.filter(is_active=True)
+        if self.is_instant:
+            self.fields['counsellor'].queryset = Counsellor.objects.filter(is_active=True, is_instant_enabled=True)
+        else:
+            self.fields['counsellor'].queryset = Counsellor.objects.filter(is_active=True)
 
     def clean(self):
         cleaned = super().clean()
         counsellor = cleaned.get('counsellor')
         booking_date = cleaned.get('date')
         time_slot = cleaned.get('time_slot')
+        include_chat = cleaned.get('include_chat')
+        include_video = cleaned.get('include_video')
+
+        # Ensure at least one session format is selected
+        if not include_chat and not include_video:
+            raise forms.ValidationError("You must select at least one session format (Chat or Video calling).")
 
         if not counsellor or not booking_date or not time_slot:
             return cleaned
@@ -129,7 +138,13 @@ class CounsellorBookingForm(forms.ModelForm):
         )
 
         if not (day_available and time_available):
-            raise forms.ValidationError('The counsellor is not available on this day or time.')
+            if self.is_instant:
+                raise forms.ValidationError(
+                    f'The counsellor is not active for instant sessions right now. '
+                    f'Active hours today: {counsellor.available_time_start.strftime("%H:%M")} - {counsellor.available_time_end.strftime("%H:%M")}.'
+                )
+            else:
+                raise forms.ValidationError('The counsellor is not available on this day or time.')
 
         # ── 30-minute session conflict check ────────────────────────────────
         # Each session lasts 30 minutes. A new booking at T conflicts with any
@@ -152,13 +167,19 @@ class CounsellorBookingForm(forms.ModelForm):
         for booking in existing_bookings:
             existing_dt = datetime.combine(booking_date, booking.time_slot)
             if window_start < existing_dt < window_end:
-                booked_time = booking.time_slot.strftime('%H:%M')
-                next_available = (existing_dt + session_delta).strftime('%H:%M')
-                raise forms.ValidationError(
-                    f'This counsellor already has a session at {booked_time}. '
-                    f'Each session is {SESSION_MINUTES} minutes. '
-                    f'The next available slot is {next_available} or later.'
-                )
+                if self.is_instant:
+                    raise forms.ValidationError(
+                        'This counsellor is currently in a session with another patient. '
+                        'Please try again in a few minutes or book a standard appointment.'
+                    )
+                else:
+                    booked_time = booking.time_slot.strftime('%H:%M')
+                    next_available = (existing_dt + session_delta).strftime('%H:%M')
+                    raise forms.ValidationError(
+                        f'This counsellor already has a session at {booked_time}. '
+                        f'Each session is {SESSION_MINUTES} minutes. '
+                        f'The next available slot is {next_available} or later.'
+                    )
 
         return cleaned
 
@@ -168,7 +189,7 @@ class CounsellorBookingForm(forms.ModelForm):
 
     class Meta:
         model = CounsellorBooking
-        fields = ['counsellor', 'date', 'time_slot', 'notes', 'is_anonymous']
+        fields = ['counsellor', 'date', 'time_slot', 'notes', 'is_anonymous', 'include_chat', 'include_video']
         widgets = {
             'date': forms.DateInput(attrs={'type': 'date'}),
             'time_slot': forms.TimeInput(attrs={'type': 'time'}),
@@ -197,7 +218,7 @@ def make_assessment_form(questions, scale_max=3, scale_labels=None):
     """Create a dynamic form for an assessment (PHQ9, GAD7 use 0-3; PSS uses 0-4)."""
     if scale_labels is None:
         scale_labels = ['Not at all', 'Several days', 'More than half', 'Nearly every day']
-    choices = [(i, f"{i} - {scale_labels[i] if i < len(scale_labels) else ''}") for i in range(scale_max + 1)]
+    choices = [(i, f"{i + 1} - {scale_labels[i] if i < len(scale_labels) else ''}") for i in range(scale_max + 1)]
 
     fields = {}
     for i, q in enumerate(questions):

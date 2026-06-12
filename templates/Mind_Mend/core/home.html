@@ -11,7 +11,7 @@
   <div class="flex items-center justify-between gap-4 py-3 px-4 bg-[#00d1b2]/10 border border-[#00d1b2]/30 rounded-xl text-sm home-location-bar">
     <span class="text-gray-300">📍 Share your location for accurate regional insights on our map.</span>
     <div class="flex gap-2 shrink-0 home-location-actions">
-      <button type="button" id="shareLocationBtn" class="px-3 py-1.5 bg-[#00d1b2] text-[#050b1a] rounded-lg hover:opacity-90 transition font-medium">Share</button>
+      <button type="button" id="shareLocationBtn" class="px-3 py-1.5 bg-[#00d1b2] text-black rounded-lg hover:opacity-90 transition font-medium">Share</button>
       <button type="button" id="dismissLocationBanner" class="px-2 text-gray-400 hover:text-white">×</button>
     </div>
   </div>
@@ -53,7 +53,7 @@
       <div class="flex flex-col sm:flex-row items-center justify-center gap-6 home-hero-actions">
         {% if not user.is_authenticated %}
         <a href="{% url 'register' %}"
-           class="w-full sm:w-auto px-10 py-4 rounded-xl bg-[#00d1b2] text-[#050b1a] font-extrabold text-sm tracking-wider hover:scale-105 transition-transform duration-200 home-cta">
+           class="w-full sm:w-auto px-10 py-4 rounded-xl bg-[#00d1b2] text-black font-extrabold text-sm tracking-wider hover:scale-105 transition-transform duration-200 home-cta">
           Get Started
         </a>
         <a href="{% url 'chat' %}"
@@ -62,7 +62,7 @@
         </a>
         {% else %}
         <a href="{% url 'dashboard' %}"
-           class="w-full sm:w-auto px-10 py-4 rounded-xl bg-[#00d1b2] text-[#050b1a] font-extrabold text-sm tracking-wider hover:scale-105 transition-transform duration-200 home-cta">
+           class="w-full sm:w-auto px-10 py-4 rounded-xl bg-[#00d1b2] text-black font-extrabold text-sm tracking-wider hover:scale-105 transition-transform duration-200 home-cta">
           My Dashboard
         </a>
         <a href="{% url 'chat' %}"
@@ -99,7 +99,7 @@
       <a href="{% url 'assessments' %}" class="group bg-[#0a1428]/40 backdrop-blur-sm rounded-3xl border border-white/5 p-8 shadow-2xl transition-all duration-300 hover:-translate-y-2 hover:border-[#00d1b2]/30 home-service-card">
         <div class="h-14 w-14 rounded-2xl bg-[#00d1b2]/10 text-[#00d1b2] flex items-center justify-center text-2xl mb-6">📋</div>
         <h5 class="text-xl font-bold text-white mb-3 tracking-tight">Self-Assessments</h5>
-        <p class="text-gray-400 text-sm leading-relaxed mb-8">PHQ-9, GAD-7 & PSS tools for mental health evaluation.</p>
+        <p class="text-gray-400 text-sm leading-relaxed mb-8">PHQ-9, GAD-7 & PSS-10 tools for mental health evaluation.</p>
         <span class="inline-flex items-center gap-2 text-[#00d1b2] text-sm font-bold tracking-wider">Take Assessment →</span>
       </a>
 
@@ -265,7 +265,6 @@
   <!-- FAQ Section -->
   <section class="max-w-5xl mx-auto px-6 md:px-12 lg:px-20 home-faq">
     <div class="flex items-center gap-4 mb-12">
-      
       <div>
         <h2 class="text-3xl font-bold text-white tracking-tight">Q&A FAQ</h2>
         <p class="text-sm text-gray-500">Answers to common questions about MindMend.</p>
@@ -273,45 +272,46 @@
     </div>
 
     <div class="flex flex-wrap gap-3 mb-10">
-      <button type="button" class="faq-tab px-6 py-2.5 rounded-full text-xs font-bold tracking-wider bg-[#00d1b2] text-[#050b1a]" data-category="ai">🤖 AI & Platform</button>
-      <button type="button" class="faq-tab px-6 py-2.5 rounded-full text-xs font-bold tracking-wider bg-white/5 text-gray-400 hover:text-white hover:bg-white/10" data-category="privacy">🔒 Privacy & Security</button>
-      <button type="button" class="faq-tab px-6 py-2.5 rounded-full text-xs font-bold tracking-wider bg-white/5 text-gray-400 hover:text-white hover:bg-white/10" data-category="features">🌟 Features & Usage</button>
+      <button type="button" class="faq-tab px-6 py-2.5 rounded-full text-xs font-bold tracking-wider bg-[#00d1b2] text-black" data-category="ai">🤖 AI &amp; Platform</button>
+      <button type="button" class="faq-tab px-6 py-2.5 rounded-full text-xs font-bold tracking-wider bg-white/5 text-gray-400 hover:text-white hover:bg-white/10" data-category="privacy">🔒 Privacy &amp; Security</button>
+      <button type="button" class="faq-tab px-6 py-2.5 rounded-full text-xs font-bold tracking-wider bg-white/5 text-gray-400 hover:text-white hover:bg-white/10" data-category="features">🌟 Features &amp; Usage</button>
       <button type="button" class="faq-tab px-6 py-2.5 rounded-full text-xs font-bold tracking-wider bg-white/5 text-gray-400 hover:text-white hover:bg-white/10" data-category="counseling">👩‍⚕️ Counseling</button>
-      <button type="button" class="faq-tab px-6 py-2.5 rounded-full text-xs font-bold tracking-wider bg-white/5 text-gray-400 hover:text-white hover:bg-white/10" data-category="support">💬 Usage & Support</button>
+      <button type="button" class="faq-tab px-6 py-2.5 rounded-full text-xs font-bold tracking-wider bg-white/5 text-gray-400 hover:text-white hover:bg-white/10" data-category="support">💬 Usage &amp; Support</button>
     </div>
 
-    <!-- AI -->
+    <!-- AI & Platform Panel -->
     <div class="faq-panel space-y-4" data-panel="ai">
+
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">1. What is this platform?</span>
+          <span class="text-lg">1. What is MindMend?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🧠 An AI-powered mental health support platform that helps you track mood, reduce stress, and improve emotional well-being.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🧠 MindMend is an AI-powered mental health support platform combining a 24/7 AI chatbot, clinically validated self-assessments (PHQ-9, GAD-7, PSS-10), mood tracking, professional counsellor booking (regular &amp; instant), live chat &amp; video sessions, community forum, and a personalized analytics dashboard — all in one stigma-free space.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">2. How does the AI detect my mental health condition?</span>
+          <span class="text-lg">2. How does the AI chatbot work?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🤖 The AI analyzes your mood inputs, responses, and behavior patterns to identify emotional trends.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🤖 The AI chatbot uses sentiment analysis to read the emotional tone of your messages and generates personalized, empathetic responses. It remembers your past conversations — stress topics, preferred name, helpful activities — to provide continuity across sessions. It's available 24/7 and supports voice input so you can speak instead of type.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">3. Can the AI provide real-time emotional support?</span>
+          <span class="text-lg">3. Does the AI remember my past conversations?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">⏱️ Yes, the AI chatbot is available 24/7 for instant emotional guidance and support.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🧠 Yes. MindMend stores a lightweight long-term memory of your chat history — including stress topics, coping activities you've found helpful, your last emotional context, and your preferred name — so the AI provides more personalized and context-aware support every time you return.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">4. What makes this platform different from others?</span>
+          <span class="text-lg">4. What makes MindMend different from other platforms?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">✨ It combines AI detection, real-time support, personalized care, and counselor booking in one place.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">✨ MindMend uniquely combines: AI emotional support with memory, evidence-based clinical assessments, daily mood tracking with energy &amp; activity logs, a moderated community forum, professional counsellor booking (both scheduled &amp; instant), live text chat &amp; video sessions, Razorpay payments, real-time counsellor notifications, a personalized analytics dashboard with downloadable PDF reports, and a regional mental health heatmap — all in one platform.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
@@ -319,18 +319,28 @@
           <span class="text-lg">5. Why should I trust this platform?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🤝 The platform uses secure technology, verified experts, and ethical AI practices to ensure safe and reliable support.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🤝 MindMend uses AES-128/HMAC-SHA256 (Fernet) encryption for all sensitive conversations, HMAC-signed Razorpay payment verification with a server-side webhook fallback, OTP-based email verification on registration, verified professional counsellors with displayed qualifications, and strict access controls so only the right account sees each session's data.</p></div>
       </div>
-    </div>
 
-    <!-- Privacy -->
-    <div class="faq-panel hidden space-y-4" data-panel="privacy">
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">1. Is it confidential?</span>
+          <span class="text-lg">6. Can I use the AI chatbot without creating an account?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🔒 Yes. AI chat history and counsellor messages are encrypted at rest, and your account data is kept private inside your MindMend profile.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">💬 Yes. The AI chatbot and the Helplines page are accessible without logging in. However, creating a free account unlocks personalized memory, saved chat history, mood tracking, assessments, booking, dashboard analytics, and forum posting.</p></div>
+      </div>
+
+    </div>
+
+    <!-- Privacy & Security Panel -->
+    <div class="faq-panel hidden space-y-4" data-panel="privacy">
+
+      <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
+        <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
+          <span class="text-lg">1. Is my data kept confidential?</span>
+          <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
+        </button>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🔒 Yes. AI chat history and counsellor chat messages are encrypted at rest using AES-128/HMAC-SHA256 (Fernet encryption). Your account data, assessment results, and mood logs are kept strictly private inside your MindMend profile.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
@@ -338,195 +348,266 @@
           <span class="text-lg">2. Can I delete my data anytime?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🗑️ Yes. Go to <a href="{% url 'user_profile' %}" class="text-[#00d1b2] font-medium hover:underline">My Profile</a> to permanently delete either your saved data only or your full account. Before deletion, MindMend shows a warning popup because deleted information cannot be recovered.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🗑️ Yes. Go to <a href="{% url 'user_profile' %}" class="text-[#00d1b2] font-medium hover:underline">My Profile</a> to permanently delete either your saved data only or your full account. A confirmation warning is shown before deletion because this action is irreversible.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">3. How is my data protected on this platform?</span>
+          <span class="text-lg">3. Will my data be shared with anyone?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🛡️ Your data is protected with encrypted storage for sensitive conversations, secure authentication, and access controls that keep session data limited to the right account.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🔐 No. MindMend does not sell your mental health data. Counsellors only see information tied to their own booked sessions — your assessment scores, mood logs, and AI chat history are never visible to them.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">4. Will my data be shared with anyone?</span>
+          <span class="text-lg">4. What privacy controls do I have?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🔐 No. MindMend does not sell your mental health data, and counsellors only see information tied to their own booked sessions.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">⚙️ You can: post anonymously in the community forum, hide your real name behind your username, book counsellor sessions anonymously (the counsellor sees "Anonymous Patient"), and opt out of location tracking anytime from your profile settings.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">5. What privacy controls do I have?</span>
+          <span class="text-lg">5. Can I use features without sharing my location?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">⚙️ You can post anonymously in the forum, keep your real name hidden behind your username, and opt out of location tracking anytime from your profile settings.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">📍 Yes. Location sharing is entirely optional and can be declined at the banner prompt or turned off later in your profile. All core features — AI chat, assessments, mood tracker, booking, forum — work fully without sharing GPS coordinates.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">6. Can I talk to the AI without sharing my exact location?</span>
+          <span class="text-lg">6. How do I register securely?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">📍 Yes. Location sharing is optional, and you can decline it on the cookie banner or turn it off later from your profile privacy settings. The AI chat can still be used without sharing exact GPS coordinates.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">✉️ After signing up, MindMend sends a 6-digit OTP to your email. You must verify it within 15 minutes before your account is activated. For password resets, a separate OTP flow keeps your account secure without exposing your password.</p></div>
       </div>
+
+      <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
+        <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
+          <span class="text-lg">7. How is my data protected on this platform?</span>
+          <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
+        </button>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🛡️ Your data is protected with encrypted storage for sensitive conversations, OTP-based email verification, HMAC-SHA256 signed Razorpay payments (plus server-side webhook reliability), and strict per-session access controls so no other account can view your data.</p></div>
+      </div>
+
     </div>
 
-    <!-- Features -->
+    <!-- Features & Usage Panel -->
     <div class="faq-panel hidden space-y-4" data-panel="features">
+
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
           <span class="text-lg">1. Who can use this platform?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">👥 Anyone—students, professionals, or anyone seeking mental health support and emotional well-being.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">👥 Anyone — students, working professionals, or anyone seeking mental health support and emotional well-being. MindMend is designed to be accessible, stigma-free, and welcoming to all.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">2. How is this platform helpful for students?</span>
+          <span class="text-lg">2. What self-assessments are available?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🎓 It helps students manage exam stress, anxiety, focus issues, and emotional pressure.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">📋 Three clinically validated screening tools: <strong class="text-white">PHQ-9</strong> (depression), <strong class="text-white">GAD-7</strong> (anxiety), and <strong class="text-white">PSS-10</strong> (perceived stress). Results are scored, labelled by severity level, and saved to your history — you can track trends over time from your personalized dashboard.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">3. Can I track my mood daily?</span>
+          <span class="text-lg">3. Are assessments a diagnosis?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">📊 Yes, you can log and monitor your daily mood and emotional patterns.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🩺 No. PHQ-9, GAD-7, and PSS-10 are standardized screening tools that help you understand your symptoms and patterns, but they do not replace a professional diagnosis. Use them as a starting point and follow up with a counsellor if results indicate concern.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">4. Does the platform support multiple languages?</span>
+          <span class="text-lg">4. Can I track my mood daily?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🌐 Yes, the platform supports multiple languages for better accessibility.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">📊 Yes. The Mood Tracker lets you log your daily mood (Very Low → Very Good), energy level, activity tags (sleep, work, exercise, social, food, hobby, etc.), and optional notes. Entries feed into your dashboard's trend charts and emotional pattern detection over the last 90 days.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">5. Can I use voice instead of typing?</span>
+          <span class="text-lg">5. What does the Community Forum offer?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🎤 Yes, you can interact using voice commands for a more comfortable experience.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">👥 A safe, moderated peer-support space where you can share experiences, ask questions, or post recovery stories. All posts can be made anonymously. Forum content goes through moderation before appearing publicly, ensuring a respectful and supportive community.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">6. Is it free?</span>
+          <span class="text-lg">6. What does my personal Dashboard show?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">💸 Yes, basic features are free, while advanced services like counseling may have a cost.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">📈 Your dashboard shows: a Mental Health Score (/100), mood streak (consecutive daily logs), recent assessment scores, personalized wellness suggestions, emotional pattern insights from the past 90 days, and interactive trend charts for PHQ-9, GAD-7, PSS, and Mood — switchable between daily/weekly/monthly views. You can also download a PDF progress report.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">7. Do I need to sign in to use assessments, mood tracking, and booking?</span>
+          <span class="text-lg">7. Is there a helpline if I need urgent help?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🔐 Yes. Personalized tools like assessments, mood tracking, counsellor booking, dashboards, and saved progress require an account so your results stay linked to you securely.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">📞 Yes. The Helplines page gives you 24/7 access to <strong class="text-white">KIRAN (1800-599-0019)</strong> and <strong class="text-white">Tele-MANAS</strong> — India's free, government-backed mental health support lines. These are always accessible even without an account.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">8. Are assessments a diagnosis?</span>
+          <span class="text-lg">8. Do I need to sign in to use assessments, mood tracking, and booking?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🩺 No. PHQ-9, GAD-7, and PSS-10 are screening tools that help you understand symptoms and patterns, but they do not replace a professional diagnosis.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🔐 Yes. Assessments, mood tracking, counsellor booking, the personalized dashboard, and saved progress all require an account so your results stay securely linked to you. The AI chatbot and helplines can be used without logging in.</p></div>
       </div>
+
     </div>
 
-    <!-- Counseling -->
+    <!-- Counseling Panel -->
     <div class="faq-panel hidden space-y-4" data-panel="counseling">
+
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">1. Can I talk to a real counselor?</span>
+          <span class="text-lg">1. Can I talk to a real counsellor?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">👩‍⚕️ Yes, you can book sessions with verified professional counselors directly on the platform.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">👩‍⚕️ Yes. Browse verified professional counsellors and book a private session directly on the platform. Each counsellor's profile shows their specialization, bio, years of experience, qualifications, medical registration, and user ratings.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">2. How do I book a counseling session?</span>
+          <span class="text-lg">2. What is the difference between Regular and Instant booking?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">📅 Open the booking page, choose a counsellor, select an available date and 30-minute slot, add an optional note, and confirm your session. Paid sessions continue to checkout automatically.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">⚡ <strong class="text-white">Regular Booking</strong> lets you schedule a 30-minute session on a future date and time slot of your choice. <strong class="text-white">Instant Booking</strong> connects you with an on-duty counsellor immediately for today — no date picker needed. Instant sessions generally have higher fees than regular bookings.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">3. Are the counselors verified professionals?</span>
+          <span class="text-lg">3. Can I choose Chat-only or add a Video Call?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">✅ Yes, all counselors are certified and verified mental health experts.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">📹 Yes. At booking time (regular or instant) you select your session format: <strong class="text-white">Chat Session</strong> (live text messaging), <strong class="text-white">Video Calling</strong> (private video room with mic/camera toggle controls and a 30-minute countdown timer), or both together. Each option has its own fee set by the counsellor.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">4. Are counseling sessions anonymous?</span>
+          <span class="text-lg">4. How do I book a counselling session?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🕶️ Sessions are private and confidential. Your public display-name settings stay under your control, but counselling sessions themselves are tied to your logged-in account.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">📅 Go to the Booking page → select a counsellor → pick an available date → choose a free 30-minute time slot → choose Chat / Video format → add an optional note → click <strong class="text-white">Book Appointment</strong>. Paid sessions redirect to secure Razorpay checkout; after payment your booking is confirmed instantly.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">5. Is there any charge for online counseling session?</span>
+          <span class="text-lg">5. Can I book a session anonymously?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">💳 Yes, online counseling sessions may have a fee depending on the counselor and service.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🕶️ Yes. Check "Keep my identity hidden" when booking — the counsellor will only see "Anonymous Patient" instead of your name or username. The session remains private and confidential regardless of this setting.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">6. What happens after I book a session?</span>
+          <span class="text-lg">6. How does payment work for sessions?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🗂️ Your booking appears in <span class="text-white font-medium">My Bookings</span>, where you can track status, open the session chat, leave a review after completion, and manage eligible records later.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">💳 If a counsellor charges a fee, you are redirected to a secure <strong class="text-white">Razorpay</strong> payment page. Payment is verified via HMAC-SHA256 signature check plus a server-side webhook for reliability (so your booking is confirmed even if you close the browser). Free sessions are confirmed immediately without any payment step.</p></div>
       </div>
+
+      <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
+        <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
+          <span class="text-lg">7. What happens after I book a session?</span>
+          <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
+        </button>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🗂️ Your booking appears in <span class="text-white font-medium">My Bookings</span>. From there you can: open the session chat, join the video call room (if included), track booking status (Pending → Confirmed → Completed), leave a star rating + written review after completion, and optionally delete completed or cancelled records.</p></div>
+      </div>
+
+      <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
+        <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
+          <span class="text-lg">8. Can I cancel a booking?</span>
+          <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
+        </button>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">❌ Yes — as long as payment hasn't been completed. Go to <strong class="text-white">My Bookings</strong> and use the cancel action on your booking card. Cancellation frees the time slot for other users. Pending bookings that haven't been paid are also auto-cleaned up after 15 minutes.</p></div>
+      </div>
+
+      <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
+        <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
+          <span class="text-lg">9. Does the counsellor get notified when I book or message?</span>
+          <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
+        </button>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🔔 Yes. Counsellors receive real-time notifications for new bookings, incoming chat messages, and session status changes through their doctor dashboard — delivered instantly via WebSocket when they're online, and stored for later if they're offline.</p></div>
+      </div>
+
+      <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
+        <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
+          <span class="text-lg">10. Are sessions automatically marked complete?</span>
+          <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
+        </button>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">✅ Yes. Confirmed bookings are automatically marked as <strong class="text-white">Completed</strong> 24 hours after their scheduled time, even if neither party manually ends them. Either the patient or the counsellor can also mark a session as complete at any earlier time.</p></div>
+      </div>
+
     </div>
 
-    <!-- Support -->
+    <!-- Usage & Support Panel -->
     <div class="faq-panel hidden space-y-4" data-panel="support">
+
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
           <span class="text-lg">1. Can I use the platform on mobile devices?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">📱 Yes, the platform is fully mobile-friendly and works on phones, tablets, and desktops.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">📱 Yes. MindMend is fully responsive and works on phones, tablets, and desktops. All features — including video calls, live chat, mood tracking, and assessments — are fully accessible in mobile browsers.</p></div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">2. How can I give feedback or suggestions?</span>
+          <span class="text-lg">2. Can I download my progress report?</span>
+          <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
+        </button>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">⬇️ Yes. From your <a href="{% url 'dashboard' %}" class="text-[#00d1b2] font-medium hover:underline">Dashboard</a>, click <strong class="text-white">Download PDF</strong> and choose your preferred time range — daily, weekly, or monthly. The PDF report summarizes your mood trends, assessment history, and wellness patterns.</p></div>
+      </div>
+
+      <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
+        <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
+          <span class="text-lg">3. Is it free to use?</span>
+          <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
+        </button>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">💸 Core features — AI chatbot, self-assessments, mood tracking, community forum, helplines, dashboard, and PDF reports — are completely free. Counsellor sessions may have a fee set by the individual counsellor. Instant sessions are typically priced higher than regular scheduled bookings.</p></div>
+      </div>
+
+      <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
+        <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
+          <span class="text-lg">4. Can I use the platform 24/7?</span>
+          <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
+        </button>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🕐 Yes. The AI chatbot, mood tracker, assessments, forum, and helplines are available 24/7. Counsellor live sessions depend on each counsellor's individual availability schedule shown on their profile.</p></div>
+      </div>
+
+      <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
+        <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
+          <span class="text-lg">5. What is the location heatmap feature?</span>
+          <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
+        </button>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">📍 The Mental Health Heatmap is a regional analytics tool that visualizes where users are accessing the platform from — using IP geolocation or optional browser GPS. Location data is collected only with your consent, stored anonymously, and used for public awareness insights only — never for advertising or personal profiling.</p></div>
+      </div>
+
+      <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
+        <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
+          <span class="text-lg">6. How can I give feedback or suggestions?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
         <div class="faq-answer hidden px-8 pb-6">
-          <p class="text-gray-400 text-base leading-relaxed">💬 You can share feedback through our <a href="{% url 'contact_us' %}" class="text-[#00d1b2] font-medium hover:underline">Contact Us</a> page anytime.</p>
+          <p class="text-gray-400 text-base leading-relaxed">💬 You can share feedback through our <a href="{% url 'contact_us' %}" class="text-[#00d1b2] font-medium hover:underline">Contact Us</a> page anytime. You can also leave a star rating and written review after completing a counsellor session.</p>
         </div>
       </div>
 
       <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
         <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">3. Can I use the platform 24/7?</span>
+          <span class="text-lg">7. Do I need an account to use all features?</span>
           <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
         </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">🕐 Yes, the platform is available anytime, anywhere for your support.</p></div>
+        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">👤 The AI chatbot and helplines are accessible without logging in. All personalized features — mood tracking, assessments, booking, dashboard, forum posting, and saved progress — require a free account so your data stays securely linked to you.</p></div>
       </div>
 
-      <div class="faq-item bg-[#0a1428]/60 backdrop-blur-sm rounded-2xl border border-white/5 overflow-hidden">
-        <button type="button" class="faq-toggle w-full flex items-center justify-between gap-6 px-8 py-6 text-left text-white font-bold tracking-tight hover:bg-white/5 transition-colors">
-          <span class="text-lg">4. Do I need an account to use all features?</span>
-          <span class="faq-icon h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-[#00d1b2] transition-transform duration-300">›</span>
-        </button>
-        <div class="faq-answer hidden px-8 pb-6"><p class="text-gray-400 text-base leading-relaxed">👤 Yes, an account is required to access personalized features and track progress.</p></div>
-      </div>
     </div>
   </section>
 </div>
@@ -534,143 +615,10 @@
 
 {% block scripts %}
 {{ block.super }}
-
-{% if user.is_authenticated %}
 <script>
-(function(){
-    const banner = document.getElementById('locationShareBanner');
-    if (!banner) return;
-    let autoHideTimer = null;
-
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
-
-    function hideBanner() {
-        banner.classList.add('hidden');
-        if (autoHideTimer) {
-            clearTimeout(autoHideTimer);
-            autoHideTimer = null;
-        }
-    }
-
-    function showBanner() {
-        if (localStorage.getItem('mindmend_geo_permission_granted') === 'true') return;
-        banner.classList.remove('hidden');
-        autoHideTimer = setTimeout(hideBanner, 5000);
-    }
-
-    if (localStorage.getItem('mindmend_geo_permission_granted') === 'true') {
-        // Do nothing
-    } else if (navigator.permissions && navigator.permissions.query) {
-        navigator.permissions.query({ name: 'geolocation' }).then(function(res) {
-            if (res.state === 'granted') {
-                localStorage.setItem('mindmend_geo_permission_granted', 'true');
-            } else {
-                showBanner();
-            }
-        }).catch(function() { showBanner(); });
-    } else {
-        showBanner();
-    }
-
-    document.getElementById('dismissLocationBanner')?.addEventListener('click', function(){
-        hideBanner();
-    });
-
-    document.getElementById('shareLocationBtn')?.addEventListener('click', function(){
-        if (!navigator.geolocation) { alert('Geolocation not supported.'); return; }
-        const btn = this;
-        hideBanner();
-        btn.disabled = true;
-        btn.textContent = 'Sharing...';
-        navigator.geolocation.getCurrentPosition(
-            function(pos){
-                fetch('{% url "share_location_api" %}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': getCookie('csrftoken')
-                    },
-                    body: JSON.stringify({lat: pos.coords.latitude, lon: pos.coords.longitude})
-                }).then(function(r){
-                    if (!r.ok) throw new Error('Location save failed');
-                    return r.json();
-                }).then(function(){
-                    localStorage.setItem('mindmend_geo_last_sent_at', String(Date.now()));
-                    localStorage.setItem('mindmend_geo_permission_granted', 'true');
-                }).catch(function(){
-                    btn.disabled = false;
-                    btn.textContent = 'Share';
-                });
-            },
-            function(){
-                btn.disabled = false;
-                btn.textContent = 'Share';
-            },
-            {enableHighAccuracy: true, timeout: 10000}
-        );
-    });
-})();
+  window.HOME_CONFIG = {
+    shareLocationUrl: "{% if user.is_authenticated %}{% url 'share_location_api' %}{% else %}null{% endif %}"
+  };
 </script>
-{% endif %}
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-  const tabs = document.querySelectorAll('.faq-tab');
-  const panels = document.querySelectorAll('.faq-panel');
-
-  tabs.forEach(tab => {
-    tab.addEventListener('click', function () {
-      const category = this.dataset.category;
-
-      tabs.forEach(t => {
-        t.classList.remove('bg-[#00d1b2]', 'text-[#050b1a]');
-        t.classList.add('bg-white/5', 'text-gray-400');
-      });
-
-      this.classList.remove('bg-white/5', 'text-gray-400');
-      this.classList.add('bg-[#00d1b2]', 'text-[#050b1a]');
-
-      panels.forEach(panel => {
-        panel.classList.add('hidden');
-      });
-
-      const activePanel = document.querySelector(`[data-panel="${category}"]`);
-      if (activePanel) activePanel.classList.remove('hidden');
-    });
-  });
-
-  document.querySelectorAll('.faq-toggle').forEach(button => {
-    button.addEventListener('click', function () {
-      const item = this.closest('.faq-item');
-      const answer = item.querySelector('.faq-answer');
-      const icon = item.querySelector('.faq-icon');
-      const isOpen = !answer.classList.contains('hidden');
-
-      document.querySelectorAll('.faq-answer').forEach(el => el.classList.add('hidden'));
-      document.querySelectorAll('.faq-icon').forEach(el => {
-        el.classList.remove('rotate-90', 'bg-[#00d1b2]', 'text-[#050b1a]', 'border-transparent');
-      });
-
-      if (!isOpen) {
-        answer.classList.remove('hidden');
-        icon.classList.add('rotate-90', 'bg-[#00d1b2]', 'text-[#050b1a]', 'border-transparent');
-      }
-    });
-  });
-});
-</script>
-
+<script src="{% static 'js/home.js' %}?v=1.0"></script>
 {% endblock %}

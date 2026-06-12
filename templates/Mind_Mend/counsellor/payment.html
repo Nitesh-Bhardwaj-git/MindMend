@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% load widget_tweaks %}
 {% block title %}Complete Payment{% endblock %}
 
@@ -51,10 +52,26 @@
             </div>
         </div>
 
+        <div class="pt-4 border-t border-white/10 space-y-3">
+            <h4 class="text-xs font-bold text-gray-400 uppercase tracking-widest">Pricing Breakdown</h4>
+            {% if booking.include_chat %}
+            <div class="flex justify-between items-center text-gray-300 text-sm">
+                <span>Chat Session Fee</span>
+                <span class="font-semibold text-white">₹{{ booking.chat_fee|floatformat:"0" }}</span>
+            </div>
+            {% endif %}
+            {% if booking.include_video %}
+            <div class="flex justify-between items-center text-gray-300 text-sm">
+                <span>Video Calling Fee</span>
+                <span class="font-semibold text-white">₹{{ booking.video_fee|floatformat:"0" }}</span>
+            </div>
+            {% endif %}
+        </div>
+
         <div class="pt-6 border-t border-white/10 flex justify-between items-end">
           <div class="text-gray-400 text-sm">Total Due</div>
           <div class="text-4xl font-bold text-[#00d1b2] shrink-0">
-             ₹{{ booking.counsellor.session_fee|floatformat:"0" }}
+             ₹{{ booking.total_fee|floatformat:"0" }}
           </div>
         </div>
 
@@ -94,7 +111,7 @@
         </p>
 
         <button id="rzp-pay-btn"
-class="w-full py-4 rounded-xl bg-[#00d1b2] text-[#050b1a] font-bold text-lg hover:bg-[#00b8a5] transition duration-300">          Pay ₹{{ booking.counsellor.session_fee|floatformat:"0" }} Now
+class="w-full py-4 rounded-xl bg-[#00d1b2] text-black font-bold text-lg hover:bg-[#00b8a5] transition duration-300">          Pay ₹{{ booking.total_fee|floatformat:"0" }} Now
         </button>
 
         <p id="rzp-error-msg" class="hidden mt-4 text-red-400 text-sm text-center"></p>
@@ -104,100 +121,23 @@ class="w-full py-4 rounded-xl bg-[#00d1b2] text-[#050b1a] font-bold text-lg hove
   </div>
 </div>
 
-<!-- Razorpay Checkout SDK -->
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
-  var rzpOptions = {
-    key:         "{{ razorpay_key_id }}",
-    amount:      "{{ amount_paise }}",
-    currency:    "INR",
-    name:        "MindMend",
-    description: "Counsellor Session \u2013 {{ booking.counsellor.name }}",
-    order_id:    "{{ razorpay_order_id }}",
-    prefill: {
-      name:  "{{ user_name }}",
-      email: "{{ user_email }}"
-    },
-    theme: { color: "#00d1b2" },
-    handler: function(response) {
-      // Payment authorised — post IDs + signature for server-side verification
-      document.getElementById('rzp_order_id').value   = response.razorpay_order_id;
-      document.getElementById('rzp_payment_id').value = response.razorpay_payment_id;
-      document.getElementById('rzp_signature').value  = response.razorpay_signature;
-      document.getElementById('razorpay-verify-form').submit();
-    },
-    modal: {
-      ondismiss: function() {
-        var el = document.getElementById('rzp-error-msg');
-        el.textContent = 'Payment window closed. Click the button again to retry.';
-        el.classList.remove('hidden');
-      }
-    }
+  window.PAYMENT_CONFIG = {
+    key: "{{ razorpay_key_id }}",
+    amount: "{{ amount_paise }}",
+    counsellorName: "{{ booking.counsellor.name }}",
+    orderId: "{{ razorpay_order_id }}",
+    userName: "{{ user_name }}",
+    userEmail: "{{ user_email }}",
+    bookingTimestamp: "{{ booking_timestamp|default:'0' }}",
+    bookingRedirectUrl: "{% url 'counsellor_booking' %}"
   };
-
-  document.getElementById('rzp-pay-btn').addEventListener('click', function(e) {
-    e.preventDefault();
-    document.getElementById('rzp-error-msg').classList.add('hidden');
-    var rzp = new Razorpay(rzpOptions);
-    rzp.on('payment.failed', function(resp) {
-      var el = document.getElementById('rzp-error-msg');
-      el.textContent = 'Payment failed: ' + (resp.error.description || 'Please try again.');
-      el.classList.remove('hidden');
-    });
-    rzp.open();
-  });
 </script>
-
-  </div>
-
-  <script>
-    (function initTimer() {
-      // Get the creation time in seconds (float) and convert to milliseconds
-      const createdAtSecs = parseFloat("{{ booking_timestamp|default:'0' }}");
-      if (!createdAtSecs) return;
-
-      const creationTime = new Date(createdAtSecs * 1000).getTime();
-      const expirationTime = creationTime + (15 * 60 * 1000); // 15 minutes limit
-      const timerDisplay = document.getElementById('countdown-timer');
-      const payBtn = document.getElementById('rzp-pay-btn');
-      const errorMsg = document.getElementById('rzp-error-msg');
-
-      function updateTimer() {
-        const now = new Date().getTime();
-        const distance = expirationTime - now;
-
-        if (distance <= 0) {
-          clearInterval(interval);
-          timerDisplay.textContent = "00:00";
-          timerDisplay.classList.add('text-red-500');
-          if (payBtn) {
-            payBtn.disabled = true;
-            payBtn.classList.add('opacity-50', 'cursor-not-allowed');
-          }
-          if (errorMsg) {
-            errorMsg.innerHTML = 'This reservation has expired. Please <a href="{% url "counsellor_booking" %}" class="underline text-red-300 hover:text-white">book a new session</a>.';
-            errorMsg.classList.remove('hidden');
-          }
-          return;
-        }
-
-        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-        
-        const mStr = minutes < 10 ? "0" + minutes : minutes;
-        const sStr = seconds < 10 ? "0" + seconds : seconds;
-        
-        timerDisplay.textContent = mStr + ":" + sStr;
-
-        // Visual warning when under 2 minutes
-        if (minutes < 2) {
-           timerDisplay.classList.add('text-red-400');
-        }
-      }
-
-      // Initial call and start interval
-      updateTimer();
-      const interval = setInterval(updateTimer, 1000);
-    })();
-  </script>
+<script src="{% static 'js/payment.js' %}?v=1.0"></script>
 {% endblock %}

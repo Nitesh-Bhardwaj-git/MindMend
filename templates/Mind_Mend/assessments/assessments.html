@@ -114,7 +114,7 @@
         <div class="mt-6 rounded-3xl border border-white/10 bg-white/5 p-4 text-left">
           <p class="text-xs uppercase text-[#10b981] tracking-[0.3em] mb-2">Latest Result</p>
           <p class="text-sm text-gray-200 mb-1">{{ last_results.pss.result_level }}</p>
-          <p class="text-sm text-gray-400">Score: <span class="text-white font-semibold">{{ last_results.pss.total_score }}</span> / 40</p>
+          <p class="text-sm text-gray-400">Score: <span class="text-white font-semibold">{{ last_results.pss.total_score }}</span> / 30</p>
           <p class="text-xs text-gray-500 mt-2">{{ last_results.pss.created_at|date:'M d, Y H:i' }}</p>
         </div>
         {% endif %}
@@ -132,12 +132,12 @@
             <p class="text-gray-400 max-w-2xl">{{ combined_result.summary_text }}</p>
           </div>
           <div class="rounded-3xl bg-white/5 px-6 py-5 text-center">
-            <p class="text-xs uppercase tracking-[0.35em] text-gray-400 mb-2">Average Score</p>
+            <p class="text-xs uppercase tracking-[0.35em] text-gray-400 mb-2">{{ combined_result.score_label }}</p>
             <p class="text-4xl font-bold text-white">{{ combined_result.average_percent|floatformat:0 }}%</p>
           </div>
         </div>
 
-        <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="mt-10 grid grid-cols-1 {% if combined_result.items|length == 2 %}md:grid-cols-2{% elif combined_result.items|length >= 3 %}md:grid-cols-3{% else %}md:grid-cols-1 max-w-md mx-auto{% endif %} gap-4">
           {% for item in combined_result.items %}
           <div class="rounded-[2rem] border border-white/10 bg-[#08101f]/80 p-5">
             <p class="text-xs uppercase tracking-[0.3em] text-gray-400 mb-3">{{ item.name }}</p>

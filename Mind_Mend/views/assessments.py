@@ -16,7 +16,7 @@ ASSESSMENT_SCALE_LABELS = ['Not at all', 'Several days', 'More than half', 'Near
 def build_assessment_context(form, title, heading, intro, questions, scale_max=3, scale_labels=None, input_prefix='assessment'):
     if scale_labels is None:
         scale_labels = ASSESSMENT_SCALE_LABELS
-    options = [(i, f"{i} - {scale_labels[i] if i < len(scale_labels) else ''}") for i in range(scale_max + 1)]
+    options = [(i, f"{i + 1} - {scale_labels[i] if i < len(scale_labels) else ''}") for i in range(scale_max + 1)]
     return {
         'form': form,
         'title': title,
@@ -30,14 +30,17 @@ def build_assessment_context(form, title, heading, intro, questions, scale_max=3
 
 
 def build_combined_result(last_results):
-    max_scores = {'phq9': 27, 'gad7': 21, 'pss': 40}
-    if not all(last_results.get(name) for name in ('phq9', 'gad7', 'pss')):
+    max_scores = {'phq9': 27, 'gad7': 21, 'pss': 30}
+    attempted_results = {name: res for name, res in last_results.items() if res is not None}
+    if not attempted_results:
         return None
 
     items = []
     total_percent = 0
     for name, label in [('phq9', 'PHQ-9'), ('gad7', 'GAD-7'), ('pss', 'PSS-10')]:
-        result = last_results[name]
+        if name not in attempted_results:
+            continue
+        result = attempted_results[name]
         max_score = max_scores[name]
         percent = (result.total_score / max_score) * 100 if max_score else 0
         items.append({
@@ -51,9 +54,32 @@ def build_combined_result(last_results):
         total_percent += percent
 
     average_percent = total_percent / len(items)
+
+    if len(items) == 1:
+        type_name = items[0]['name']
+        term_map = {'PHQ-9': 'depression', 'GAD-7': 'anxiety', 'PSS-10': 'stress'}
+        term = term_map.get(type_name, 'mental health symptoms')
+        if average_percent < 33:
+            summary_title = 'Low concern'
+            summary_text = f'Your most recent {type_name} assessment indicates a generally low level of {term}.'
+        elif average_percent < 66:
+            summary_title = 'Moderate concern'
+            summary_text = f'Your most recent {type_name} assessment indicates a moderate level of {term}. Consider self-care and monitoring your wellbeing.'
+        else:
+            summary_title = 'High concern'
+            summary_text = f'Your most recent {type_name} assessment indicates a higher level of {term}. Consider seeking professional support.'
+    else:
+        if average_percent < 33:
+            summary_title = 'Low overall concern'
+            summary_text = 'Your most recent assessments indicate a generally low combined level of depression, anxiety, and stress.'
+        elif average_percent < 66:
+            summary_title = 'Moderate overall concern'
+            summary_text = 'Your most recent assessments indicate a moderate combined level of mental health symptoms. Consider self-care and monitoring your wellbeing.'
+        else:
+            summary_title = 'High overall concern'
+            summary_text = 'Your most recent assessments indicate a higher combined level of depression, anxiety, and stress. Consider seeking professional support.'
+
     if average_percent < 33:
-        summary_title = 'Low overall concern'
-        summary_text = 'Your most recent assessments indicate a generally low combined level of depression, anxiety, and stress.'
         tips = [
             '✓ Continue your current healthy habits and routines.',
             '✓ Maintain regular physical activity and adequate sleep.',
@@ -61,8 +87,6 @@ def build_combined_result(last_results):
             '✓ Regularly check in with yourself through assessments.',
         ]
     elif average_percent < 66:
-        summary_title = 'Moderate overall concern'
-        summary_text = 'Your most recent assessments indicate a moderate combined level of mental health symptoms. Consider self-care and monitoring your wellbeing.'
         tips = [
             '💡 Practice stress-reduction techniques like meditation or deep breathing.',
             '💡 Maintain a consistent sleep schedule and limit caffeine.',
@@ -71,8 +95,6 @@ def build_combined_result(last_results):
             '💡 Track your mood and triggers to identify patterns.',
         ]
     else:
-        summary_title = 'High overall concern'
-        summary_text = 'Your most recent assessments indicate a higher combined level of depression, anxiety, and stress. Consider seeking professional support.'
         tips = [
             '🔔 Reach out to a mental health professional immediately.',
             '🔔 Call a crisis helpline if you\'re in distress (KIRAN: 1800-599-0019).',
@@ -88,6 +110,7 @@ def build_combined_result(last_results):
         'summary_text': summary_text,
         'items': items,
         'tips': tips,
+        'score_label': 'Average Score' if len(items) > 1 else 'Score',
     }
 
 
@@ -197,7 +220,7 @@ def _process_pss(request, form_class):
     form = form_class(request.POST)
     if form.is_valid():
         raw_scores = [form.cleaned_data[f'q{i}'] for i in range(len(PSS_QUESTIONS))]
-        total = sum((4 - score) if (i + 1) in PSS_REVERSE_ITEMS else score for i, score in enumerate(raw_scores))
+        total = sum((3 - score) if (i + 1) in PSS_REVERSE_ITEMS else score for i, score in enumerate(raw_scores))
         level = get_pss_result(raw_scores)
         result = AssessmentResult.objects.create(
             user=request.user,
@@ -207,14 +230,14 @@ def _process_pss(request, form_class):
             answers=form.cleaned_data
         )
         return redirect('assessment_result', result_id=result.id)
-    scale_labels = ['Never', 'Almost Never', 'Sometimes', 'Fairly Often', 'Very Often']
+    scale_labels = ['Never', 'Sometimes', 'Fairly Often', 'Very Often']
     return render(request, 'Mind_Mend/assessments/assessment_form.html', build_assessment_context(
         form,
         title='PSS-10 (Perceived Stress Scale)',
         heading='PSS-10 (Perceived Stress Scale)',
         intro='In the last month, how often have you felt or thought a certain way?',
         questions=PSS_QUESTIONS,
-        scale_max=4,
+        scale_max=3,
         scale_labels=scale_labels,
         input_prefix='pss'
     ))
@@ -222,8 +245,8 @@ def _process_pss(request, form_class):
 
 @login_required
 def assessment_pss(request):
-    scale_labels = ['Never', 'Almost Never', 'Sometimes', 'Fairly Often', 'Very Often']
-    PSSForm = make_assessment_form(PSS_QUESTIONS, scale_max=4, scale_labels=scale_labels)
+    scale_labels = ['Never', 'Sometimes', 'Fairly Often', 'Very Often']
+    PSSForm = make_assessment_form(PSS_QUESTIONS, scale_max=3, scale_labels=scale_labels)
     if request.method == 'POST':
         return _process_pss(request, PSSForm)
     return render(request, 'Mind_Mend/assessments/assessment_form.html', build_assessment_context(
@@ -232,7 +255,7 @@ def assessment_pss(request):
         heading='PSS-10 (Perceived Stress Scale)',
         intro='In the last month, how often have you felt or thought a certain way?',
         questions=PSS_QUESTIONS,
-        scale_max=4,
+        scale_max=3,
         scale_labels=scale_labels,
         input_prefix='pss'
     ))
@@ -241,7 +264,7 @@ def assessment_pss(request):
 @login_required
 def assessment_result(request, result_id):
     result = get_object_or_404(AssessmentResult, id=result_id, user=request.user)
-    max_scores = {'phq9': 27, 'gad7': 21, 'pss': 40}
+    max_scores = {'phq9': 27, 'gad7': 21, 'pss': 30}
     assessment_names = {'phq9': 'PHQ-9', 'gad7': 'GAD-7', 'pss': 'PSS-10'}
     max_score = max_scores.get(result.assessment_type, 100)
     percent = (result.total_score / max_score) * 100 if max_score > 0 else 0

@@ -22,9 +22,17 @@ class UserProfile(models.Model):
         default=False,
         help_text='If checked, your real name is visible to others. Otherwise your username is used.'
     )
+    show_username = models.BooleanField(
+        default=True,
+        help_text='If True, your @username is shown to counsellors and in the community forum. If False, you appear as Anonymous everywhere.'
+    )
     location_opt_out = models.BooleanField(
         default=False,
         help_text='If checked, location tracking is disabled for this user.'
+    )
+    profile_complete = models.BooleanField(
+        default=False,
+        help_text='Set to True after the user completes the mandatory profile setup after registration.'
     )
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -32,17 +40,26 @@ class UserProfile(models.Model):
         return f"Profile({self.user.username})"
 
     def display_name(self):
+        """Returns display identity: real name (if show_real_name), username (if show_username), else Anonymous."""
+        if not self.show_username:
+            return 'Anonymous'
         if self.show_real_name and self.user.get_full_name():
             return self.user.get_full_name()
         return self.user.username
 
 
 def get_display_name(user):
-    """Standalone helper for views/consumers: respects the user's privacy setting."""
+    """Standalone helper for views/consumers: respects the user's privacy settings.
+    - show_username=False → 'Anonymous'
+    - show_username=True + show_real_name=True → Full name (or username fallback)
+    - show_username=True + show_real_name=False → @username
+    """
     if not user:
-        return "Anonymous"
+        return 'Anonymous'
     try:
         profile = user.profile
+        if not profile.show_username:
+            return 'Anonymous'
         if profile.show_real_name:
             full = user.get_full_name().strip()
             return full if full else user.username
@@ -72,10 +89,23 @@ class Counsellor(models.Model):
     bio = models.TextField(blank=True)
     profile_picture = models.ImageField(upload_to='counsellors/', null=True, blank=True)
     session_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Session fee")
+    is_instant_enabled = models.BooleanField(default=False, help_text="Available for instant counselling")
+    instant_session_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Instant session fee")
+    video_session_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Video session fee")
+    instant_video_session_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Instant video session fee")
     available_days = models.CharField(max_length=100, help_text="e.g., Mon,Wed,Fri")
     available_time_start = models.TimeField()
     available_time_end = models.TimeField()
     is_active = models.BooleanField(default=True)
+    
+    # New detailed fields
+    verified_qualification = models.TextField(blank=True, default="", help_text="Verified degrees and licenses")
+    medical_registration = models.CharField(max_length=200, blank=True, default="", help_text="Medical registration number")
+    relevant_experience = models.TextField(blank=True, default="", help_text="Brief description of relevant experience")
+    review_quality = models.TextField(blank=True, default="", help_text="Summary of rating/review quality")
+    years_of_experience = models.PositiveIntegerField(default=0, help_text="Years of professional experience")
+    consultation_fees_policy = models.TextField(blank=True, default="", help_text="Fees and follow-up policies")
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -104,6 +134,12 @@ class CounsellorBooking(models.Model):
         default='pending'
     )
     is_paid = models.BooleanField(default=False)
+    is_instant = models.BooleanField(default=False, help_text="Whether this is an instant booking")
+    include_chat = models.BooleanField(default=True, help_text="Include Chat Session")
+    include_video = models.BooleanField(default=False, help_text="Include Video Calling Session")
+    chat_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    video_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    total_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -111,9 +147,31 @@ class CounsellorBooking(models.Model):
         ordering = ['date', 'time_slot']
 
     def patient_display_name(self):
+        """Returns name shown to counsellors. Respects both the booking-level anonymous flag
+        AND the user's global show_username profile toggle."""
         if self.is_anonymous:
             return 'Anonymous Patient'
+        try:
+            if not self.user.profile.show_username:
+                return 'Anonymous Patient'
+        except Exception:
+            pass
         return get_display_name(self.user)
+
+    def save(self, *args, **kwargs):
+        if self.counsellor:
+            if self.include_chat:
+                self.chat_fee = self.counsellor.instant_session_fee if self.is_instant else self.counsellor.session_fee
+            else:
+                self.chat_fee = 0.00
+            
+            if self.include_video:
+                self.video_fee = self.counsellor.instant_video_session_fee if self.is_instant else self.counsellor.video_session_fee
+            else:
+                self.video_fee = 0.00
+            
+            self.total_fee = self.chat_fee + self.video_fee
+        super().save(*args, **kwargs)
 
 
 class CounsellorChatMessage(models.Model):

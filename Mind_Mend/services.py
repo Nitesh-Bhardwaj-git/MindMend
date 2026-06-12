@@ -255,10 +255,38 @@ def _get_recommendations(sentiment, is_distress, is_high_risk, is_hi):
 # -----------------------------------------------------------------------------
 # LLM SYSTEM PROMPT ENGINEERING
 # -----------------------------------------------------------------------------
-def _build_system_prompt(lang, context_meta, is_high_risk, is_violence_risk):
+def _build_system_prompt(lang, context_meta, is_high_risk, is_violence_risk, is_greeting=False, memory_allowed=False):
     lang_instruction = "IMPORTANT: You MUST reply entirely in pure Hindi using the Devanagari script (हिंदी लिपि) absolutely no matter what. Do NOT use English letters or Hinglish." if lang == 'hi' else "IMPORTANT: You must reply entirely in English."
     
-    # Base Persona
+    if is_greeting:
+        if memory_allowed and context_meta.get('memory', {}).get('last_emotion'):
+            last_emo = context_meta['memory']['last_emotion']
+            prompt = (
+                f"You are MindMend, a calm, minimal, and emotionally safe mental health AI assistant.\n"
+                f"The user's message is ONLY a greeting (e.g. 'hello', 'aap kaise ho').\n"
+                f"STRICT RULES:\n"
+                f"1. Respond naturally, warmly, and briefly to their greeting.\n"
+                f"2. You MUST also gently check in on their previous state, as their last recorded emotion was '{last_emo}'.\n"
+                f"3. Ask if the tips you gave them last time worked, or if they are feeling better now.\n"
+                f"4. Keep it concise, empathetic, and organic (max 2-3 sentences).\n"
+                f"5. DO NOT assume their current location or situation, other than the past emotion.\n"
+            )
+        else:
+            prompt = (
+                "You are MindMend, a calm, minimal, and emotionally safe mental health AI assistant.\n"
+                "The user's message is ONLY a greeting or general 'how are you' check-in (e.g. 'hello', 'aap kaise ho').\n"
+                "STRICT RULES:\n"
+                "1. Respond briefly, naturally, and warmly in a human-like tone.\n"
+                "2. DO NOT assume anything about the user's life or location (e.g. do NOT assume they are in the office or stressed).\n"
+                "3. DO NOT use memory or mention past conversations.\n"
+                "4. DO NOT provide emotional support or suggest coping exercises.\n"
+                "5. DO NOT ask emotional or follow-up questions.\n"
+                "6. Keep it to 1 short sentence, e.g., 'I am doing well 🙂 how are you?' or 'Main theek hoon 🙂 aap kaise ho?' or 'मैं ठीक हूँ, आप कैसे हैं?'\n"
+            )
+        prompt += lang_instruction
+        return prompt
+
+    # Base Persona for non-greeting inputs
     prompt = (
         "You are MindMend, a compassionate AI mental health support assistant. "
         "Your goal is to support users emotionally like a caring human friend while also giving helpful, practical coping strategies.\n\n"
@@ -386,8 +414,56 @@ def _build_system_prompt(lang, context_meta, is_high_risk, is_violence_risk):
             "2. Urge them to seek immediate emergency medical services (112 in India) and step away from the situation.\n\n"
         )
 
+    # Memory Check-In follow-up instruction
+    if memory_allowed:
+        last_emo = memory.get('last_emotion')
+        if last_emo in {'sad', 'anxious', 'overwhelmed', 'depressed', 'stressed', 'lonely', 'negative'}:
+            prompt += (
+                f"\n### PAST CONTEXT CHECK-IN:\n"
+                f"The user has returned and the conversation has progressed beyond greeting. Since their last recorded emotion was '{last_emo}', "
+                f"you should naturally and gently ask a follow-up question about the previous conversation. "
+                f"For example, ask if the tips or exercises you suggested (e.g. breathing, walk, music) worked or if they feel better now. "
+                f"Make sure this check-in sounds organic, calm, and minimal.\n"
+            )
+
     prompt += lang_instruction
     return prompt
+
+# -----------------------------------------------------------------------------
+# DETECTOR FOR GREETINGS AND CHECK-INS
+# -----------------------------------------------------------------------------
+def is_greeting_or_checkin(message):
+    text = (message or '').lower().strip()
+    text_clean = re.sub(r'[^\w\s]', '', text)
+    words = text_clean.split()
+    
+    if not words:
+        return False
+        
+    greetings = {
+        'hi', 'hello', 'hey', 'hii', 'hy', 'namaste', 'pranam', 'hola', 'yo', 'helo',
+        'kaisa', 'kaise', 'kese', 'kasa', 'hal', 'haal', 'whats', 'greet', 'greetings',
+        'aap', 'ap', 'tum', 'ho', 'hai', 'hain', 'u', 'you'
+    }
+    
+    greeting_phrases = [
+        'how are you', 'how r u', 'how are u', 'how you doing', 'how are you doing',
+        'whats up', 'what is up', 'whats going on', 'what is going on',
+        'kaisa ho', 'kaise ho', 'kaisa hain', 'kaise hain', 'kaisa hai', 'kaise hai',
+        'aap kaise ho', 'aap kaisa ho', 'aap kaise hain', 'aap kaisa hain',
+        'tum kaise ho', 'tum kaisa ho', 'ap kaise ho', 'ap kaisa ho', 'ap kaise hain',
+        'kya hal hai', 'kya haal hai', 'kya chal raha hai', 'kya ho raha hai',
+        'kese ho', 'kasa ho', 'sab theek', 'sab thik', 'how do you do', 'good morning',
+        'good afternoon', 'good evening'
+    ]
+    
+    if text_clean in greeting_phrases:
+        return True
+        
+    if all(w in greetings for w in words):
+        return True
+        
+    return False
 
 # -----------------------------------------------------------------------------
 # MAIN CHAT FUNCTION
@@ -425,26 +501,50 @@ def get_chat_response(user_message, session_id=None, lang='en', conversation_his
         if detected_loc != 'unknown':
             context_meta['situation'] = detected_loc
 
+    # Determine if current input is ONLY a greeting
+    is_greeting = is_greeting_or_checkin(msg_clean)
+
+    # RULE D: Memory Usage Rule
+    memory_allowed = False
+    memory = context_meta.get('memory', {})
+    
+    last_emo = memory.get('last_emotion')
+    has_past_negative_emotion = last_emo in {'sad', 'anxious', 'overwhelmed', 'depressed', 'stressed', 'lonely', 'negative'}
+    
+    # We allow memory if it's a greeting BUT we have a past negative emotion we need to check in on (and we haven't already progressed in the conversation).
+    if is_greeting and has_past_negative_emotion and len(history) < 4:
+        memory_allowed = True
+    # Or if it's NOT a greeting and session has progressed (at least 2 exchanges: history has >= 4 messages)
+    elif not is_greeting and len(history) >= 4:
+        stress_topics = memory.get('stress_topics', [])
+        last_context = memory.get('last_context', '')
+        message_lower = msg_clean.lower()
+        if any(topic in message_lower for topic in stress_topics) or (last_context and last_context in message_lower):
+            memory_allowed = True
+
+    # If memory is not allowed, clear it from context so the prompt remains completely isolated
+    if not memory_allowed:
+        context_meta['memory'] = {}
+
     # 2. Build the LLM Messages payload
-    system_prompt = _build_system_prompt(lang, context_meta, is_high_risk, is_violence_risk)
+    system_prompt = _build_system_prompt(
+        lang, 
+        context_meta, 
+        is_high_risk, 
+        is_violence_risk, 
+        is_greeting=is_greeting, 
+        memory_allowed=memory_allowed
+    )
     
     llm_messages = [{"role": "system", "content": system_prompt}]
     
-    # Intercept simple greetings to prevent the LLM from overthinking history
-    words = msg_clean.lower().split()
-    is_greeting = len(words) <= 3 and any(w in {'hi', 'hello', 'hey', 'hii', 'namaste', 'hola'} for w in words)
-    
-    if is_greeting:
-        # Avoid passing history if it's just a greeting, resetting interaction tone nicely
-        llm_messages.append({"role": "user", "content": msg_clean + " \n[Internal System Note: The user said hello. Give a warm, 1-sentence friendly greeting. Ask how they are.]"})
-    else:
-        # Add limited history for context (last 6 messages max to preserve token budget & relevance)
-        truncated_history = history[-6:] if len(history) > 6 else history
-        for msg in truncated_history:
-            role = 'user' if msg.get('role') == 'user' else 'assistant'
-            llm_messages.append({"role": role, "content": msg.get('content', '')})
+    # Add limited history for context (last 6 messages max to preserve token budget & relevance)
+    truncated_history = history[-6:] if len(history) > 6 else history
+    for msg in truncated_history:
+        role = 'user' if msg.get('role') == 'user' else 'assistant'
+        llm_messages.append({"role": role, "content": msg.get('content', '')})
             
-        llm_messages.append({"role": "user", "content": msg_clean})
+    llm_messages.append({"role": "user", "content": msg_clean})
 
     # 3. Request LLM Generation
     llm_response = _call_llm(llm_messages)
@@ -457,15 +557,15 @@ def get_chat_response(user_message, session_id=None, lang='en', conversation_his
         if is_high_risk:
             final_response = "I hear you, and what you're feeling is so painful. Please know you're not alone. Reach out to 1800-599-0019 right now, there are people waiting to help."
             if is_hi:
-                final_response = "मैं सुन रहा हूं। आपका यह दर्द बहुत गहरा है, लेकिन आप अकेले नहीं हैं। कृपया अभी 1800-599-0019 पर कॉल करें, वहां लोग आपकी मदद के लिए इंतज़ार कर रहे हैं।"
+                final_response = "मैं सुन रहा हूँ, और आपकी भावनाएँ बहुत दर्दनाक हैं। कृपया जानें कि आप अकेले नहीं हैं। तुरंत 1800-599-0019 पर कॉल करें, वहाँ लोग आपकी मदद के लिए इंतज़ार कर रहे हैं।"
         elif is_violence_risk:
             final_response = "This sounds like an emergency. Please call local emergency services immediately (112)."
             if is_hi:
-                final_response = "यह एक आपातकाल प्रतीत होता है। कृपया तुरंत 112 पर कॉल करें।"
+                final_response = "यह एक आपातकालीन स्थिति लग रही है। कृपया तुरंत स्थानीय आपातकालीन सेवाओं (112) पर कॉल करें।"
         else:
             final_response = "I'm here with you. Can you tell me a little more about what's on your mind?"
             if is_hi:
-                final_response = "मैं आपके साथ हूँ। क्या आप बता सकते हैं कि अभी आपको कैसा लग रहा है?"
+                final_response = "मैं आपके साथ हूँ। क्या आप मुझे थोड़ा और बता सकते हैं कि आपके दिमाग में क्या चल रहा है?" 
 
     return {
         'response': final_response,

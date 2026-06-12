@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% load widget_tweaks %}
 {% block title %}Register{% endblock %}
 
@@ -109,7 +110,7 @@
         </div>
         {% endfor %}
 
-        <button type="submit" class="w-full py-6 rounded-2xl bg-[#00d1b2] text-[#050b1a] font-extrabold text-sm tracking-widest hover:scale-[1.02] transition-transform flex items-center justify-center gap-3">
+        <button type="submit" class="w-full py-6 rounded-2xl bg-[#00d1b2] text-black font-extrabold text-sm tracking-widest hover:scale-[1.02] transition-transform flex items-center justify-center gap-3">
           Create Account ➡️
         </button>
 
@@ -122,20 +123,9 @@
   </div>
 </div>
 
-<script>
-function togglePass(btn) {
-    var inp = btn.parentElement.querySelector('input');
-    var eyeOpen = btn.querySelector('.eye-open');
-    var eyeClosed = btn.querySelector('.eye-closed');
-    if (inp.type === 'password') {
-        inp.type = 'text';
-        eyeOpen.classList.add('hidden');
-        eyeClosed.classList.remove('hidden');
-    } else {
-        inp.type = 'password';
-        eyeOpen.classList.remove('hidden');
-        eyeClosed.classList.add('hidden');
-    }
-}
-</script>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/register.js' %}?v=1.0"></script>
 {% endblock %}

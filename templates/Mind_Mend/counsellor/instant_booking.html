@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+{% load static %}
+{% block title %}Book Instant Counsellor{% endblock %}
+{% block content %}
+
+<div class="min-h-screen bg-[#050b1a] relative overflow-auto pt-4 md:pt-6 pb-20">
+  <div class="absolute bottom-0 right-1/2 md:right-1/4 w-[360px] h-[360px] md:w-[500px] md:h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse"></div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 lg:px-20">
+
+    <!-- HEADER -->
+    <div class="flex flex-col md:flex-row justify-between gap-12 mb-6">
+      <div class="max-w-2xl">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-purple-400/30 bg-purple-500/5 text-purple-300 text-[10px] font-bold tracking-[0.2em] mb-2">
+          ⚡ INSTANT COUNSELLING
+        </div>
+
+        <h1 class="text-4xl md:text-6xl font-bold text-white mb-4 leading-tight">
+          Book an
+          <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-500">
+            Instant Session
+          </span>
+        </h1>
+
+        <p class="text-gray-400 text-lg">
+          Connect with our available experts for an immediate slot today. Note: Instant booking fees are higher than regular sessions.
+        </p>
+      </div>
+
+      <div class="mt-4 md:mt-12 flex flex-wrap items-start gap-3">
+        <!-- Back to Standard Booking button -->
+        <a href="{% url 'counsellor_booking' %}"
+           class="px-5 py-3 rounded-2xl border border-[#00d1b2]/30 bg-[#00d1b2]/10 text-[#00d1b2] font-bold text-sm inline-flex items-center gap-2 active:scale-95 hover:bg-[#00d1b2]/20 transition">
+          📅 Regular Booking
+        </a>
+        {% if user.is_authenticated %}
+        <a href="{% url 'my_bookings' %}"
+           class="px-5 py-3 rounded-2xl border border-white/10 bg-white/5 text-white font-bold uppercase inline-flex items-center gap-3 active:scale-95 hover:bg-white/10 transition">
+          📅 My Bookings →
+        </a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,680px)] gap-6 md:gap-8 lg:gap-12">
+
+      <!-- BOOKING FORM -->
+      <div class="bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 sm:p-8 md:p-10 lg:p-12 shadow-2xl relative overflow-visible">
+        <div class="absolute top-0 right-0 w-28 h-28 sm:w-32 sm:h-32 bg-purple-500/5 rounded-full blur-3xl"></div>
+
+        <h3 class="text-2xl font-bold text-white mb-8">Schedule Instant Session</h3>
+
+        <form method="post" id="bookingForm">
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+          <div class="mb-6 p-4 rounded-2xl bg-red-500/10 border border-red-400/20 text-red-300 text-sm" id="bookingFormError">
+            {% for err in form.non_field_errors %}
+            <p>{{ err }}</p>
+            {% endfor %}
+          </div>
+          {% endif %}
+
+          <!-- Counsellor field -->
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-300 mb-2" for="id_counsellor">
+              Counsellor
+            </label>
+            {{ form.counsellor|add_class:"w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder-gray-500 outline-none hover:bg-white/10 focus:border-purple-500/50" }}
+            {% if form.counsellor.errors %}
+            <div class="mt-2 text-sm text-red-400">{{ form.counsellor.errors }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Date field (Read-only for instant session) -->
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-300 mb-2" for="id_date">
+              Date (Today only)
+            </label>
+            {{ form.date|attr:"readonly:readonly"|add_class:"w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-gray-400 outline-none cursor-not-allowed" }}
+            {% if form.date.errors %}
+            <div class="mt-2 text-sm text-red-400">{{ form.date.errors }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Hidden input that Django reads initially -->
+          <input type="hidden" name="time_slot" id="id_time_slot" value="12:00">
+
+          <!-- Session Format Selection -->
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-300 mb-3">
+              Session Format <span class="text-xs text-gray-500 font-normal">(Select at least one)</span>
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <!-- Chat Session Checkbox Card -->
+              <label for="id_include_chat" class="relative flex items-center gap-3 p-4 rounded-2xl border border-white/10 bg-white/5 cursor-pointer hover:bg-white/10 transition group">
+                <input type="checkbox" name="include_chat" id="id_include_chat" checked class="h-5 w-5 rounded border-white/20 bg-white/5 text-[#00d1b2] focus:ring-[#00d1b2] focus:ring-offset-[#050b1a] focus:ring-offset-2">
+                <div>
+                  <p class="text-sm font-bold text-white">Chat Session</p>
+                </div>
+              </label>
+
+              <!-- Video Calling Checkbox Card -->
+              <label for="id_include_video" class="relative flex items-center gap-3 p-4 rounded-2xl border border-white/10 bg-white/5 cursor-pointer hover:bg-white/10 transition group">
+                <input type="checkbox" name="include_video" id="id_include_video" class="h-5 w-5 rounded border-white/20 bg-white/5 text-[#00d1b2] focus:ring-[#00d1b2] focus:ring-offset-[#050b1a] focus:ring-offset-2">
+                <div>
+                  <p class="text-sm font-bold text-white">Video Calling</p>
+                </div>
+              </label>
+            </div>
+            {% if form.include_chat.errors or form.include_video.errors %}
+            <div class="mt-2 text-sm text-red-400">
+              {{ form.include_chat.errors }}
+              {{ form.include_video.errors }}
+            </div>
+            {% endif %}
+          </div>
+
+
+          <!-- Notes field -->
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-300 mb-2" for="id_notes">
+              Notes <span class="text-gray-500 font-normal text-xs">(optional)</span>
+            </label>
+            {{ form.notes|add_class:"w-full bg-white/5 border border-white/10 rounded-2xl px-2 py-1 text-white placeholder-gray-500 outline-none hover:bg-white/10 focus:border-purple-500/50" }}
+          </div>
+
+          <div class="mb-8 rounded-2xl border border-white/10 bg-white/5 p-5">
+            <label for="id_is_anonymous" class="flex items-start gap-4 cursor-pointer">
+              {{ form.is_anonymous|add_class:"mt-1 h-4 w-4 rounded border-white/20 bg-white/5 text-[#00d1b2] focus:ring-[#00d1b2]" }}
+              <div>
+                <p class="text-sm font-semibold text-white">Keep my identity hidden</p>
+                
+              </div>
+            </label>
+            {% if form.is_anonymous.errors %}
+            <div class="mt-2 text-sm text-red-400">{{ form.is_anonymous.errors }}</div>
+            {% endif %}
+          </div>
+
+          <div class="flex justify-center mt-4">
+            <button type="submit"
+                    id="submitBtn"
+                    class="px-8 py-4 rounded-2xl bg-purple-500 text-white font-extrabold transition-all duration-300 shadow-[0_0_20px_rgba(168,85,247,0.45)] hover:bg-[#00b8a5] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:hover:bg-purple-500 active:scale-95">
+              Book & Start Instant Session
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- COUNSELLORS LIST -->
+      <div class="bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 rounded-[2rem] p-1 sm:p-3 md:p-5 lg:p-7 shadow-2xl h-auto max-h-[500px] sm:max-h-[680px] lg:h-[860px] lg:max-h-none overflow-y-auto flex flex-col">
+        <h3 class="text-2xl font-bold text-white mb-6">Available for Instant Counselling</h3>
+
+        <div class="flex-1 space-y-6 overflow-y-auto pr-2 min-h-0">
+          {% for c in counsellors %}
+          <div class="bg-gradient-to-br from-[#0b162d] to-[#0a1428] border border-white/10 rounded-[2rem] px-6 md:px-8 py-6 md:py-8 shadow-2xl transition hover:border-purple-500/30">
+            <div class="grid grid-cols-1 md:grid-cols-[96px_minmax(0,1fr)_210px] gap-4 md:gap-8 items-center">
+              <!-- Avatar -->
+              <div class="relative shrink-0">
+                {% if c.profile_picture %}
+                <div class="h-20 w-20 rounded-full border border-white/10 shadow-lg overflow-hidden">
+                  <img src="{{ c.profile_picture.url }}" alt="{{ c.name }}" class="w-full h-full object-cover">
+                </div>
+                {% else %}
+                <div class="h-20 w-20 rounded-full bg-gradient-to-br from-[#111c33] to-[#0a1428] border border-white/10 flex items-center justify-center text-xl font-bold text-white shadow-lg overflow-hidden">
+                  {{ c.name|slice:":1"|upper }}
+                </div>
+                {% endif %}
+                <div class="absolute -bottom-2 -right-2 h-9 w-9 rounded-full bg-purple-500 text-white flex items-center justify-center text-sm font-bold shadow-md">
+                  ⚡
+                </div>
+              </div>
+
+              <!-- Details -->
+              <div class="min-w-0">
+                <div class="flex flex-col gap-1">
+                  <h4 class="text-xl font-bold text-white whitespace-nowrap">{{ c.name }}</h4>
+                  {% if c.avg_rating %}
+                  <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-amber-400/10 text-amber-300 text-xs font-bold border border-amber-400/30 w-fit">
+                    ★ {{ c.avg_rating|floatformat:1 }}
+                  </span>
+                  {% endif %}
+                </div>
+                <p class="text-purple-400 text-xs font-semibold tracking-[0.3em] uppercase mt-2">
+                  {{ c.specialization }}
+                </p>
+              </div>
+
+              <!-- Availability -->
+              <div class="flex flex-col items-end gap-4">
+                <div class="text-right min-w-0">
+                  <p class="text-[10px] uppercase tracking-[0.3em] text-gray-500 mb-2">Availability Today</p>
+                  <div class="px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-white font-semibold text-sm text-center w-full min-w-0 leading-snug break-words">
+                    {{ c.available_time_start|time:"H:i" }} – {{ c.available_time_end|time:"H:i" }}
+                  </div>
+                </div>
+                <div class="flex items-center gap-3">
+                  {% if c.instant_session_fee > 0 %}
+                  <p class="text-purple-400 font-semibold text-sm px-3 py-1.5 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                    ₹{{ c.instant_session_fee|floatformat:"0" }}/session
+                  </p>
+                  {% endif %}
+                  <a href="{% url 'counsellor_detail' c.id %}" class="h-11 w-11 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-white/70 active:scale-95 hover:bg-purple-600 hover:border-purple-500/30 hover:text-white transition cursor-pointer" title="View Details">
+                    →
+                  </a>
+                </div>
+              </div>
+            </div>
+            
+          </div>
+          {% empty %}
+          <div class="bg-[#0a1428]/60 backdrop-blur-xl border border-white/10 p-8 rounded-[2rem] text-gray-400">
+            No counsellors are currently active for instant sessions. Check back later or schedule a standard appointment.
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{% if form.non_field_errors %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const errBox = document.getElementById('bookingFormError');
+    if (errBox) errBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+</script>
+{% endif %}
+<script>
+  window.COUNSELLORS_DATA = {{ counsellors_json|safe }};
+</script>
+<script src="{% static 'js/counsellor_booking.js' %}?v=1.3"></script>
+{% endblock %}

@@ -61,6 +61,20 @@
                 {% else %}bg-red-500/15 text-red-300 border border-red-400/20{% endif %}">
                 {{ b.status|title }}
               </span>
+              {% if b.is_instant %}
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/20 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
+                ⚡ Instant Session
+              </span>
+              {% endif %}
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/5 text-gray-300 border border-white/10">
+                {% if b.include_chat and b.include_video %}
+                  💬 Chat + 📹 Video
+                {% elif b.include_video %}
+                  📹 Video Session
+                {% else %}
+                  💬 Chat Session
+                {% endif %}
+              </span>
             </div>
 
             <p class="text-gray-300 mb-2">
@@ -80,10 +94,18 @@
           <!-- RIGHT ACTIONS -->
           <div class="flex flex-wrap gap-3 xl:justify-end">
             {% if b.status == 'confirmed' or b.status == 'completed' %}
-            <a href="{% url 'counsellor_chat' b.id %}"
-               class="inline-flex items-center gap-2 px-5 py-3 bg-[#00d1b2] text-[#04111d] rounded-2xl transition text-sm font-bold">
-              💬 Open Chat
-            </a>
+              {% if b.include_chat %}
+                <a href="{% url 'counsellor_chat' b.id %}"
+                   class="inline-flex items-center gap-2 px-5 py-3 bg-[#00d1b2] text-[#04111d] rounded-2xl transition text-sm font-bold">
+                  💬 Open Chat
+                </a>
+              {% endif %}
+              {% if b.include_video %}
+                <a href="{% url 'counsellor_video_call' b.id %}"
+                   class="inline-flex items-center gap-2 px-5 py-3 bg-purple-500 text-white rounded-2xl transition text-sm font-bold shadow-[0_0_15px_rgba(168,85,247,0.3)] hover:bg-purple-600">
+                  📹 Join Video Call
+                </a>
+              {% endif %}
             {% endif %}
 
             {% if b.status == 'confirmed' %}

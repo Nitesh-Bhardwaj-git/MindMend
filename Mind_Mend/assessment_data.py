@@ -68,16 +68,16 @@ def get_gad7_result(score):
 
 
 def get_pss_result(answers):
-    """PSS-10: items 4,5,7,8 are reverse scored (4-x). Total 0-40."""
+    """PSS-10: items 4,5,7,8 are reverse scored (3-x). Total 0-30."""
     total = 0
     for i, ans in enumerate(answers):
         if (i + 1) in PSS_REVERSE_ITEMS:
-            total += (4 - ans)
+            total += (3 - ans)
         else:
             total += ans
-    if total <= 13:
+    if total <= 10:
         return "Low stress"
-    elif total <= 26:
+    elif total <= 20:
         return "Moderate stress"
     else:
         return "High stress"

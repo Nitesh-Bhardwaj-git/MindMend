@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% load widget_tweaks %}
 {% block title %}Submit Review{% endblock %}
 
@@ -73,7 +74,7 @@
           <div class="flex items-center gap-3 text-[10px] font-bold text-gray-600 uppercase tracking-widest">
             ✅ Your review will be public
           </div>
-          <button type="submit" class="w-full sm:w-auto px-12 py-5 rounded-xl font-extrabold text-sm tracking-wider bg-[#00d1b2] text-[#050b1a] hover:scale-105 flex items-center justify-center gap-2">
+          <button type="submit" class="w-full sm:w-auto px-12 py-5 rounded-xl font-extrabold text-sm tracking-wider bg-[#00d1b2] text-black hover:scale-105 flex items-center justify-center gap-2">
             📨 Submit Review
           </button>
         </div>
@@ -107,56 +108,9 @@
 </div>
 
 <!-- JS for Star Rating -->
-<script>
-  const stars = document.querySelectorAll('.star-button');
-  const ratingInput = document.querySelector('[name="rating"]');
 
-  function updateStars(value, isHover) {
-    stars.forEach(s => {
-      const sValue = parseInt(s.dataset.value);
-      const svg = s.querySelector('.star-svg');
-      if (sValue <= value) {
-        // Filled star
-        svg.setAttribute('fill', 'currentColor');
-        svg.classList.remove('text-gray-600', 'text-gray-500');
-        svg.classList.add(isHover ? 'text-amber-300' : 'text-amber-400', 'drop-shadow-lg');
-        s.classList.add(isHover ? 'scale-110' : 'scale-100');
-      } else {
-        // Empty star
-        svg.setAttribute('fill', 'none');
-        svg.classList.remove('text-amber-400', 'text-amber-300', 'drop-shadow-lg');
-        svg.classList.add('text-gray-500');
-        s.classList.remove('scale-110', 'scale-125');
-      }
-    });
-  }
+{% endblock %}
 
-  stars.forEach(star => {
-    star.addEventListener('mouseenter', () => {
-      const value = parseInt(star.dataset.value);
-      updateStars(value, true);
-    });
-    
-    star.addEventListener('mouseleave', () => {
-      const currentValue = parseInt(ratingInput.value) || 0;
-      updateStars(currentValue, false);
-    });
-
-    star.addEventListener('click', () => {
-      const value = star.dataset.value;
-      ratingInput.value = value;
-      updateStars(value, false);
-      // Give a tiny pop animation to the clicked star
-      const svg = star.querySelector('.star-svg');
-      svg.classList.add('scale-125');
-      setTimeout(() => svg.classList.remove('scale-125'), 150);
-    });
-  });
-
-  // Initialize state
-  const initialValue = parseInt(ratingInput.value) || 0;
-  if(initialValue > 0) {
-    updateStars(initialValue, false);
-  }
-</script>
+{% block scripts %}
+<script src="{% static 'js/review_form.js' %}?v=1.0"></script>
 {% endblock %}

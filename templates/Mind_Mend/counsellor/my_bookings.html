@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}My Bookings{% endblock %}
 
 {% block content %}
@@ -15,7 +16,7 @@
       </p>
     </div>
     <a href="{% url 'counsellor_booking' %}"
-       class="px-8 py-4 rounded-xl bg-[#00d1b2] text-[#050b1a] font-extrabold text-sm tracking-wider hover:scale-105 transition-transform flex items-center justify-center gap-2">
+       class="px-8 py-4 rounded-xl bg-[#00d1b2] text-black font-extrabold text-sm tracking-wider hover:scale-105 transition-transform flex items-center justify-center gap-2">
       ➕ Book New Session
     </a>
   </div>
@@ -51,6 +52,20 @@
                           {% else %}bg-red-500/10 text-red-500 border border-red-500/20{% endif %}">
                 {{ b.status|title }}
               </span>
+              {% if b.is_instant %}
+              <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-purple-500/10 text-purple-300 border border-purple-500/20 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
+                ⚡ Instant Session
+              </span>
+              {% endif %}
+              <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-white/5 text-gray-300 border border-white/10">
+                {% if b.include_chat and b.include_video %}
+                  💬 Chat + 📹 Video
+                {% elif b.include_video %}
+                  📹 Video Session
+                {% else %}
+                  💬 Chat Session
+                {% endif %}
+              </span>
             </div>
             <div class="flex flex-wrap justify-center md:justify-start items-center gap-6 text-gray-400 text-sm font-medium">
               <div class="flex items-center gap-2">📅 {{ b.date|date:"d M Y" }}</div>
@@ -69,9 +84,16 @@
             {% endif %}
 
             {% if b.status == 'confirmed' or b.status == 'completed' %}
-              <a href="{% url 'counsellor_chat' b.id %}" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-[#00d1b2]/10 text-[#00d1b2] font-bold text-xs uppercase tracking-widest hover:bg-[#00d1b2]/20 flex items-center justify-center gap-2">
-                💬 Chat
-              </a>
+              {% if b.include_chat %}
+                <a href="{% url 'counsellor_chat' b.id %}" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-[#00d1b2]/10 text-[#00d1b2] font-bold text-xs uppercase tracking-widest hover:bg-[#00d1b2]/20 flex items-center justify-center gap-2">
+                  💬 Chat
+                </a>
+              {% endif %}
+              {% if b.include_video %}
+                <a href="{% url 'counsellor_video_call' b.id %}" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-purple-500/10 text-purple-300 font-bold text-xs uppercase tracking-widest hover:bg-purple-500/20 flex items-center justify-center gap-2 border border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.15)]">
+                  📹 Video Call
+                </a>
+              {% endif %}
             {% endif %}
 
             {% if b.status == 'confirmed' %}
@@ -164,7 +186,7 @@
             Take the first step towards wellness today. Book a session with our expert counsellors.
           </p>
         </div>
-        <a href="{% url 'counsellor_booking' %}" class="px-8 py-4 rounded-xl bg-[#00d1b2] text-[#050b1a] font-extrabold text-sm tracking-wider hover:scale-105 transition-transform">
+        <a href="{% url 'counsellor_booking' %}" class="px-8 py-4 rounded-xl bg-[#00d1b2] text-black font-extrabold text-sm tracking-wider hover:scale-105 transition-transform">
           Book Your First Session
         </a>
       </div>
@@ -184,26 +206,8 @@
 
 </div>
 
-<script>
-  function toggleMenu(id) {
-    // Close all other open menus first
-    document.querySelectorAll('[id^="menu-"]').forEach(function(el) {
-      if (!el.id.startsWith('menu-wrapper-') && el.id !== 'menu-' + id) {
-        el.classList.add('hidden');
-      }
-    });
-    const menu = document.getElementById('menu-' + id);
-    if (menu) menu.classList.toggle('hidden');
-  }
+{% endblock %}
 
-  // Close dropdown when clicking anywhere outside a menu wrapper
-  document.addEventListener('click', function(e) {
-    if (!e.target.closest('[id^="menu-wrapper-"]')) {
-      document.querySelectorAll('[id^="menu-"]').forEach(function(el) {
-        if (!el.id.startsWith('menu-wrapper-')) el.classList.add('hidden');
-      });
-    }
-  });
-</script>
-
+{% block scripts %}
+<script src="{% static 'js/my_bookings.js' %}?v=1.0"></script>
 {% endblock %}

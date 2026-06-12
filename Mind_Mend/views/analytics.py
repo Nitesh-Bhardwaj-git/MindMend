@@ -193,7 +193,7 @@ def _mental_health_score(user):
     pss = AssessmentResult.objects.filter(user=user, assessment_type='pss').order_by('-created_at').first()
     pen = 0
     if phq9 and phq9.total_score >= 10: pen += min(20, (phq9.total_score - 9) * 2)
-    if pss and pss.total_score >= 14: pen += min(20, (pss.total_score - 13) * 2)
+    if pss and pss.total_score >= 11: pen += min(20, (pss.total_score - 10) * 2)
     return round(max(0, min(100, mood_comp + (40 - pen))))
 
 def _wellness_suggestions(user, score):
@@ -544,7 +544,7 @@ def download_progress_report_pdf(request):
     label_map = {
         'phq9': ('PHQ-9 (Depression)', phq9_list),
         'gad7': ('GAD-7 (Anxiety)',    gad7_list),
-        'pss':  ('PSS   (Stress)',     pss_list),
+        'pss':  ('PSS-10 (Stress)',    pss_list),
     }
     MOOD_LABELS = {1: 'Very Low', 2: 'Low', 3: 'Neutral', 4: 'Good', 5: 'Very Good'}
 

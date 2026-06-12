@@ -86,6 +86,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'Mind_Mend.middleware.LocationTrackingMiddleware',
+    'Mind_Mend.middleware.ProfileSetupMiddleware',
 ]
 
 ROOT_URLCONF = 'MindMend.urls'
@@ -292,3 +293,8 @@ EMAIL_USE_TLS = True
 # Fallback to empty string locally if not present to avoid crashes
 EMAIL_HOST_USER = os.environ.get('MINDMEND_EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('MINDMEND_EMAIL_HOST_PASSWORD', '')
+
+AUTHENTICATION_BACKENDS = [
+    'Mind_Mend.backends.EmailOrUsernameModelBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]

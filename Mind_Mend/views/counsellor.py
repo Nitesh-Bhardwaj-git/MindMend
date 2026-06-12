@@ -76,7 +76,7 @@ def counsellor_booking(request):
             booking.user = request.user
             booking.save()
 
-            if booking.counsellor.session_fee > 0:
+            if booking.total_fee > 0:
                 return redirect('checkout_payment', booking_id=booking.id)
             else:
                 booking.is_paid = True
@@ -92,7 +92,14 @@ def counsellor_booking(request):
                 )
                 return redirect('my_bookings')
     else:
-        form = CounsellorBookingForm(initial={'date': timezone.localdate()})
+        initial_data = {'date': timezone.localdate()}
+        c_id = request.GET.get('counsellor')
+        if c_id:
+            try:
+                initial_data['counsellor'] = int(c_id)
+            except ValueError:
+                pass
+        form = CounsellorBookingForm(initial=initial_data)
 
     # Build counsellor availability data for the JS slot picker
     counsellors_json = _json.dumps([
@@ -105,6 +112,8 @@ def counsellor_booking(request):
                 for t in (c.available_days or '').replace('/', ',').replace(' ', ',').split(',')
                 if t.strip()
             ],
+            'session_fee': float(c.session_fee),
+            'video_session_fee': float(c.video_session_fee),
         }
         for c in counsellors
     ])
@@ -113,6 +122,87 @@ def counsellor_booking(request):
         'form': form,
         'counsellors': counsellors,
         'counsellors_json': counsellors_json,
+    })
+
+
+@login_required
+def instant_booking(request):
+    _cleanup_expired_pending_bookings()
+
+    import json as _json
+    from django.db.models import Avg
+    counsellors = list(
+        Counsellor.objects.filter(is_active=True, is_instant_enabled=True).annotate(
+            avg_rating=Avg('counsellorbooking__counsellorreview__rating')
+        )
+    )
+    if request.method == 'POST':
+        post_data = request.POST.copy()
+        post_data['date'] = timezone.localdate().strftime('%Y-%m-%d')
+        post_data['time_slot'] = timezone.localtime().strftime('%H:%M')
+        form = CounsellorBookingForm(post_data, is_instant=True)
+        if form.is_valid():
+            booking = form.save(commit=False)
+            booking.user = request.user
+            booking.is_instant = True
+            booking.save()
+
+            if booking.total_fee > 0:
+                return redirect('checkout_payment', booking_id=booking.id)
+            else:
+                booking.is_paid = True
+                booking.status = 'confirmed'
+                booking.save(update_fields=['is_paid', 'status'])
+                _notify_counsellor(
+                    booking.counsellor,
+                    'booking_created',
+                    'New instant appointment booked ⚡',
+                    f'{_booking_patient_name(booking)} booked instant session on {booking.date} at {booking.time_slot.strftime("%H:%M")}.',
+                    booking=booking,
+                    actor=request.user
+                )
+                return redirect('instant_connect', booking_id=booking.id)
+    else:
+        initial_data = {'date': timezone.localdate()}
+        c_id = request.GET.get('counsellor')
+        if c_id:
+            try:
+                initial_data['counsellor'] = int(c_id)
+            except ValueError:
+                pass
+        form = CounsellorBookingForm(initial=initial_data, is_instant=True)
+
+    # Build counsellor availability data for the JS slot picker
+    counsellors_json = _json.dumps([
+        {
+            'id': c.id,
+            'start': c.available_time_start.strftime('%H:%M'),
+            'end': c.available_time_end.strftime('%H:%M'),
+            'days': [
+                t.strip().lower()[:3]
+                for t in (c.available_days or '').replace('/', ',').replace(' ', ',').split(',')
+                if t.strip()
+            ],
+            'instant_session_fee': float(c.instant_session_fee),
+            'instant_video_session_fee': float(c.instant_video_session_fee),
+        }
+        for c in counsellors
+    ])
+
+    return render(request, 'Mind_Mend/counsellor/instant_booking.html', {
+        'form': form,
+        'counsellors': counsellors,
+        'counsellors_json': counsellors_json,
+    })
+
+
+@login_required
+def instant_connect(request, booking_id):
+    booking = get_object_or_404(CounsellorBooking, pk=booking_id, user=request.user)
+    if not booking.is_instant:
+        return redirect('my_bookings')
+    return render(request, 'Mind_Mend/counsellor/instant_connect.html', {
+        'booking': booking,
     })
 
 
@@ -268,6 +358,36 @@ def finish_session(request, booking_id):
 
 
 @login_required
+def counsellor_video_call(request, booking_id):
+    """Virtual video call room with counsellor for a booking. User or counsellor can access."""
+    _autocomplete_past_bookings()
+    booking = get_object_or_404(CounsellorBooking, pk=booking_id)
+    if not _user_can_access_booking(request.user, booking):
+        messages.error(request, 'You do not have access to this video call.')
+        return redirect('my_bookings')
+    if not booking.include_video:
+        messages.error(request, 'This booking does not include a video calling session.')
+        return redirect('my_bookings')
+    if not booking.is_paid and booking.total_fee > 0:
+        messages.error(request, 'Please complete payment before joining the session.')
+        return redirect('checkout_payment', booking_id=booking.id)
+
+    chat_messages = list(CounsellorChatMessage.objects.filter(
+        booking__user=booking.user,
+        booking__counsellor=booking.counsellor
+    ).select_related('sender').order_by('created_at'))
+    for msg in chat_messages:
+        msg.sender_label = _chat_sender_name(booking, msg.sender)
+
+    return render(request, 'Mind_Mend/counsellor/video_call.html', {
+        'booking': booking,
+        'chat_messages': chat_messages,
+        'chat_locked': booking.status in ('completed', 'cancelled'),
+        'is_counsellor_view': (booking.counsellor.user_id == request.user.id),
+    })
+
+
+@login_required
 def counsellor_sessions(request):
     """List of sessions (bookings) for the logged-in counsellor."""
     _autocomplete_past_bookings()
@@ -310,7 +430,8 @@ def doctor_dashboard(request):
     completed_bookings = [b for b in bookings if b.status == 'completed']
     total_completed_sessions = len(completed_bookings)
     monthly_revenue = sum(
-        b.counsellor.session_fee for b in completed_bookings 
+        (b.counsellor.instant_session_fee if b.is_instant else b.counsellor.session_fee)
+        for b in completed_bookings 
         if b.is_paid and b.date.month == today_date.month and b.date.year == today_date.year
     )
 
@@ -509,7 +630,7 @@ def checkout_payment(request, booking_id):
         return redirect('checkout_payment', booking_id=booking_id)
 
     # Amount in paise (Razorpay requires smallest currency unit)
-    amount_paise = int(booking.counsellor.session_fee * 100)
+    amount_paise = int(booking.total_fee * 100)
 
     client = razorpay.Client(
         auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
@@ -584,6 +705,8 @@ def razorpay_payment_verify(request, booking_id):
     )
 
     messages.success(request, "Payment successful! Your appointment is confirmed.")
+    if booking.is_instant:
+        return redirect('instant_connect', booking_id=booking.id)
     return redirect('my_bookings')
 
 
@@ -660,6 +783,7 @@ def get_booked_slots(request, counsellor_id):
     Response: {"booked_slots": [{"start": "12:00", "end": "12:30"}, ...]}
     """
     from django.utils.dateparse import parse_date
+    from datetime import time
 
     _cleanup_expired_pending_bookings()
 
@@ -686,6 +810,29 @@ def get_booked_slots(request, counsellor_id):
             'end': end_dt.strftime('%H:%M'),
         })
 
+    # If the date is today, block past slots from being selected
+    now = timezone.localtime()
+    if booking_date == now.date():
+        current_time = now.time()
+        c_start_mins = counsellor.available_time_start.hour * 60 + counsellor.available_time_start.minute
+        c_end_mins = counsellor.available_time_end.hour * 60 + counsellor.available_time_end.minute
+        current_mins = current_time.hour * 60 + current_time.minute
+        
+        cur = c_start_mins
+        while cur + SESSION_MINUTES <= c_end_mins:
+            if cur < current_mins:
+                hr = cur // 60
+                mn = cur % 60
+                slot_time = time(hr, mn)
+                slot_start_str = slot_time.strftime('%H:%M')
+                if not any(s['start'] == slot_start_str for s in booked_slots):
+                    slot_end_time = (datetime.combine(booking_date, slot_time) + session_delta).time()
+                    booked_slots.append({
+                        'start': slot_start_str,
+                        'end': slot_end_time.strftime('%H:%M'),
+                    })
+            cur += SESSION_MINUTES
+
     booked_slots.sort(key=lambda s: s['start'])
     return JsonResponse({'booked_slots': booked_slots})
 
@@ -693,3 +840,21 @@ def get_booked_slots(request, counsellor_id):
 def how_to_book(request):
     """Static guide page explaining how to book a session."""
     return render(request, 'Mind_Mend/counsellor/how_to_book.html')
+
+
+@login_required
+def counsellor_detail(request, counsellor_id):
+    """View to show details of a specific counsellor."""
+    from django.db.models import Avg
+    counsellor = get_object_or_404(
+        Counsellor.objects.annotate(
+            avg_rating=Avg('counsellorbooking__counsellorreview__rating')
+        ),
+        pk=counsellor_id,
+        is_active=True
+    )
+    reviews = CounsellorReview.objects.filter(booking__counsellor=counsellor).select_related('user').order_by('-created_at')
+    return render(request, 'Mind_Mend/counsellor/counsellor_detail.html', {
+        'counsellor': counsellor,
+        'reviews': reviews,
+    })

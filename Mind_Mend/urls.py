@@ -17,6 +17,8 @@ urlpatterns = [
     path('doctor/login/', auth.doctor_login_view, name='doctor_login'),
     path('logout/', auth.logout_view, name='logout'),
     path('profile/', auth.user_profile, name='user_profile'),
+    path('profile/setup/', auth.profile_setup, name='profile_setup'),
+    path('profile/toggle-identity/', auth.toggle_identity, name='toggle_identity'),
     path('profile/delete-data/', auth.delete_my_data, name='delete_my_data'),
     path('profile/delete-account/', auth.delete_my_account, name='delete_my_account'),
 
@@ -42,12 +44,16 @@ urlpatterns = [
 
     # Counsellor Booking
     path('book/', counsellor.counsellor_booking, name='counsellor_booking'),
+    path('book/instant/', counsellor.instant_booking, name='instant_booking'),
+    path('book/instant-connect/<int:booking_id>/', counsellor.instant_connect, name='instant_connect'),
+    path('book/counsellor/<int:counsellor_id>/details/', counsellor.counsellor_detail, name='counsellor_detail'),
     path('book/how-to/', counsellor.how_to_book, name='how_to_book'),
     path('my-bookings/', counsellor.my_bookings, name='my_bookings'),
     path('counsellor/sessions/', counsellor.counsellor_sessions, name='counsellor_sessions'),
     path('doctor/dashboard/', counsellor.doctor_dashboard, name='doctor_dashboard'),
     path('doctor/booking/<int:booking_id>/action/', counsellor.doctor_booking_action, name='doctor_booking_action'),
     path('booking/<int:booking_id>/chat/', counsellor.counsellor_chat, name='counsellor_chat'),
+    path('booking/<int:booking_id>/video/', counsellor.counsellor_video_call, name='counsellor_video_call'),
     path('booking/<int:booking_id>/finish/', counsellor.finish_session, name='finish_session'),
     path('booking/<int:booking_id>/cancel/', counsellor.booking_action, name='booking_action'),
     path('booking/<int:booking_id>/delete/', counsellor.delete_booking, name='delete_booking'),

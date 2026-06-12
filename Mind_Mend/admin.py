@@ -7,7 +7,8 @@ from .models import (
 
 @admin.register(Counsellor)
 class CounsellorAdmin(admin.ModelAdmin):
-    list_display = ['name', 'specialization', 'is_active', 'available_days']
+    list_display = ['name', 'specialization', 'is_active', 'is_instant_enabled', 'session_fee', 'instant_session_fee', 'video_session_fee', 'instant_video_session_fee', 'available_days']
+    list_editable = ['is_active', 'is_instant_enabled', 'session_fee', 'instant_session_fee', 'video_session_fee', 'instant_video_session_fee']
 
 
 @admin.register(CounsellorBooking)

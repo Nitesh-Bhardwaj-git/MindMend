@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Connecting...{% endblock %}
+{% block content %}
+
+<div class="min-h-screen bg-[#050b1a] relative overflow-hidden flex items-center justify-center text-white">
+
+  <!-- Background Glow -->
+  <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse"></div>
+  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-[#00d1b2]/10 rounded-full blur-[120px] animate-pulse"></div>
+
+  <div class="w-full max-w-lg mx-auto px-6 text-center relative z-10 -translate-y-8">
+    <div class="bg-[#0a1428]/60 backdrop-blur-xl border border-white/10 rounded-[3rem] p-10 md:p-12 shadow-2xl relative overflow-hidden">
+      <!-- Glow -->
+      <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-purple-500/10 rounded-full blur-[80px]"></div>
+
+      <!-- Spinner / Progress Circle -->
+      <div class="relative z-10 h-32 w-32 mx-auto mb-10 flex items-center justify-center">
+        <!-- SVG Ring -->
+        <svg class="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="44" stroke="rgba(255,255,255,0.05)" stroke-width="6" fill="transparent" />
+          <circle id="progressRing" cx="50" cy="50" r="44" stroke="#8b5cf6" stroke-width="6" fill="transparent"
+                  stroke-dasharray="276.46" stroke-dashoffset="0" stroke-linecap="round" class="transition-all duration-1000 ease-linear" />
+        </svg>
+        <!-- Numeric Countdown text -->
+        <div id="countdownNumber" class="text-4xl font-extrabold text-white">60</div>
+      </div>
+
+      <!-- Connecting Title -->
+      <h3 class="relative z-10 text-3xl font-bold text-white mb-4 uppercase tracking-wide">
+        Connecting...
+      </h3>
+
+      <!-- Info Message -->
+      <div class="relative z-10 max-w-sm mx-auto mb-6">
+        <p class="text-gray-300 text-base leading-relaxed mb-2">
+          Establishing a secure chat room with <span class="text-[#00d1b2] font-semibold">{{ booking.counsellor.name }}</span>.
+        </p>
+        <p class="text-gray-500 text-xs leading-normal">
+          Please do not refresh or close this page. Your instant counseling session is starting soon.
+        </p>
+      </div>
+
+      <!-- Visual Pulse Badge -->
+      <div class="relative z-10 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-purple-500/30 bg-purple-500/5 text-purple-300 text-xs font-semibold tracking-wider animate-pulse">
+        <span class="h-2 w-2 rounded-full bg-purple-400"></span> SECURE TUNNEL ACTIVE
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const countdownNumber = document.getElementById("countdownNumber");
+    const progressRing = document.getElementById("progressRing");
+    const redirectUrl = "{% url 'counsellor_chat' booking.id %}";
+
+    let timeLeft = 60;
+    const totalDuration = 60;
+    const maxOffset = 276.46; // circumference = 2 * pi * r (2 * 3.14159 * 44)
+
+    function updateTimer() {
+      countdownNumber.textContent = timeLeft;
+      
+      // Update SVG Stroke Offset to show circular progress
+      const offset = maxOffset - ((timeLeft / totalDuration) * maxOffset);
+      progressRing.style.strokeDashoffset = offset;
+
+      if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        window.location.href = redirectUrl;
+      }
+      timeLeft--;
+    }
+
+    // Run first tick immediately
+    updateTimer();
+
+    // Start interval
+    const timerInterval = setInterval(updateTimer, 1000);
+  });
+</script>
+{% endblock %}

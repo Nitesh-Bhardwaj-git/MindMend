@@ -47,11 +47,22 @@ def forum_create(request):
         if form.is_valid():
             post = form.save(commit=False)
             post.author = request.user
+            # Respect global identity toggle: if show_username is OFF, force anonymous
+            try:
+                if not request.user.profile.show_username:
+                    post.is_anonymous = True
+            except Exception:
+                pass
             post.save()
-            messages.success(request, 'Your post was created anonymously.')
+            messages.success(request, 'Your post was submitted successfully.')
             return redirect('forum_detail', pk=post.pk)
     else:
-        form = ForumPostForm(initial={'is_anonymous': True})
+        # Pre-tick anonymous if user's identity is hidden globally
+        try:
+            default_anon = not request.user.profile.show_username
+        except Exception:
+            default_anon = True
+        form = ForumPostForm(initial={'is_anonymous': default_anon})
     return render(request, 'Mind_Mend/forum/forum_create.html', {'form': form})
 
 
@@ -75,6 +86,12 @@ def forum_reply(request, pk):
             reply = form.save(commit=False)
             reply.post = post
             reply.author = request.user
+            # Respect global identity toggle
+            try:
+                if not request.user.profile.show_username:
+                    reply.is_anonymous = True
+            except Exception:
+                pass
             reply.save()
             messages.success(request, 'Reply posted successfully.')
     return redirect('forum_detail', pk=pk)

@@ -1,405 +1,20 @@
 {% extends "base.html" %}
 {% load profile_tags %}
+{% load static %}
 {% block title %}AI Chat{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/chat.css' %}?v=1.0">
+{% endblock %}
+
 {% block content %}
-<style>
-  html, body {
-    min-height: 100%;
-    overflow-x: hidden;
-    overflow-y: auto;
-  }
-
-  main > div.w-full {
-    margin-top: 0px !important;
-    margin-bottom: 12px !important;
-  }
-
-  .back-link {
-    display: inline-flex;
-    margin-bottom: 2px;
-    padding-left: 6px;
-    padding-top: 2px;
-  }
-
-  :root {
-    --mm-bg: #050b1a;
-    --mm-surface: rgba(10, 20, 40, 0.55);
-    --mm-surface-strong: #0a1428;
-    --mm-border: rgba(255, 255, 255, 0.10);
-    --mm-text: #f8fafc;
-    --mm-muted: #94a3b8;
-    --mm-accent: #00d1b2;
-    --mm-accent-dark: #00b39a;
-    --mm-user-text: #03120f;
-  }
-
-  .mm-shell {
-    min-height: calc(100vh - 80px);
-    padding-top: 0px;
-    padding-bottom: 90px; /* lets page scroll enough to reveal footer */
-    margin-top: 0;
-    overflow: visible;
-  }
-
-  .mm-grid {
-    min-height: calc(100vh - 120px);
-    align-items: start;
-  }
-
-  .mm-sidebar,
-  .mm-chat-shell {
-    background: var(--mm-surface);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
-    border: 1px solid var(--mm-border);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
-  }
-
-  .mm-scroll::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  .mm-scroll::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .mm-scroll::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.18);
-    border-radius: 999px;
-  }
-
-  .mm-scroll::-webkit-scrollbar-thumb:hover {
-    background: rgba(255,255,255,0.28);
-  }
-
-  .chat-history-item {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border-radius: 14px;
-    transition: 0.2s ease;
-  }
-
-  .chat-history-item:hover {
-    background: rgba(255,255,255,0.08);
-  }
-
-  .chat-history-item.active {
-    background: rgba(255,255,255,0.12);
-    border: 1px solid rgba(255,255,255,0.08);
-  }
-
-  .chat-history-open {
-    flex: 1;
-    text-align: left;
-    min-width: 0;
-  }
-
-  .chat-history-title {
-    color: #f8fafc;
-    font-size: 0.95rem;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .chat-history-meta {
-    font-size: 11px;
-    color: rgba(255,255,255,0.55);
-    margin-top: 4px;
-  }
-
-  .chat-history-menu-btn {
-    width: 30px;
-    height: 30px;
-    border-radius: 10px;
-    background: rgba(255,255,255,0.08);
-    color: #f8fafc;
-    border: 1px solid rgba(255,255,255,0.12);
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    flex-shrink: 0;
-  }
-
-  .chat-history-menu {
-    position: absolute;
-    right: 10px;
-    top: 48px;
-    background: #122033;
-    border: 1px solid rgba(255,255,255,0.10);
-    border-radius: 14px;
-    box-shadow: 0 16px 40px rgba(0,0,0,0.35);
-    min-width: 180px;
-    z-index: 50;
-    padding: 6px;
-    display: none;
-  }
-
-  .chat-history-menu.open {
-    display: block;
-  }
-
-  .chat-history-menu button {
-    width: 100%;
-    text-align: left;
-    color: #f8fafc;
-    padding: 9px 10px;
-    border-radius: 10px;
-    font-size: 13px;
-  }
-
-  .chat-history-menu button:hover {
-    background: rgba(255,255,255,0.08);
-  }
-
-  .mm-sidebar-footer {
-    border-top: 1px solid rgba(255,255,255,0.06);
-  }
-
-  .mm-user-avatar {
-    width: 38px;
-    height: 38px;
-    border-radius: 999px;
-    background: rgba(0, 209, 178, 0.18);
-    color: #7ff7e3;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 0.85rem;
-  }
-
-  .chat-history-menu .danger {
-    color: #fca5a5;
-  }
-
-  #chatMessages {
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  .chat-row {
-    display: flex;
-    flex-direction: column;
-    max-width: 85%;
-    width: fit-content;
-  }
-
-  .chat-row-user {
-    align-self: flex-end;
-    align-items: flex-end;
-  }
-
-  .chat-row-bot {
-    align-self: flex-start;
-    align-items: flex-start;
-  }
-
-  .chat-sender {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 12px;
-    line-height: 1;
-    font-weight: 700;
-    color: var(--mm-muted);
-    margin-bottom: 6px;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-  }
-
-  .chat-sender::before {
-    content: "";
-    width: 3px;
-    height: 14px;
-    border-radius: 999px;
-    background: var(--mm-accent);
-  }
-
-  .chat-row-user .chat-sender::before {
-    background: #67e8f9;
-  }
-
-  .chat-bubble {
-    padding: 8px 14px 4px 14px;
-    border-radius: 22px;
-    word-break: break-word;
-    white-space: pre-wrap;
-    border: 1px solid rgba(255,255,255,0.08);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
-    line-height: 1.35;
-  }
-
-  #welcomeMsg .chat-bubble {
-    padding-bottom: 2px;
-  }
-
-
-  .chat-row-bot .chat-bubble {
-    background: rgba(255,255,255,0.05);
-    color: #e5eefc;
-    border-bottom-left-radius: 8px;
-  }
-
-  .chat-row-user .chat-bubble {
-    background: var(--mm-accent);
-    color: var(--mm-user-text);
-    border-color: rgba(0,0,0,0.05);
-    border-bottom-right-radius: 8px;
-  }
-
-  .chat-time {
-    display: block;
-    margin-top: 4px;
-    font-size: 9px;
-    line-height: 1;
-    opacity: 0.72;
-  }
-
-  .chat-row-user .chat-time {
-    text-align: right;
-  }
-
-  .chat-row-bot .chat-time {
-    text-align: left;
-  }
-
-  .chat-typing {
-    align-self: flex-start;
-    max-width: 85%;
-    width: fit-content;
-  }
-
-  .chat-typing .chat-bubble {
-    padding: 14px 18px;
-    min-width: 64px;
-  }
-
-  .chat-typing-dots {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .chat-typing-dots span {
-    width: 7px;
-    height: 7px;
-    border-radius: 999px;
-    background: var(--mm-accent);
-    opacity: 0.8;
-    animation: mmTypingBounce 1.3s ease-in-out infinite both;
-  }
-
-  .chat-typing-dots span:nth-child(2) { animation-delay: 0.16s; }
-  .chat-typing-dots span:nth-child(3) { animation-delay: 0.32s; }
-
-  @keyframes mmTypingBounce {
-    0%, 80%, 100% { transform: scale(0.65); opacity: 0.45; }
-    40% { transform: scale(1); opacity: 1; }
-  }
-
-  .chat-video {
-    width: 240px;
-    max-width: 100%;
-    border-radius: 14px;
-    display: block;
-  }
-
-  .chat-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 10px;
-    flex-wrap: wrap;
-  }
-
-  .chat-btn {
-    border: 1px solid rgba(255,255,255,0.10);
-    background: rgba(255,255,255,0.08);
-    color: #f8fafc;
-    padding: 8px 12px;
-    border-radius: 10px;
-    font-size: 12px;
-    line-height: 1;
-    cursor: pointer;
-    transition: 0.2s ease;
-  }
-
-  .chat-btn:hover {
-    background: rgba(255,255,255,0.14);
-  }
-
-  .recommendation-card {
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.08);
-    color: #e5eefc;
-    padding: 12px 14px;
-    border-radius: 16px;
-  }
-
-  .recommendation-card.urgent {
-    border-color: rgba(252, 165, 165, 0.35);
-  }
-
-  /* desktop: mostly fixed layout, but page still scrolls a little for footer */
-  .mm-sidebar {
-    height: calc(100vh - 190px);
-    min-height: 560px;
-    max-height: 760px;
-    margin-top: 40px;
-  }
-
-  .mm-chat-shell {
-    height: calc(100vh - 190px);
-    min-height: 560px;
-    max-height: 760px;
-  }
-
-  @media (max-width: 1023px) {
-    .mm-shell {
-      padding-bottom: 40px;
-    }
-
-    .mm-grid {
-      min-height: auto;
-    }
-
-    .mm-sidebar,
-    .mm-chat-shell {
-      height: auto;
-      min-height: auto;
-      max-height: none;
-    }
-
-    .mm-sidebar {
-      margin-top: 0;
-    }
-
-    html, body {
-      overflow-y: auto;
-    }
-  }
-
-  @media (max-width: 640px) {
-    .chat-row,
-    .chat-typing {
-      max-width: 100%;
-    }
-  }
-</style>
 
 <div class="mm-shell bg-[#050b1a] relative overflow-visible">
   <div class="absolute top-0 left-1/4 w-[420px] h-[420px] bg-[#00d1b2]/10 rounded-full blur-[120px]"></div>
   <div class="absolute bottom-0 right-1/4 w-[420px] h-[420px] bg-cyan-500/10 rounded-full blur-[120px]"></div>
 
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 relative z-10">
-    <div class="grid mm-grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] gap-8">
+  <div class="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="grid mm-grid grid-cols-1 md:grid-cols-[250px_minmax(0,1fr)] lg:grid-cols-[250px_minmax(0,1fr)_280px] gap-6">
 
       <!-- Sidebar -->
       <aside class="mm-sidebar rounded-[2.2rem] flex flex-col overflow-hidden min-h-0">
@@ -407,7 +22,7 @@
           <button
             type="button"
             id="newChatBtn"
-            class="w-full py-4 rounded-2xl bg-[#00d1b2] text-[#03120f] font-extrabold uppercase tracking-wide hover:bg-[#00b39a] transition"
+            class="w-full py-4 rounded-2xl bg-[#00d1b2] text-[#03120f] font-extrabold uppercase tracking-wide hover:bg-[#00b39a] transition animate-pulse-subtle"
           >
             + New Session
           </button>
@@ -471,6 +86,38 @@
                 <span class="chat-time" id="welcomeTime"></span>
               </div>
             </div>
+
+            <!-- Empty State Suggestions Grid -->
+            <div id="empty-state-prompts" class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+              <button type="button" onclick="applyPromptTemplate('Can you guide me through a 4-7-8 breathing exercise to calm down?')" class="p-5 text-left rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all flex flex-col justify-between h-32 group">
+                <div class="text-xl">🌬️</div>
+                <div>
+                  <h4 class="text-sm font-bold text-white group-hover:text-[#00d1b2] transition">4-7-8 Breathing</h4>
+                  <p class="text-xs text-white/55 mt-1">Guide me through a breathing exercise to calm down</p>
+                </div>
+              </button>
+              <button type="button" onclick="applyPromptTemplate('Let\'s do the 5-4-3-2-1 grounding exercise for stress.')" class="p-5 text-left rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all flex flex-col justify-between h-32 group">
+                <div class="text-xl">🛑</div>
+                <div>
+                  <h4 class="text-sm font-bold text-white group-hover:text-[#00d1b2] transition">Grounding Exercise</h4>
+                  <p class="text-xs text-white/55 mt-1">Let's do the 5-4-3-2-1 grounding exercise for stress</p>
+                </div>
+              </button>
+              <button type="button" onclick="applyPromptTemplate('I have a negative thought: \'I\'ll fail this.\' Can we reframe it?')" class="p-5 text-left rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all flex flex-col justify-between h-32 group">
+                <div class="text-xl">💭</div>
+                <div>
+                  <h4 class="text-sm font-bold text-white group-hover:text-[#00d1b2] transition">Reframe Thought</h4>
+                  <p class="text-xs text-white/55 mt-1">Help me reframe a negative thought step-by-step</p>
+                </div>
+              </button>
+              <button type="button" onclick="applyPromptTemplate('Help me design a peaceful evening routine for better sleep.')" class="p-5 text-left rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all flex flex-col justify-between h-32 group">
+                <div class="text-xl">😴</div>
+                <div>
+                  <h4 class="text-sm font-bold text-white group-hover:text-[#00d1b2] transition">Better Sleep</h4>
+                  <p class="text-xs text-white/55 mt-1">Help me design a peaceful evening routine for sleep</p>
+                </div>
+              </button>
+            </div>
           </div>
 
           <div class="p-5 border-t border-white/5 shrink-0">
@@ -503,15 +150,108 @@
             </form>
 
             <p id="micStatus" class="text-sm text-slate-400 mt-2 hidden">Listening... speak now.</p>
+          </div>
 
-            {% comment %} <p class="text-[10px] text-center text-slate-500 mt-3 uppercase tracking-[0.12em]">
-              AI can make mistakes. In crisis call <span class="text-white">1800-599-0019</span>
-            </p> {% endcomment %}
+          <!-- Subtle version label & security trust elements at bottom of Main Chat panel too -->
+          <div class="px-6 py-2.5 bg-white/[0.01] border-t border-white/5 flex items-center justify-between text-[10px] text-white/40">
+            <span class="flex items-center gap-1">
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              Online AI Support
+            </span>
+            <span>Your data is encrypted & secure</span>
+            <span>v1.0.4</span>
           </div>
         </div>
 
         <div id="recommendations" class="mt-4 hidden"></div>
       </section>
+
+      <!-- Right Panel -->
+      <aside class="mm-right-panel flex flex-col overflow-hidden min-h-0">
+        <div class="p-5 border-b border-white/5 shrink-0">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">🧠</span>
+            <div>
+              <h3 class="text-sm font-bold text-white uppercase tracking-wider">AI Context & Memory</h3>
+              <p class="text-[10px] text-white/40">Active session insights</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-5 space-y-6 mm-scroll">
+          <!-- AI Memory Section -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-semibold text-white/70">AI Memory</span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="memoryToggle" class="sr-only peer" checked>
+                <div class="w-8 h-4 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-[#00d1b2]"></div>
+              </label>
+            </div>
+            <div class="space-y-2 text-xs text-white/55 bg-white/[0.02] border border-white/5 p-3 rounded-xl">
+              <div class="flex items-center gap-2">
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                <span>Language: <span class="text-white/80 font-medium">English</span></span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                <span>Context window: <span id="contextMsgCount" class="text-white/80 font-medium">0 messages</span></span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                <span>Encryption: <span class="text-white/80 font-medium">Enabled (AES-256)</span></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Prompt Templates -->
+          <div class="space-y-3">
+            <span class="text-xs font-semibold text-white/70">Quick Prompts</span>
+            <div class="grid grid-cols-1 gap-2">
+              <button onclick="applyPromptTemplate('Can you guide me through a 4-7-8 breathing exercise to calm down?')" class="w-full text-left p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 text-xs text-white/70 hover:text-white transition-all flex items-center justify-between">
+                <span>🌬️ 4-7-8 Breathing</span>
+                <span class="text-white/30">→</span>
+              </button>
+              <button onclick="applyPromptTemplate('Let\'s do the 5-4-3-2-1 grounding exercise for stress.')" class="w-full text-left p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 text-xs text-white/70 hover:text-white transition-all flex items-center justify-between">
+                <span>🛑 Grounding Exercise</span>
+                <span class="text-white/30">→</span>
+              </button>
+              <button onclick="applyPromptTemplate('I have a negative thought: \'I\'ll fail this.\' Can we reframe it?')" class="w-full text-left p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 text-xs text-white/70 hover:text-white transition-all flex items-center justify-between">
+                <span>💭 Reframe Thought</span>
+                <span class="text-white/30">→</span>
+              </button>
+              <button onclick="applyPromptTemplate('Help me design a peaceful evening routine for better sleep.')" class="w-full text-left p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 text-xs text-white/70 hover:text-white transition-all flex items-center justify-between">
+                <span>😴 Better Sleep</span>
+                <span class="text-white/30">→</span>
+              </button>
+              <button onclick="applyPromptTemplate('I\'m feeling very self-critical today. Can we do a self-compassion exercise?')" class="w-full text-left p-3 rounded-xl bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 text-xs text-white/70 hover:text-white transition-all flex items-center justify-between">
+                <span>💖 Self-Compassion</span>
+                <span class="text-white/30">→</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Trust Elements Footer -->
+        <div class="p-5 border-t border-white/5 bg-white/[0.01] text-[10px] text-white/40 space-y-1.5">
+          <div class="flex items-center justify-between">
+            <span>Status:</span>
+            <span class="text-emerald-400 font-semibold flex items-center gap-1">
+              <span class="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              🟢 Online AI
+            </span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span>Security:</span>
+            <span class="text-white/60 font-semibold">🔒 HIPAA Compliant</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <span>Version:</span>
+            <span>v1.0.4</span>
+          </div>
+        </div>
+      </aside>
+
     </div>
   </div>
 </div>
@@ -519,691 +259,10 @@
 
 {% block scripts %}
 <script>
-(function () {
-  const form = document.getElementById('chatForm');
-  const input = document.getElementById('messageInput');
-  const messages = document.getElementById('chatMessages');
-  const recs = document.getElementById('recommendations');
-  const welcomeMsg = document.getElementById('welcomeMsg');
-  const CHAT_STORE_KEY = 'mindmend_chats_v1';
-
-  let sessionId = '';
-  let currentChatId = '';
-
-  function getTimeString() {
-    const d = new Date();
-    let h = d.getHours();
-    const m = d.getMinutes();
-    const am = h < 12;
-    h = h % 12 || 12;
-    return h + ':' + (m < 10 ? '0' : '') + m + (am ? ' am' : ' pm');
-  }
-
-  function loadChatStore() {
-    try {
-      return JSON.parse(localStorage.getItem(CHAT_STORE_KEY) || '[]');
-    } catch (e) {
-      return [];
-    }
-  }
-
-  function saveChatStore(store) {
-    try {
-      localStorage.setItem(CHAT_STORE_KEY, JSON.stringify(store || []));
-    } catch (e) {
-      console.warn("localStorage is not available", e);
-    }
-  }
-
-  function getBreathingOptIn() {
-    try {
-      return localStorage.getItem('mindmend_breathing_opt_in');
-    } catch (e) {
-      return null;
-    }
-  }
-
-  function setBreathingOptIn(val) {
-    try {
-      localStorage.setItem('mindmend_breathing_opt_in', val);
-    } catch (e) {
-      console.warn("localStorage is not available for breathing opt in", e);
-    }
-  }
-
-  function chatTitleFromText(text) {
-    const t = (text || '').trim();
-    if (!t) return 'New chat';
-    if (t.length <= 28) return t;
-    return t.slice(0, 28) + '...';
-  }
-
-  function renderHistory() {
-    const list = document.getElementById('chatHistory');
-    if (!list) return;
-
-    list.innerHTML = '';
-    const store = loadChatStore();
-
-    if (!store.length) {
-      list.innerHTML = '<div class="text-white/40 text-sm px-2">No chats yet.</div>';
-      return;
-    }
-
-    const sorted = store.slice().sort(function (a, b) {
-      const ap = a.pinned ? 1 : 0;
-      const bp = b.pinned ? 1 : 0;
-      if (ap !== bp) return bp - ap;
-
-      const at = a.updated_at ? new Date(a.updated_at).getTime() : 0;
-      const bt = b.updated_at ? new Date(b.updated_at).getTime() : 0;
-      return bt - at;
-    });
-
-    sorted.forEach(function (chat) {
-      const item = document.createElement('div');
-      item.className = 'chat-history-item' + (chat.id === currentChatId ? ' active' : '');
-
-      const openBtn = document.createElement('button');
-      openBtn.type = 'button';
-      openBtn.className = 'chat-history-open';
-
-      const title = document.createElement('div');
-      title.className = 'chat-history-title';
-      title.textContent = chat.title || 'New chat';
-
-      const meta = document.createElement('div');
-      meta.className = 'chat-history-meta';
-
-      if (chat.updated_at) {
-        const d = new Date(chat.updated_at);
-        meta.textContent = d.toLocaleDateString() + ' • ' + d.toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit'
-        });
-      }
-
-      openBtn.appendChild(title);
-      if (meta.textContent) openBtn.appendChild(meta);
-
-      openBtn.addEventListener('click', function () {
-        openChat(chat.id);
-      });
-
-      const menuBtn = document.createElement('button');
-      menuBtn.type = 'button';
-      menuBtn.className = 'chat-history-menu-btn';
-      menuBtn.textContent = '⋯';
-
-      const menu = document.createElement('div');
-      menu.className = 'chat-history-menu';
-
-      function closeMenus() {
-        document.querySelectorAll('.chat-history-menu.open').forEach(function (el) {
-          el.classList.remove('open');
-        });
-      }
-
-      const shareBtn = document.createElement('button');
-      shareBtn.type = 'button';
-      shareBtn.textContent = 'Share';
-      shareBtn.addEventListener('click', async function (e) {
-        e.stopPropagation();
-        closeMenus();
-
-        const transcript = (chat.messages || []).map(function (m) {
-          return (m.role === 'user' ? 'You: ' : 'MindMend: ') + m.text;
-        }).join('\n');
-
-        const text = (chat.title || 'Chat') + '\n\n' + transcript;
-
-        if (navigator.share) {
-          try {
-            await navigator.share({ title: chat.title || 'Chat', text: text });
-            return;
-          } catch (err) {}
-        }
-
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          try {
-            await navigator.clipboard.writeText(text);
-            alert('Chat copied to clipboard.');
-          } catch (err) {
-            prompt('Copy chat:', text);
-          }
-        } else {
-          prompt('Copy chat:', text);
-        }
-      });
-
-      const renameBtn = document.createElement('button');
-      renameBtn.type = 'button';
-      renameBtn.textContent = 'Rename';
-      renameBtn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        closeMenus();
-
-        const newTitle = prompt('Rename chat', chat.title || 'New chat');
-        if (!newTitle) return;
-
-        const storeNow = loadChatStore();
-        const itemNow = storeNow.find(function (c) { return c.id === chat.id; });
-        if (itemNow) {
-          itemNow.title = newTitle.trim();
-          saveChatStore(storeNow);
-          renderHistory();
-        }
-      });
-
-      const pinBtn = document.createElement('button');
-      pinBtn.type = 'button';
-      pinBtn.textContent = chat.pinned ? 'Unpin chat' : 'Pin chat';
-      pinBtn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        closeMenus();
-
-        const storeNow = loadChatStore();
-        const itemNow = storeNow.find(function (c) { return c.id === chat.id; });
-        if (itemNow) {
-          itemNow.pinned = !itemNow.pinned;
-          saveChatStore(storeNow);
-          renderHistory();
-        }
-      });
-
-      const deleteBtn = document.createElement('button');
-      deleteBtn.type = 'button';
-      deleteBtn.className = 'danger';
-      deleteBtn.textContent = 'Delete';
-      deleteBtn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        closeMenus();
-
-        if (!confirm('Delete this chat?')) return;
-
-        const storeNow = loadChatStore().filter(function (c) { return c.id !== chat.id; });
-        saveChatStore(storeNow);
-
-        if (currentChatId === chat.id) {
-          startNewChat();
-        } else {
-          renderHistory();
-        }
-      });
-
-      menu.appendChild(shareBtn);
-      menu.appendChild(renameBtn);
-      menu.appendChild(pinBtn);
-      menu.appendChild(deleteBtn);
-
-      menuBtn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        if (menu.classList.contains('open')) {
-          menu.classList.remove('open');
-        } else {
-          closeMenus();
-          menu.classList.add('open');
-        }
-      });
-
-      item.appendChild(openBtn);
-      item.appendChild(menuBtn);
-      item.appendChild(menu);
-      list.appendChild(item);
-    });
-  }
-
-  document.addEventListener('click', function () {
-    document.querySelectorAll('.chat-history-menu.open').forEach(function (el) {
-      el.classList.remove('open');
-    });
-  });
-
-  function clearChatUI() {
-    messages.innerHTML = '';
-    if (welcomeMsg) {
-      welcomeMsg.style.display = '';
-      messages.appendChild(welcomeMsg);
-    }
-    recs.innerHTML = '';
-    recs.classList.add('hidden');
-  }
-
-  function openChat(chatId) {
-    const store = loadChatStore();
-    const chat = store.find(function (c) { return c.id === chatId; });
-    if (!chat) return;
-
-    currentChatId = chat.id;
-    sessionId = chat.session_id || '';
-    messages.innerHTML = '';
-
-    if (welcomeMsg) welcomeMsg.style.display = 'none';
-
-    (chat.messages || []).forEach(function (m) {
-      addMsg(m.text, m.role === 'user');
-    });
-
-    renderHistory();
-    messages.scrollTop = messages.scrollHeight;
-  }
-
-  function startNewChat() {
-    currentChatId = 'c' + Math.random().toString(36).slice(2, 10);
-    sessionId = '';
-    clearChatUI();
-    renderHistory();
-  }
-
-  function addMsg(text, isUser) {
-    const row = document.createElement('div');
-    row.className = 'chat-row ' + (isUser ? 'chat-row-user' : 'chat-row-bot');
-
-    const sender = document.createElement('div');
-    sender.className = 'chat-sender';
-    sender.textContent = isUser ? 'You' : 'MindMend';
-
-    const bubble = document.createElement('div');
-    bubble.className = 'chat-bubble';
-    bubble.textContent = text;
-
-    const time = document.createElement('span');
-    time.className = 'chat-time';
-    time.textContent = getTimeString();
-
-    bubble.appendChild(time);
-    row.appendChild(sender);
-    row.appendChild(bubble);
-    messages.appendChild(row);
-    messages.scrollTop = messages.scrollHeight;
-  }
-
-  function addBotMsgWithTyping(text) {
-    return new Promise(function (resolve) {
-      const row = document.createElement('div');
-      row.className = 'chat-row chat-row-bot';
-
-      const sender = document.createElement('div');
-      sender.className = 'chat-sender';
-      sender.textContent = 'MindMend';
-
-      const bubble = document.createElement('div');
-      bubble.className = 'chat-bubble';
-
-      const content = document.createElement('span');
-      const time = document.createElement('span');
-      time.className = 'chat-time';
-
-      bubble.appendChild(content);
-      bubble.appendChild(time);
-      row.appendChild(sender);
-      row.appendChild(bubble);
-      messages.appendChild(row);
-      messages.scrollTop = messages.scrollHeight;
-
-      const fullText = text || '';
-      let index = 0;
-      const step = Math.max(1, Math.ceil(fullText.length / 70));
-
-      const timer = setInterval(function () {
-        index = Math.min(fullText.length, index + step);
-        content.textContent = fullText.slice(0, index);
-        messages.scrollTop = messages.scrollHeight;
-
-        if (index >= fullText.length) {
-          clearInterval(timer);
-          time.textContent = getTimeString();
-          resolve();
-        }
-      }, 18);
-    });
-  }
-
-  function addBreathingVideoBubble() {
-    const row = document.createElement('div');
-    row.className = 'chat-row chat-row-bot';
-
-    const sender = document.createElement('div');
-    sender.className = 'chat-sender';
-    sender.textContent = 'MindMend';
-
-    const bubble = document.createElement('div');
-    bubble.className = 'chat-bubble';
-
-    const video = document.createElement('video');
-    video.className = 'chat-video';
-    video.autoplay = true;
-    video.muted = true;
-    video.loop = true;
-    video.playsInline = true;
-    video.controls = true;
-
-    const source = document.createElement('source');
-    source.src = '/static/videos/breathing.mp4';
-    source.type = 'video/mp4';
-    video.appendChild(source);
-
-    bubble.appendChild(video);
-    row.appendChild(sender);
-    row.appendChild(bubble);
-    messages.appendChild(row);
-    messages.scrollTop = messages.scrollHeight;
-  }
-
-  function addBreathingConsentBubble() {
-    const row = document.createElement('div');
-    row.className = 'chat-row chat-row-bot';
-
-    const sender = document.createElement('div');
-    sender.className = 'chat-sender';
-    sender.textContent = 'MindMend';
-
-    const bubble = document.createElement('div');
-    bubble.className = 'chat-bubble';
-    bubble.textContent = 'Want a short breathing exercise video?';
-
-    const actions = document.createElement('div');
-    actions.className = 'chat-actions';
-
-    const yesBtn = document.createElement('button');
-    yesBtn.type = 'button';
-    yesBtn.className = 'chat-btn';
-    yesBtn.textContent = 'Yes, show it';
-
-    const noBtn = document.createElement('button');
-    noBtn.type = 'button';
-    noBtn.className = 'chat-btn';
-    noBtn.textContent = 'No thanks';
-
-    actions.appendChild(yesBtn);
-    actions.appendChild(noBtn);
-    bubble.appendChild(actions);
-    row.appendChild(sender);
-    row.appendChild(bubble);
-    messages.appendChild(row);
-    messages.scrollTop = messages.scrollHeight;
-
-    yesBtn.addEventListener('click', function () {
-      setBreathingOptIn('yes');
-      row.remove();
-      addBreathingVideoBubble();
-    });
-
-    noBtn.addEventListener('click', function () {
-      setBreathingOptIn('no');
-      row.remove();
-    });
-  }
-
-  function showTyping() {
-    const row = document.createElement('div');
-    row.className = 'chat-row chat-typing';
-    row.id = 'typingIndicator';
-    row.innerHTML =
-      '<div class="chat-sender">MindMend</div>' +
-      '<div class="chat-bubble"><div class="chat-typing-dots"><span></span><span></span><span></span></div></div>';
-
-    messages.appendChild(row);
-    messages.scrollTop = messages.scrollHeight;
-  }
-
-  function hideTyping() {
-    const el = document.getElementById('typingIndicator');
-    if (el) el.remove();
-  }
-
-  (function setWelcomeTime() {
-    const t = document.getElementById('welcomeTime');
-    if (t) t.textContent = getTimeString();
-  })();
-
-  function showRecommendations(items) {
-    recs.innerHTML = '';
-    if (!items || items.length === 0) {
-      recs.classList.add('hidden');
-      return;
-    }
-
-    recs.classList.remove('hidden');
-
-    items.forEach(function (r) {
-      const card = document.createElement('div');
-      card.className = 'recommendation-card' + (r.priority === 'urgent' ? ' urgent' : '');
-      card.innerHTML = '<strong>' + r.title + '</strong><p class="mb-0 mt-1">' + r.content + '</p>';
-      recs.appendChild(card);
-    });
-  }
-
-  function getClientContext() {
-    const now = new Date();
-    let tz = '';
-
-    try {
-      tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
-    } catch (e) {
-      tz = '';
-    }
-
-    return {
-      client_time: now.toISOString(),
-      client_tz_offset: now.getTimezoneOffset(),
-      client_tz: tz
-    };
-  }
-
-  const newChatBtn = document.getElementById('newChatBtn');
-  if (newChatBtn) {
-    newChatBtn.addEventListener('click', function () {
-      startNewChat();
-    });
-  }
-
-  const micBtn = document.getElementById('micBtn');
-  const micStatus = document.getElementById('micStatus');
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  let recognition = null;
-  let isListening = false;
-
-  if (SpeechRecognition) {
-    recognition = new SpeechRecognition();
-    recognition.continuous = false;
-    recognition.interimResults = true;
-    recognition.lang = 'en-IN';
-
-    recognition.onresult = function (e) {
-      const transcript = Array.from(e.results).map(function (r) {
-        return r[0].transcript;
-      }).join('').trim();
-
-      if (transcript) input.value = transcript;
-    };
-
-    recognition.onend = function () {
-      isListening = false;
-      micBtn.classList.remove('bg-red-100', 'border-red-400');
-      micStatus.classList.add('hidden');
-    };
-
-    recognition.onerror = function () {
-      isListening = false;
-      micBtn.classList.remove('bg-red-100', 'border-red-400');
-      micStatus.classList.add('hidden');
-    };
-
-    micBtn.addEventListener('click', function () {
-      if (isListening) {
-        recognition.stop();
-        return;
-      }
-
-      const langEl = document.getElementById('chatLangSelect');
-      recognition.lang = (langEl && langEl.value === 'hi') ? 'hi-IN' : 'en-IN';
-
-      input.focus();
-      recognition.start();
-      isListening = true;
-      micBtn.classList.add('bg-red-100', 'border-red-400');
-      micStatus.classList.remove('hidden');
-      micStatus.textContent = 'Listening... speak now.';
-    });
-  } else {
-    micBtn.style.display = 'none';
-  }
-
-  startNewChat();
-
-  form.addEventListener('submit', async function (e) {
-    e.preventDefault();
-
-    const msg = input.value.trim();
-    if (!msg) return;
-
-    addMsg(msg, true);
-    input.value = '';
-
-    const btn = form.querySelector('button[type="submit"]');
-    if (btn) btn.disabled = true;
-
-    showTyping();
-
-    try {
-      let store = loadChatStore();
-      let current = store.find(function (c) { return c.id === currentChatId; });
-
-      if (!current) {
-        current = {
-          id: currentChatId,
-          title: chatTitleFromText(msg),
-          session_id: sessionId || '',
-          messages: [],
-          updated_at: new Date().toISOString()
-        };
-        store.unshift(current);
-      }
-
-      current.messages = current.messages || [];
-      current.messages.push({ role: 'user', text: msg });
-
-      if (!current.title || current.title === 'New chat') {
-        current.title = chatTitleFromText(msg);
-      }
-
-      current.updated_at = new Date().toISOString();
-      saveChatStore(store);
-      renderHistory();
-
-      const langEl = document.getElementById('chatLangSelect');
-      const langVal = langEl ? langEl.value : 'en';
-
-      const res = await fetch('{% url "chat_api" %}', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(Object.assign({
-          message: msg,
-          session_id: sessionId,
-          lang: langVal
-        }, getClientContext()))
-      });
-
-      const data = await res.json();
-
-      if (data.session_id) {
-        sessionId = data.session_id;
-
-        const storeAfter = loadChatStore();
-        const currentAfter = storeAfter.find(function (c) { return c.id === currentChatId; });
-
-        if (currentAfter) {
-          currentAfter.session_id = sessionId;
-          saveChatStore(storeAfter);
-        }
-      }
-
-      hideTyping();
-      await addBotMsgWithTyping(data.response || data.reply || 'Sorry, something went wrong.');
-
-      if (data.recommendations && data.recommendations.length) {
-        data.recommendations.forEach(function (r) {
-          const row = document.createElement('div');
-          row.className = 'chat-row chat-row-bot';
-
-          const sender = document.createElement('div');
-          sender.className = 'chat-sender';
-          sender.textContent = 'MindMend';
-
-          const bubble = document.createElement('div');
-          bubble.className = 'chat-bubble';
-          bubble.innerHTML = '<strong>' + r.title + '</strong><br>' + (r.content || '');
-
-          row.appendChild(sender);
-          row.appendChild(bubble);
-          messages.appendChild(row);
-        });
-
-        messages.scrollTop = messages.scrollHeight;
-      }
-
-      if (data.recommendations && data.recommendations.some(function (r) { return r.type === 'breathing'; })) {
-        const pref = getBreathingOptIn();
-
-        if (pref === 'yes') {
-          addBreathingVideoBubble();
-        } else if (pref !== 'no') {
-          addBreathingConsentBubble();
-        }
-      }
-
-      showRecommendations([]);
-
-      const storeAfterMsg = loadChatStore();
-      const currentMsg = storeAfterMsg.find(function (c) { return c.id === currentChatId; });
-
-      if (currentMsg) {
-        currentMsg.messages = currentMsg.messages || [];
-        currentMsg.messages.push({ role: 'assistant', text: data.response || data.reply || 'Sorry, something went wrong.' });
-        currentMsg.updated_at = new Date().toISOString();
-        saveChatStore(storeAfterMsg);
-      }
-    } catch (err) {
-      hideTyping();
-      await addBotMsgWithTyping("Frontend Diagnostic Error: " + (err.message || err.toString()) + " | Please tell Antigravity what this says.");
-    }
-
-    if (btn) btn.disabled = false;
-  });
-
-  // Live Hindi keyboard transliteration
-  input.addEventListener('keyup', async function(e) {
-    if (e.key === ' ') {
-      const langEl = document.getElementById('chatLangSelect');
-      if (langEl && langEl.value === 'hi') {
-        const cursor = input.selectionStart;
-        const textUpToCursor = input.value.substring(0, cursor);
-        const match = textUpToCursor.match(/([a-zA-Z]+)(\s+)$/);
-        if (match) {
-          const word = match[1];
-          const spaces = match[2];
-          try {
-            const res = await fetch('{% url "transliterate_api" %}', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({text: word, lang: 'hi'})
-            });
-            const data = await res.json();
-            if (data.result) {
-               const startSegment = textUpToCursor.substring(0, textUpToCursor.length - match[0].length);
-               const newSegment = startSegment + data.result + spaces;
-               const endSegment = input.value.substring(cursor);
-               input.value = newSegment + endSegment;
-               input.selectionStart = input.selectionEnd = newSegment.length;
-            }
-          } catch(err) {
-            console.error("Transliteration failed", err);
-          }
-        }
-      }
-    }
-  });
-})();
+  window.MINDMEND_CONFIG = {
+    chatApiUrl: "{% url 'chat_api' %}",
+    transliterateApiUrl: "{% url 'transliterate_api' %}"
+  };
 </script>
+<script src="{% static 'js/chat.js' %}?v=1.0"></script>
 {% endblock %}

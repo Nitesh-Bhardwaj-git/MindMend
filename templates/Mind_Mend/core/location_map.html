@@ -1,8 +1,11 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block content %}
 
+{% block extra_css %}
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+{% endblock %}
+
+{% block content %}
 
 <div class="min-h-screen bg-[#050b1a] overflow-hidden py-6">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)] gap-6 lg:gap-8 lg:h-[calc(100vh-120px)]">
@@ -68,64 +71,14 @@
   </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
 <script>
-// ================= BACKEND DATA =================
-const markers = {{ markers_json|safe }};
-
-// ================= MAP =================
-const map = L.map('map').setView([20.5937, 78.9629], 4);
-
-L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-
-// ================= STORE MARKERS =================
-let leafletMarkers = [];
-
-// ================= ADD USER MARKERS =================
-markers.forEach(m => {
-    if (m.lat && m.lon) {
-
-        const marker = L.marker([m.lat, m.lon]).addTo(map)
-        .bindPopup(`
-            <div class="text-black">
-                <b>${m.label || "User"}</b><br>
-                ${m.user || "Anonymous"}<br>
-                ${m.date || ""}<br>
-                ${m.page || ""}<br>
-                ${m.source === 'browser' ? '📍 GPS' : 'IP'}
-            </div>
-        `);
-
-        leafletMarkers.push({
-            marker: marker,
-            state: m.state
-        });
-    }
-});
-
-// ================= AUTO FIT =================
-if (leafletMarkers.length > 0) {
-    const bounds = L.latLngBounds(
-        leafletMarkers.map(m => m.marker.getLatLng())
-    );
-    map.fitBounds(bounds.pad(0.2));
-}
-
-// ================= FOCUS STATE =================
-function focusState(state) {
-
-    const filtered = leafletMarkers.filter(m => m.state === state);
-
-    if (filtered.length === 0) return;
-
-    const bounds = L.latLngBounds(
-        filtered.map(m => m.marker.getLatLng())
-    );
-
-    map.fitBounds(bounds.pad(0.3));
-}
-
+    window.LOCATION_DATA = {
+        markers: {{ markers_json|safe }}
+    };
 </script>
-
+<script src="{% static 'js/location_map.js' %}?v=1.0"></script>
 {% endblock %}

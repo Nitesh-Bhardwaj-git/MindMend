@@ -50,6 +50,8 @@ class CounsellorSerializer(serializers.ModelSerializer):
             'id', 'name', 'specialization', 'bio',
             'available_days', 'available_time_start', 'available_time_end',
             'is_active', 'avg_rating',
+            'verified_qualification', 'medical_registration', 'relevant_experience',
+            'review_quality', 'years_of_experience', 'consultation_fees_policy',
         ]
 
 

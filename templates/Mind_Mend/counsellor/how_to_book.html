@@ -9,12 +9,6 @@
 
   <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
-    {% comment %} <!-- Back button -->
-    <a href="{% url 'counsellor_booking' %}"
-       class="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-[#00d1b2] transition mb-8 group">
-      <span class="group-hover:-translate-x-1 transition-transform">←</span> Back to Booking
-    </a> {% endcomment %}
-
     <!-- Hero -->
     <div class="text-center mb-14">
       <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#00d1b2]/30 bg-[#00d1b2]/5 text-[#00d1b2] text-[10px] font-bold tracking-[0.2em] mb-4">
@@ -27,8 +21,31 @@
         </span>
       </h1>
       <p class="text-gray-400 text-lg max-w-xl mx-auto">
-        Follow these simple steps to schedule a private, secure session with one of our certified counsellors.
+        Follow these simple steps to schedule a private, secure session with one of our certified counsellors — via text chat, video call, or both.
       </p>
+    </div>
+
+    <!-- Choose Your Path -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-14">
+      <a href="{% url 'counsellor_booking' %}" class="group flex flex-col gap-4 p-7 rounded-[2rem] bg-[#0a1428]/80 backdrop-blur-xl border border-[#00d1b2]/20 hover:border-[#00d1b2]/50 transition-all">
+        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-[#00d1b2] to-[#00b8a5] flex items-center justify-center text-black font-black text-2xl shadow-lg shadow-[#00d1b2]/20">📅</div>
+        <div>
+          <p class="text-[10px] uppercase tracking-[0.2em] text-[#00d1b2] mb-1 font-bold">Standard</p>
+          <h3 class="text-xl font-bold text-white mb-1">Regular Booking</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">Pick a future date and 30-minute slot with any certified counsellor. Best for planned, unhurried sessions.</p>
+        </div>
+        <span class="inline-flex items-center gap-2 text-[#00d1b2] text-sm font-bold">Book Now →</span>
+      </a>
+
+      <a href="{% url 'instant_booking' %}" class="group flex flex-col gap-4 p-7 rounded-[2rem] bg-[#0a1428]/80 backdrop-blur-xl border border-purple-500/20 hover:border-purple-400/50 transition-all">
+        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-black text-2xl shadow-lg shadow-purple-500/20">⚡</div>
+        <div>
+          <p class="text-[10px] uppercase tracking-[0.2em] text-purple-400 mb-1 font-bold">Instant</p>
+          <h3 class="text-xl font-bold text-white mb-1">Instant Booking</h3>
+          <p class="text-gray-400 text-sm leading-relaxed">Connect with an on-duty counsellor today, right now. Higher fees than regular, but no waiting required.</p>
+        </div>
+        <span class="inline-flex items-center gap-2 text-purple-400 text-sm font-bold">Connect Now →</span>
+      </a>
     </div>
 
     <!-- Steps -->
@@ -36,7 +53,7 @@
 
       <!-- Step 1 -->
       <div class="relative flex gap-6 p-7 rounded-[2rem] bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 hover:border-[#00d1b2]/30 transition-all group">
-        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-[#00d1b2] to-[#00b8a5] flex items-center justify-center text-[#050b1a] font-black text-xl shadow-lg shadow-[#00d1b2]/20">
+        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-[#00d1b2] to-[#00b8a5] flex items-center justify-center text-black font-black text-xl shadow-lg shadow-[#00d1b2]/20">
           1
         </div>
         <div class="flex-1 min-w-0">
@@ -44,13 +61,14 @@
           <p class="text-gray-400 leading-relaxed">
             Browse the list of available counsellors on the right side of the booking page. Each card shows their
             <span class="text-white font-medium">specialization</span>,
-            <span class="text-white font-medium">rating</span> and
+            <span class="text-white font-medium">star rating</span>,
+            <span class="text-white font-medium">years of experience</span>, and
             <span class="text-white font-medium">session fee</span>.
-            Select the counsellor that best fits your needs from the dropdown in the form.
+            Click the <span class="text-[#00d1b2] font-medium">→</span> button to view their full profile — verified qualifications, bio, medical registration, and consultation policy.
           </p>
           <div class="mt-4 flex items-center gap-3 px-4 py-3 rounded-xl bg-[#00d1b2]/5 border border-[#00d1b2]/15">
             <span class="text-2xl">💡</span>
-            <p class="text-sm text-[#00d1b2]">Read each counsellor's bio and specialization to find the right match for you.</p>
+            <p class="text-sm text-[#00d1b2]">Read each counsellor's bio and specialization to find the right match for your needs.</p>
           </div>
         </div>
       </div>
@@ -63,26 +81,26 @@
         <div class="flex-1 min-w-0">
           <h2 class="text-xl font-bold text-white mb-2">Pick a Date</h2>
           <p class="text-gray-400 leading-relaxed">
-            Use the date picker to choose a day that falls within the counsellor's
-            <span class="text-white font-medium">available days</span> (shown on their card).
-            Choosing an unavailable day will show an error — the form will tell you which days work.
+            Use the date picker to choose a day within the counsellor's
+            <span class="text-white font-medium">available days</span> (shown on their card — e.g., Mon, Wed, Fri).
+            Choosing an unavailable day will display a validation error with the correct days listed.
           </p>
           <div class="mt-4 flex items-center gap-3 px-4 py-3 rounded-xl bg-purple-500/5 border border-purple-500/15">
             <span class="text-2xl">📅</span>
-            <p class="text-sm text-purple-300">Always book at least a day in advance so your counsellor has time to prepare.</p>
+            <p class="text-sm text-purple-300">For <strong>Instant Booking</strong>, the date is locked to today — no picker needed. Just select a counsellor who has Instant enabled and go.</p>
           </div>
         </div>
       </div>
 
-      <!-- Step 3 — Time Slot (key feature explanation) -->
+      <!-- Step 3 — Time Slot -->
       <div class="relative flex gap-6 p-7 rounded-[2rem] bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 hover:border-amber-400/30 transition-all group">
-        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-[#050b1a] font-black text-xl shadow-lg shadow-amber-400/20">
+        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-black font-black text-xl shadow-lg shadow-amber-400/20">
           3
         </div>
         <div class="flex-1 min-w-0">
           <h2 class="text-xl font-bold text-white mb-2">Select a Time Slot</h2>
           <p class="text-gray-400 leading-relaxed mb-4">
-            After picking a counsellor and date, the <span class="text-white font-medium">time slot grid</span> will appear,
+            After picking a counsellor and date, the <span class="text-white font-medium">time slot grid</span> appears,
             showing all available 30-minute windows within the counsellor's working hours.
           </p>
 
@@ -130,57 +148,142 @@
             </div>
             <p class="text-xs text-gray-500 mt-3">
               ⏱ Each session is exactly <strong class="text-white">30 minutes</strong>.
-              The strikethrough slot (09:30) is already booked — the next person can book at 10:00.
+              The strikethrough slot (09:30) is already booked — the next available slot is 10:00.
             </p>
           </div>
         </div>
       </div>
 
-      <!-- Step 4 -->
-      <div class="relative flex gap-6 p-7 rounded-[2rem] bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 hover:border-[#00d1b2]/30 transition-all group">
-        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-500/20">
+      <!-- Step 4 — Session Format -->
+      <div class="relative flex gap-6 p-7 rounded-[2rem] bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 hover:border-pink-400/30 transition-all group">
+        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-pink-500/20">
           4
         </div>
         <div class="flex-1 min-w-0">
-          <h2 class="text-xl font-bold text-white mb-2">Add Notes (Optional)</h2>
-          <p class="text-gray-400 leading-relaxed">
-            You can share a brief note with your counsellor — for example, what you'd like to discuss or any
-            concerns you have going in. This is entirely optional but helps your counsellor prepare.
+          <h2 class="text-xl font-bold text-white mb-2">Choose Session Format</h2>
+          <p class="text-gray-400 leading-relaxed mb-4">
+            Select one or both session formats. At least one must be selected to proceed.
           </p>
-        </div>
-      </div>
-
-      <!-- Step 5 -->
-      <div class="relative flex gap-6 p-7 rounded-[2rem] bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 hover:border-[#00d1b2]/30 transition-all group">
-        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-emerald-500/20">
-          5
-        </div>
-        <div class="flex-1 min-w-0">
-          <h2 class="text-xl font-bold text-white mb-2">Confirm & Pay</h2>
-          <p class="text-gray-400 leading-relaxed">
-            Click <span class="text-white font-semibold">Book Appointment</span>. If the counsellor charges a session fee,
-            you'll be taken to the secure Razorpay payment page. After successful payment, your booking is
-            <span class="text-[#00d1b2] font-semibold">Confirmed</span> instantly.
-          </p>
-          <div class="mt-4 flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-500/5 border border-emerald-500/15">
-            <span class="text-2xl">🔒</span>
-            <p class="text-sm text-emerald-400">Payments are 100% secure and processed by Razorpay.</p>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="flex items-start gap-4 px-5 py-4 rounded-2xl bg-[#00d1b2]/5 border border-[#00d1b2]/20">
+              <span class="text-2xl">💬</span>
+              <div>
+                <p class="text-sm font-bold text-white">Chat Session</p>
+                <p class="text-xs text-gray-400 mt-1 leading-relaxed">Live real-time encrypted text messaging with your counsellor — accessible from My Bookings and also inside the video call room simultaneously.</p>
+              </div>
+            </div>
+            <div class="flex items-start gap-4 px-5 py-4 rounded-2xl bg-purple-500/5 border border-purple-500/20">
+              <span class="text-2xl">📹</span>
+              <div>
+                <p class="text-sm font-bold text-white">Video Calling</p>
+                <p class="text-xs text-gray-400 mt-1 leading-relaxed">A private video room with your live camera (picture-in-picture), mic &amp; camera toggle controls, a 30-minute countdown timer, and an integrated chat sidebar.</p>
+              </div>
+            </div>
+          </div>
+          <div class="mt-4 flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10">
+            <span class="text-2xl">💡</span>
+            <p class="text-sm text-gray-300">Each format has its own fee set by the counsellor. Selecting both adds the fees together. The total is shown before you confirm.</p>
           </div>
         </div>
       </div>
 
-      <!-- Step 6 -->
+      <!-- Step 5 — Notes & Anonymous -->
+      <div class="relative flex gap-6 p-7 rounded-[2rem] bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 hover:border-blue-400/30 transition-all group">
+        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-500/20">
+          5
+        </div>
+        <div class="flex-1 min-w-0">
+          <h2 class="text-xl font-bold text-white mb-2">Add Notes &amp; Choose Anonymity</h2>
+          <p class="text-gray-400 leading-relaxed mb-4">
+            Optionally share a brief note with your counsellor (what you'd like to discuss, any concerns going in).
+            You can also check <span class="text-white font-semibold">Keep my identity hidden</span> — if selected, the counsellor sees your booking as <span class="text-[#00d1b2]">"Anonymous Patient"</span> instead of your name or username.
+          </p>
+          <div class="flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-500/5 border border-blue-500/15">
+            <span class="text-2xl">🕶️</span>
+            <p class="text-sm text-blue-300">Anonymity applies to the counsellor's view only. Your booking is still linked to your account for payment and chat.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 6 — Confirm & Pay -->
       <div class="relative flex gap-6 p-7 rounded-[2rem] bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 hover:border-[#00d1b2]/30 transition-all group">
-        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-pink-500/20">
+        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-emerald-500/20">
           6
         </div>
         <div class="flex-1 min-w-0">
-          <h2 class="text-xl font-bold text-white mb-2">Attend Your Session & Chat</h2>
+          <h2 class="text-xl font-bold text-white mb-2">Confirm &amp; Pay</h2>
           <p class="text-gray-400 leading-relaxed">
-            Go to <span class="text-white font-semibold">My Bookings</span> to view your confirmed appointment.
-            Use the <span class="text-[#00d1b2] font-semibold">💬 Chat</span> button to communicate with your counsellor
-            before, during, or after the session. Once the session ends, you can leave a review.
+            Click <span class="text-white font-semibold">Book Appointment</span>. If the session has a fee,
+            you'll be redirected to the secure <span class="text-white font-semibold">Razorpay</span> payment page.
+            After successful payment, your booking is
+            <span class="text-[#00d1b2] font-semibold">Confirmed</span> instantly.
+            Free sessions skip payment and are confirmed immediately.
           </p>
+          <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div class="flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-500/5 border border-emerald-500/15">
+              <span class="text-2xl">🔒</span>
+              <p class="text-sm text-emerald-400">Payments are 100% secure and processed by Razorpay.</p>
+            </div>
+            <div class="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 border border-white/10">
+              <span class="text-2xl">🔔</span>
+              <p class="text-sm text-gray-300">Your counsellor is notified in real time when your booking is confirmed.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 7 — Attend Your Session -->
+      <div class="relative flex gap-6 p-7 rounded-[2rem] bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 hover:border-purple-400/30 transition-all group">
+        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-700 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-violet-500/20">
+          7
+        </div>
+        <div class="flex-1 min-w-0">
+          <h2 class="text-xl font-bold text-white mb-2">Attend Your Session</h2>
+          <p class="text-gray-400 leading-relaxed mb-4">
+            Go to <span class="text-white font-semibold">My Bookings</span> to view your confirmed appointment.
+            From your booking card, you can:
+          </p>
+          <ul class="space-y-3">
+            <li class="flex items-start gap-3 text-sm text-gray-300">
+              <span class="text-[#00d1b2] mt-0.5 text-lg">💬</span>
+              <span>Open the <strong class="text-white">Chat</strong> button to message your counsellor before, during, or after the session. All messages are encrypted end-to-end.</span>
+            </li>
+            <li class="flex items-start gap-3 text-sm text-gray-300">
+              <span class="text-purple-400 mt-0.5 text-lg">📹</span>
+              <span>Click <strong class="text-white">Join Video</strong> (if Video Calling was selected) to enter the private video room with mic/camera controls, a 30-minute timer, and a built-in chat sidebar.</span>
+            </li>
+            <li class="flex items-start gap-3 text-sm text-gray-300">
+              <span class="text-amber-400 mt-0.5 text-lg">⚡</span>
+              <span>For <strong class="text-white">Instant Bookings</strong>, you are redirected to the chat or video room immediately after payment confirmation — no waiting needed.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Step 8 — Complete & Review -->
+      <div class="relative flex gap-6 p-7 rounded-[2rem] bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 hover:border-amber-400/30 transition-all group">
+        <div class="flex-shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center text-black font-black text-xl shadow-lg shadow-amber-400/20">
+          8
+        </div>
+        <div class="flex-1 min-w-0">
+          <h2 class="text-xl font-bold text-white mb-2">Complete &amp; Leave a Review</h2>
+          <p class="text-gray-400 leading-relaxed mb-4">
+            Either you or the counsellor can mark the session as <span class="text-white font-semibold">Completed</span> — or it auto-completes <strong class="text-white">24 hours</strong> after the scheduled time. After completion:
+          </p>
+          <ul class="space-y-3">
+            <li class="flex items-start gap-3 text-sm text-gray-300">
+              <span class="text-amber-400 mt-0.5 text-lg">⭐</span>
+              <span>Leave a <strong class="text-white">1–5 star rating</strong> and a written review to help others choose the right counsellor.</span>
+            </li>
+            <li class="flex items-start gap-3 text-sm text-gray-300">
+              <span class="text-gray-400 mt-0.5 text-lg">🗑️</span>
+              <span>Optionally <strong class="text-white">delete the session record</strong> from My Bookings — this removes the booking and all associated chat history permanently.</span>
+            </li>
+            <li class="flex items-start gap-3 text-sm text-gray-300">
+              <span class="text-[#00d1b2] mt-0.5 text-lg">💾</span>
+              <span>If you <strong class="text-white">don't delete</strong>, the record stays in My Bookings so you can reference the chat history anytime.</span>
+            </li>
+          </ul>
         </div>
       </div>
 
@@ -193,12 +296,22 @@
 
         <details class="group p-6 rounded-2xl bg-[#0a1428]/60 border border-white/10 cursor-pointer hover:border-white/20 transition">
           <summary class="flex items-center justify-between text-white font-semibold select-none list-none">
+            What is the difference between Regular and Instant booking?
+            <span class="text-gray-400 group-open:rotate-180 transition-transform">▾</span>
+          </summary>
+          <p class="mt-4 text-gray-400 leading-relaxed">
+            <strong class="text-white">Regular Booking</strong> lets you schedule a 30-minute session on any future date and available time slot. You choose your counsellor, date, time, and session format at your own pace. <strong class="text-white">Instant Booking</strong> connects you with an on-duty counsellor for today with no date selection — perfect for urgent support. Instant fees are typically higher than regular session fees.
+          </p>
+        </details>
+
+        <details class="group p-6 rounded-2xl bg-[#0a1428]/60 border border-white/10 cursor-pointer hover:border-white/20 transition">
+          <summary class="flex items-center justify-between text-white font-semibold select-none list-none">
             Can I cancel my booking?
             <span class="text-gray-400 group-open:rotate-180 transition-transform">▾</span>
           </summary>
           <p class="mt-4 text-gray-400 leading-relaxed">
-            Yes — as long as you haven't completed payment, you can cancel from the three-dot menu (⋮) on
-            your booking card in <strong class="text-white">My Bookings</strong>. Cancellation frees up the slot for other users.
+            Yes — as long as you haven't completed payment, you can cancel from the cancel option on
+            your booking card in <strong class="text-white">My Bookings</strong>. Cancellation frees up the slot for other users. Unpaid pending bookings are also auto-cleaned after 15 minutes.
           </p>
         </details>
 
@@ -210,6 +323,26 @@
           <p class="mt-4 text-gray-400 leading-relaxed">
             Greyed-out (strikethrough) slots are already booked by another user. Each session lasts
             <strong class="text-white">30 minutes</strong>, so the next available slot is always 30 minutes after the last booked one.
+          </p>
+        </details>
+
+        <details class="group p-6 rounded-2xl bg-[#0a1428]/60 border border-white/10 cursor-pointer hover:border-white/20 transition">
+          <summary class="flex items-center justify-between text-white font-semibold select-none list-none">
+            How do I access the Video Call room?
+            <span class="text-gray-400 group-open:rotate-180 transition-transform">▾</span>
+          </summary>
+          <p class="mt-4 text-gray-400 leading-relaxed">
+            After your booking is confirmed, go to <strong class="text-white">My Bookings</strong> and click <strong class="text-white">Join Video</strong> on your booking card. The video room features: your live camera (picture-in-picture), a simulated counsellor feed, mic/camera toggle controls, a 30-minute countdown timer, and a side chat panel for real-time messaging.
+          </p>
+        </details>
+
+        <details class="group p-6 rounded-2xl bg-[#0a1428]/60 border border-white/10 cursor-pointer hover:border-white/20 transition">
+          <summary class="flex items-center justify-between text-white font-semibold select-none list-none">
+            Can I book a session anonymously?
+            <span class="text-gray-400 group-open:rotate-180 transition-transform">▾</span>
+          </summary>
+          <p class="mt-4 text-gray-400 leading-relaxed">
+            Yes. Check <strong class="text-white">Keep my identity hidden</strong> when booking — the counsellor will see "Anonymous Patient" in their dashboard instead of your name. Your booking remains linked to your account for payment and chat access.
           </p>
         </details>
 
@@ -230,9 +363,19 @@
             <span class="text-gray-400 group-open:rotate-180 transition-transform">▾</span>
           </summary>
           <p class="mt-4 text-gray-400 leading-relaxed">
-            Either you or the counsellor can mark the session as <strong class="text-white">Completed</strong>.
+            Either you or the counsellor can mark the session as <strong class="text-white">Completed</strong>, or it auto-completes 24 hours after the scheduled time.
             After that, you can leave a star review and optionally delete the session record (which removes all chat history).
             If you want to keep the chat, simply don't delete it — it stays visible under My Bookings.
+          </p>
+        </details>
+
+        <details class="group p-6 rounded-2xl bg-[#0a1428]/60 border border-white/10 cursor-pointer hover:border-white/20 transition">
+          <summary class="flex items-center justify-between text-white font-semibold select-none list-none">
+            Will my counsellor be notified when I book or send a message?
+            <span class="text-gray-400 group-open:rotate-180 transition-transform">▾</span>
+          </summary>
+          <p class="mt-4 text-gray-400 leading-relaxed">
+            Yes. Counsellors receive real-time notifications for new bookings, incoming chat messages, and session status changes through their doctor dashboard — delivered instantly via WebSocket when online, and stored persistently so they don't miss anything when offline.
           </p>
         </details>
 
@@ -240,10 +383,14 @@
     </div>
 
     <!-- CTA -->
-    <div class="mt-14 text-center">
+    <div class="mt-14 text-center flex flex-col sm:flex-row items-center justify-center gap-4">
       <a href="{% url 'counsellor_booking' %}"
-         class="inline-flex items-center gap-3 px-10 py-4 rounded-2xl bg-gradient-to-r from-[#00d1b2] to-[#00b8a5] text-[#050b1a] font-extrabold text-sm uppercase tracking-widest hover:scale-105 transition-transform">
-        📅 Book a Session Now →
+         class="inline-flex items-center gap-3 px-10 py-4 rounded-2xl bg-gradient-to-r from-[#00d1b2] to-[#00b8a5] text-black font-extrabold text-sm uppercase tracking-widest hover:scale-105 transition-transform">
+        📅 Book a Regular Session →
+      </a>
+      <a href="{% url 'instant_booking' %}"
+         class="inline-flex items-center gap-3 px-10 py-4 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-extrabold text-sm uppercase tracking-widest hover:scale-105 transition-transform shadow-lg shadow-purple-500/20">
+        ⚡ Book Instant Session →
       </a>
     </div>
 

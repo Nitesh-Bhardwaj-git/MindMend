@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.models import User
 from django.contrib.sessions.models import Session
+from django.db.models import Q
 import random
 from django.core.mail import send_mail
 from django.conf import settings
@@ -118,7 +119,7 @@ def login_view(request):
                 enforce_single_device_login(request, user)
                 return redirect(request.GET.get('next', 'home'))
         username = request.POST.get('username', '').strip()
-        username_not_found = username and not User.objects.filter(username=username).exists()
+        username_not_found = username and not User.objects.filter(Q(username=username) | Q(email__iexact=username)).exists()
     else:
         form = AuthenticationForm()
         username_not_found = False
@@ -140,7 +141,7 @@ def doctor_login_view(request):
                 enforce_single_device_login(request, user)
                 return redirect('doctor_dashboard')
         username = request.POST.get('username', '').strip()
-        username_not_found = username and not User.objects.filter(username=username).exists()
+        username_not_found = username and not User.objects.filter(Q(username=username) | Q(email__iexact=username)).exists()
     else:
         form = AuthenticationForm()
         username_not_found = False
@@ -189,7 +190,7 @@ def verify_otp(request):
                 del request.session['pending_otp_expiry']
                 
                 messages.success(request, 'Email verified! Welcome to MindMend.')
-                return redirect('home')
+                return redirect('profile_setup')
             else:
                 messages.error(request, 'Invalid OTP. Please try again.')
         else:
@@ -341,3 +342,56 @@ def user_profile(request):
         form = UserProfileForm(instance=profile, user=request.user)
 
     return render(request, 'Mind_Mend/auth/user_profile.html', {'form': form, 'profile': profile})
+
+
+@login_required
+def profile_setup(request):
+    """Mandatory one-time profile setup — reuses user_profile.html with setup_mode=True."""
+    from ..forms import UserProfileForm
+    from ..models import UserProfile
+
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+    # Already completed — bounce to home
+    if profile.profile_complete:
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = UserProfileForm(request.POST, instance=profile, user=request.user)
+        if form.is_valid():
+            request.user.first_name = form.cleaned_data.get('first_name', '')
+            request.user.last_name  = form.cleaned_data.get('last_name', '')
+            request.user.save()
+            profile = form.save(commit=False)
+            profile.profile_complete = True
+            profile.save()
+            messages.success(request, f'Welcome to MindMend, {request.user.first_name or request.user.username}! Your profile is all set.')
+            return redirect('home')
+    else:
+        form = UserProfileForm(instance=profile, user=request.user)
+
+    return render(request, 'Mind_Mend/auth/user_profile.html', {
+        'form': form,
+        'profile': profile,
+        'setup_mode': True,   # triggers the mandatory banner in user_profile.html
+    })
+
+
+@login_required
+def toggle_identity(request):
+    """AJAX endpoint: flip show_username and return the new state as JSON."""
+    import json
+    from django.http import JsonResponse
+    from ..models import UserProfile
+
+    if request.method != 'POST':
+        return JsonResponse({'error': 'POST required'}, status=405)
+
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    profile.show_username = not profile.show_username
+    profile.save(update_fields=['show_username'])
+
+    return JsonResponse({
+        'show_username': profile.show_username,
+        'display_name': request.user.username if profile.show_username else 'Anonymous',
+    })

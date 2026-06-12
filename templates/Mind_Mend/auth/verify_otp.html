@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Verify OTP - MindMend{% endblock %}
 
@@ -34,7 +35,7 @@
                 </div>
 
                 <button type="submit"
-                    class="w-full py-5 rounded-2xl bg-[#00d1b2] text-[#050b1a] font-extrabold text-base tracking-wider transition-all flex items-center justify-center gap-3 cursor-pointer hover:bg-[#00e6c3] hover:shadow-[0_0_20px_rgba(0,209,178,0.3)] hover:-translate-y-1">
+                    class="w-full py-5 rounded-2xl bg-[#00d1b2] text-black font-extrabold text-base tracking-wider transition-all flex items-center justify-center gap-3 cursor-pointer hover:bg-[#00e6c3] hover:shadow-[0_0_20px_rgba(0,209,178,0.3)] hover:-translate-y-1">
                     Verify Account
                 </button>
             </form>
@@ -50,31 +51,9 @@
     </div>
 </div>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const otpInput = document.getElementById("otp");
-        if(otpInput) {
-            otpInput.focus();
-            otpInput.addEventListener("input", function(e) {
-                // Ensure only digits are entered
-                this.value = this.value.replace(/[^0-9]/g, '');
-            });
-        }
-        
-        let timeLeft = 60;
-        const timerSpan = document.getElementById('resendTimer');
-        const resendLink = document.getElementById('resendLink');
-        
-        const countdown = setInterval(() => {
-            timeLeft--;
-            if (timeLeft <= 0) {
-                clearInterval(countdown);
-                timerSpan.classList.add('hidden');
-                resendLink.classList.remove('hidden');
-            } else {
-                timerSpan.textContent = `Resend OTP (${timeLeft}s)`;
-            }
-        }, 1000);
-    });
-</script>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/verify_otp.js' %}?v=1.0"></script>
 {% endblock %}

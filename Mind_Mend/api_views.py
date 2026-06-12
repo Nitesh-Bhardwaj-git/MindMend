@@ -288,8 +288,8 @@ def api_assessment_submit(request):
     else:  # pss
         raw = [answers.get(f'q{i}', 0) for i in range(len(PSS_QUESTIONS))]
         result_level = get_pss_result(raw)
-        total = sum((4 - a) if (i + 1) in PSS_REVERSE_ITEMS else a for i, a in enumerate(raw))
-        max_score = 40
+        total = sum((3 - a) if (i + 1) in PSS_REVERSE_ITEMS else a for i, a in enumerate(raw))
+        max_score = 30
 
     result = AssessmentResult.objects.create(
         user=request.user,

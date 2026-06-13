@@ -58,7 +58,8 @@
 
     <!-- ================= NAVBAR ================= -->
     <header class="glass-navbar fixed top-0 left-0 right-0 z-[9999] px-2 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4">
-        <nav class="max-w-7xl mx-auto rounded-full px-3 sm:px-4 md:px-6 lg:px-8 py-2.5 sm:py-3 md:py-4 flex items-center justify-between bg-[#0a1428] border border-white/5 shadow-xl">
+        <nav
+            class="max-w-7xl mx-auto rounded-full px-3 sm:px-4 md:px-6 lg:px-8 py-2.5 sm:py-3 md:py-4 flex items-center justify-between bg-[#0a1428] border border-white/5 shadow-xl">
 
             <!-- LOGO -->
             <a href="{% url 'home' %}" class="flex items-center gap-3">
@@ -219,22 +220,24 @@
         </div>
     </header>
 
+    <!-- ================= FIXED BACK BUTTON ================= -->
+    {% block show_back_button %}
+    <a href="#" onclick="history.back(); return false;"
+        class="fixed top-[7.5rem] left-5 z-[9998] inline-flex items-center justify-center w-10 h-10 rounded-full bg-[#0a1428]/80 border border-[#00d1b2]/30 text-[#00d1b2] hover:text-[#7ef5df] hover:border-[#00d1b2]/70 hover:bg-[#00d1b2]/10 backdrop-blur-md shadow-lg transition-all duration-200 hover:scale-110 group"
+        aria-label="Go back">
+        <svg class="w-5 h-5 drop-shadow-[0_0_6px_rgba(0,209,178,0.7)] group-hover:drop-shadow-[0_0_12px_rgba(0,209,178,0.9)] transition-all duration-200"
+             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                  d="M15 19l-7-7 7-7" />
+        </svg>
+    </a>
+    {% endblock %}
+
     <!-- ================= MAIN CONTENT ================= -->
     <main class="flex-1 pb-8 pt-0 sm:pt-4">
-        {% block show_back_button %}
-        <a href="#" onclick="history.back(); return false;"
-        class="ml-6 inline-flex items-center text-[#00d1b2] hover:text-[#7ef5df] transition hover:scale-110"
-        aria-label="Go back">
-    <svg class="w-7 h-7 drop-shadow-[0_0_8px_rgba(0,209,178,0.7)]"
-         fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3.5"
-              d="M15 19l-7-7 7-7" />
-                </svg>
-            </a>
-        </div>
-        {% endblock %}
 
-        {% if messages %}                   
+
+        {% if messages %}
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4" id="toast-container">
             {% for message in messages %}
             <div class="toast-msg rounded-xl p-4 mb-3 flex items-center justify-between border transition-all duration-500 opacity-100

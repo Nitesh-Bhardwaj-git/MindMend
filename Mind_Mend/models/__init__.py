@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
@@ -163,12 +164,12 @@ class CounsellorBooking(models.Model):
             if self.include_chat:
                 self.chat_fee = self.counsellor.instant_session_fee if self.is_instant else self.counsellor.session_fee
             else:
-                self.chat_fee = 0.00
+                self.chat_fee = Decimal('0.00')
             
             if self.include_video:
                 self.video_fee = self.counsellor.instant_video_session_fee if self.is_instant else self.counsellor.video_session_fee
             else:
-                self.video_fee = 0.00
+                self.video_fee = Decimal('0.00')
             
             self.total_fee = self.chat_fee + self.video_fee
         super().save(*args, **kwargs)

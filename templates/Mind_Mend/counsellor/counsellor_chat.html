@@ -6,16 +6,21 @@
 
 <div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-4 md:pt-6 pb-8">
 
-  <!-- Background Glow -->
-  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse pointer-events-none"></div>
+  {% include 'Mind_Mend/partials/_bg_glows.html' %}
 
-  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
     <!-- Top Bar -->
     <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
       <div>
         <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#00d1b2]/30 bg-[#00d1b2]/5 text-[#00d1b2] text-[10px] font-bold tracking-[0.2em] mb-4">
-          💬 LIVE SESSION
+          {% if session_state == 'early' %}
+            ⏳ UPCOMING SESSION
+          {% elif session_state == 'active' %}
+            💬 LIVE SESSION
+          {% else %}
+            🔒 SESSION ENDED
+          {% endif %}
         </div>
 
         <h1 class="text-3xl md:text-4xl font-bold text-white">Secure Counsellor Chat</h1>
@@ -26,7 +31,7 @@
         </p>
       </div>
 
-      <div class="flex flex-wrap items-center gap-3">
+      <div class="flex flex-col items-start lg:items-end gap-3">
         {% if booking.status == 'completed' %}
         <div class="inline-flex items-center px-4 py-2 rounded-full bg-white/10 text-white text-sm font-medium border border-white/10">
           Session Completed
@@ -44,68 +49,244 @@
           ← My Bookings
         </a>
         {% endif %}
+
+        {% if session_state == 'active' and booking.status != 'completed' and booking.status != 'cancelled' %}
+        <form method="post" action="{% url 'finish_session' booking.id %}" onsubmit="return confirm('Finish this session now? This will disable chat and mark it as completed.');">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{% url 'counsellor_chat' booking.id %}">
+          <button type="submit"
+                  class="px-5 py-3 rounded-xl bg-white/10 text-white hover:bg-red-500 hover:text-white transition font-medium border border-white/10">
+            Finish Session
+          </button>
+        </form>
+        {% endif %}
       </div>
     </div>
 
-    {% if booking.status != 'completed' and booking.status != 'cancelled' %}
-    <div class="mb-6">
-      <form method="post" action="{% url 'finish_session' booking.id %}" onsubmit="return confirm('Finish this session now? This will disable chat and mark it as completed.');">
-        {% csrf_token %}
-        <input type="hidden" name="next" value="{% url 'counsellor_chat' booking.id %}">
-        <button type="submit"
-                class="px-5 py-3 rounded-xl bg-white/10 text-white hover:bg-red-500 hover:text-white transition font-medium border border-white/10">
-          Finish Session
-        </button>
-      </form>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- STATE 1: TOO EARLY — Show countdown                 -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    {% if session_state == 'early' %}
+    <div class="bg-[#0a1428]/70 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-[#00d1b2]/20 overflow-hidden">
+      <div class="flex flex-col items-center justify-center py-20 px-6 text-center gap-6">
+
+        <!-- Pulsing clock icon -->
+        <div class="relative">
+          <div class="absolute inset-0 rounded-full bg-[#00d1b2]/10 scale-150 animate-ping"></div>
+          <div class="relative h-24 w-24 rounded-full bg-[#00d1b2]/10 border border-[#00d1b2]/30 flex items-center justify-center text-5xl z-10">
+            ⏳
+          </div>
+        </div>
+
+        <div>
+          <h2 class="text-2xl md:text-3xl font-bold text-white mb-2">Session Hasn't Started Yet</h2>
+          <p class="text-gray-400 text-sm max-w-md mx-auto">
+            Your chat session with <strong class="text-white">{{ booking.counsellor.name }}</strong>
+            is scheduled for <strong class="text-[#00d1b2]">{{ booking.date|date:"l, M d, Y" }}</strong>
+            at <strong class="text-[#00d1b2]">{{ booking.time_slot|time:"H:i" }}</strong>.
+            The chat will unlock automatically when your session begins.
+          </p>
+        </div>
+
+        <!-- Countdown display -->
+        <div class="flex items-center gap-4 mt-2" id="countdownWrapper">
+          <div class="flex flex-col items-center bg-white/5 border border-white/10 rounded-2xl px-6 py-4 min-w-[80px]">
+            <span id="cdDays" class="text-3xl font-black font-mono text-white">00</span>
+            <span class="text-[10px] uppercase tracking-widest text-gray-500 mt-1">Days</span>
+          </div>
+          <span class="text-2xl text-gray-500 font-bold">:</span>
+          <div class="flex flex-col items-center bg-white/5 border border-white/10 rounded-2xl px-6 py-4 min-w-[80px]">
+            <span id="cdHours" class="text-3xl font-black font-mono text-white">00</span>
+            <span class="text-[10px] uppercase tracking-widest text-gray-500 mt-1">Hours</span>
+          </div>
+          <span class="text-2xl text-gray-500 font-bold">:</span>
+          <div class="flex flex-col items-center bg-white/5 border border-white/10 rounded-2xl px-6 py-4 min-w-[80px]">
+            <span id="cdMins" class="text-3xl font-black font-mono text-[#00d1b2]">00</span>
+            <span class="text-[10px] uppercase tracking-widest text-gray-500 mt-1">Mins</span>
+          </div>
+          <span class="text-2xl text-gray-500 font-bold">:</span>
+          <div class="flex flex-col items-center bg-white/5 border border-white/10 rounded-2xl px-6 py-4 min-w-[80px]">
+            <span id="cdSecs" class="text-3xl font-black font-mono text-[#00d1b2]">00</span>
+            <span class="text-[10px] uppercase tracking-widest text-gray-500 mt-1">Secs</span>
+          </div>
+        </div>
+
+        <p class="text-xs text-gray-600 mt-2">The page will refresh automatically when the session starts.</p>
+      </div>
     </div>
-    {% endif %}
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- STATE 2: SESSION EXPIRED / COMPLETED                -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    {% elif session_state == 'expired' %}
+    <div class="bg-[#0a1428]/70 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-white/10 overflow-hidden">
+      <div class="flex flex-col items-center justify-center py-20 px-6 text-center gap-5">
+        <div class="h-20 w-20 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-4xl">
+          🔒
+        </div>
+        <div>
+          <h2 class="text-2xl font-bold text-white mb-2">Session Has Ended</h2>
+          <p class="text-gray-400 text-sm max-w-md mx-auto">
+            {% if booking.status == 'completed' %}
+              This session has been marked as <strong class="text-white">completed</strong>. The chat is now closed.
+            {% elif booking.status == 'cancelled' %}
+              This session was <strong class="text-red-400">cancelled</strong>.
+            {% else %}
+              The 30-minute session window for <strong class="text-white">{{ booking.date|date:"M d, Y" }}</strong>
+              at <strong class="text-white">{{ booking.time_slot|time:"H:i" }}</strong> has passed.
+            {% endif %}
+          </p>
+        </div>
+        <!-- Message history is still visible below -->
+        {% if chat_messages %}
+        <div class="w-full max-w-2xl mt-4 bg-white/5 border border-white/10 rounded-2xl p-5">
+          <p class="text-xs text-gray-500 uppercase tracking-widest mb-4 font-semibold">Session History</p>
+          <div class="space-y-3 max-h-80 overflow-y-auto pr-1">
+            {% for m in chat_messages %}
+            {% if m.sender_id == request.user.id %}
+            <div class="flex justify-end">
+              <div class="max-w-[80%] rounded-2xl px-3 py-2 bg-[#00d1b2]/20 text-white border border-[#00d1b2]/20">
+                <p class="whitespace-pre-wrap break-words text-sm">{{ m.content }}</p>
+                <p class="text-[10px] opacity-50 mt-1 text-right">{{ m.created_at|date:"g:i A" }}</p>
+              </div>
+            </div>
+            {% else %}
+            <div class="flex justify-start">
+              <div class="max-w-[80%] rounded-2xl px-3 py-2 bg-white/5 text-white border border-white/10">
+                <p class="text-xs font-bold mb-0.5 text-[#00d1b2]/70">
+                  {% if m.sender_id == booking.counsellor.user_id %}{{ booking.counsellor.name }}{% else %}{{ m.sender_label }}{% endif %}
+                </p>
+                <p class="whitespace-pre-wrap break-words text-sm">{{ m.content }}</p>
+                <p class="text-[10px] opacity-50 mt-1 text-right">{{ m.created_at|date:"g:i A" }}</p>
+              </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- STATE 3: SESSION ACTIVE — Full Chat UI              -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    {% else %}
+
+    <!-- Live Session Timer Strip -->
+    <div class="mb-4 flex items-center justify-between px-5 py-3 bg-[#00d1b2]/10 border border-[#00d1b2]/20 rounded-2xl">
+      <div class="flex items-center gap-2">
+        <span class="h-2 w-2 rounded-full bg-[#00d1b2] animate-ping"></span>
+        <span class="text-sm font-semibold text-[#00d1b2]">Session Live</span>
+      </div>
+      <div class="flex items-center gap-2 text-sm text-gray-400">
+        <span>Time remaining:</span>
+        <span id="sessionTimer" class="font-mono font-bold text-white text-base">--:--</span>
+      </div>
+    </div>
 
     <!-- Chat Card -->
     <div class="bg-[#0a1428]/70 backdrop-blur-xl rounded-[2rem] shadow-2xl border border-white/10 overflow-hidden flex flex-col min-h-[520px]">
 
       <!-- Chat Header -->
-      <div class="border-b border-white/10 px-6 py-5 bg-[#0a1428]/80 flex items-center justify-between gap-4">
+      <div class="border-b border-white/10 px-5 py-4 bg-[#0a1428]/80 flex items-center justify-between gap-4">
         <div class="flex items-center gap-4 min-w-0">
           <div class="h-12 w-12 rounded-2xl bg-[#00d1b2]/10 flex items-center justify-center text-[#00d1b2] text-xl shrink-0">
             🧠
           </div>
           <div class="min-w-0">
             <h2 class="text-white font-semibold truncate">{{ booking.counsellor.name }}</h2>
-            <p class="text-sm text-gray-400">
-              {% if booking.status == 'completed' %}
-                Session closed
-              {% elif booking.status == 'cancelled' %}
-                Session cancelled
-              {% else %}
-                Messages are delivered in real time
-              {% endif %}
-            </p>
+            <p class="text-sm text-gray-400">Messages are delivered in real time</p>
           </div>
         </div>
-
-        <div class="text-xs uppercase tracking-[0.2em] text-gray-500 hidden sm:block">
-          Secure Chat
+        <div class="flex items-center gap-3">
+          {% if total_sessions > 1 %}
+          <span class="px-2.5 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-[10px] font-bold uppercase tracking-widest">
+            Session {{ total_sessions }} of {{ total_sessions }}
+          </span>
+          {% endif %}
+          <div class="text-xs uppercase tracking-[0.2em] text-gray-500 hidden sm:block">Secure Chat</div>
         </div>
       </div>
 
       <!-- Messages -->
-      <div id="chatMessages" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 max-h-[420px]">
+      <div id="chatMessages" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 max-h-[440px]">
+
+        {% if total_sessions > 1 %}
+        <!-- History info banner -->
+        <div class="flex items-center gap-2 py-2 px-4 rounded-2xl bg-purple-500/5 border border-purple-500/15 mb-2">
+          <span class="text-purple-400 text-sm">🕘</span>
+          <p class="text-[11px] text-purple-300/70">
+            Continuing from <strong>{{ total_sessions|add:"-1" }} previous session{% if total_sessions > 2 %}s{% endif %}</strong> with {{ booking.counsellor.name }}. Full history shown below.
+          </p>
+        </div>
+        {% endif %}
+
+        {% now "Y-m-d" as today_str %}
         {% for m in chat_messages %}
-        <div class="flex {% if m.sender_id == request.user.id %}justify-end{% else %}justify-start{% endif %}" data-message-id="{{ m.id }}">
-          <div class="max-w-full sm:max-w-[85%] lg:max-w-[75%] rounded-3xl px-4 py-3 shadow-lg
-                      {% if m.sender_id == request.user.id %}
-                        bg-[#00d1b2] text-[#04111d]
-                      {% else %}
-                        bg-white/5 text-white border border-white/10
-                      {% endif %}">
-            <p class="text-xs opacity-75 mb-1">
-              {{ m.sender_label }}
-              {% if m.sender_id == booking.counsellor.user_id %} (Counsellor){% else %} (Patient){% endif %}
-            </p>
-            <p class="whitespace-pre-wrap break-words text-sm sm:text-base">{{ m.content }}</p>
-            <p class="text-[11px] opacity-70 mt-2">{{ m.created_at|date:"M d, H:i" }}</p>
+
+        {% if m.is_new_session %}
+        <!-- Session boundary divider -->
+        <div class="flex flex-col items-center gap-1 my-4">
+          <div class="flex items-center gap-3 w-full">
+            <div class="flex-1 h-px {% if m.is_current_session %}bg-[#00d1b2]/30{% else %}bg-white/10{% endif %}"></div>
+            <span class="px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest shrink-0
+              {% if m.is_current_session %}
+                bg-[#00d1b2]/10 border border-[#00d1b2]/30 text-[#00d1b2]
+              {% else %}
+                bg-white/5 border border-white/10 text-gray-400
+              {% endif %}">
+              {% if m.is_current_session %}
+                💬 Current Session · {{ m.session_date|date:"M d, Y" }} at {{ m.session_time|time:"H:i" }}
+              {% else %}
+                🕘 Session {{ m.session_number }} · {{ m.session_date|date:"M d, Y" }} at {{ m.session_time|time:"H:i" }}
+              {% endif %}
+            </span>
+            <div class="flex-1 h-px {% if m.is_current_session %}bg-[#00d1b2]/30{% else %}bg-white/10{% endif %}"></div>
           </div>
         </div>
+        {% endif %}
+
+        {% ifchanged m.created_at|date:"Y-m-d" %}
+        <!-- Date separator -->
+        <div class="flex flex-col items-center gap-0.5 my-2" data-date-label="{{ m.created_at|date:'d M Y' }}">
+          <div class="flex items-center gap-3 w-full">
+            <div class="flex-1 h-px bg-white/10"></div>
+            <span class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] text-white/50 shrink-0">
+              {{ m.created_at|date:"d M Y" }}
+            </span>
+            <div class="flex-1 h-px bg-white/10"></div>
+          </div>
+          {% if m.created_at|date:"Y-m-d" == today_str %}
+          <span class="text-[10px] text-white/30">Today</span>
+          {% endif %}
+        </div>
+        {% endifchanged %}
+
+        {% if m.sender_id == request.user.id %}
+        <!-- Own message: right-aligned -->
+        <div class="flex justify-end" data-message-id="{{ m.id }}">
+          <div class="max-w-full sm:max-w-[85%] lg:max-w-[75%] rounded-2xl px-3 py-2 shadow-lg relative
+            {% if m.is_current_session %}bg-[#00d1b2] text-[#04111d]{% else %}bg-[#00d1b2]/60 text-[#04111d]{% endif %}">
+            <p class="whitespace-pre-wrap break-words text-sm sm:text-base">{{ m.content }}</p>
+            <p class="text-[11px] opacity-60 mt-1 text-right">{{ m.created_at|date:"g:i A" }}</p>
+          </div>
+        </div>
+        {% else %}
+        <!-- Other party: left-aligned -->
+        <div class="flex justify-start items-end gap-2" data-message-id="{{ m.id }}">
+          <div class="max-w-full sm:max-w-[85%] lg:max-w-[75%] rounded-2xl px-3 py-2 shadow-lg
+            {% if m.is_current_session %}bg-white/5 text-white border border-white/10{% else %}bg-white/[0.03] text-white/70 border border-white/5{% endif %}">
+            <p class="text-xs font-bold mb-0.5 text-[#00d1b2]/80">
+              {% if m.sender_id == booking.counsellor.user_id %}{{ booking.counsellor.name }}{% else %}{{ m.sender_label }}{% endif %}
+            </p>
+            <p class="whitespace-pre-wrap break-words text-sm sm:text-base">{{ m.content }}</p>
+            <p class="text-[11px] opacity-50 mt-1 text-right">{{ m.created_at|date:"g:i A" }}</p>
+          </div>
+        </div>
+        {% endif %}
+
         {% empty %}
         <p class="text-gray-500 text-center py-12" id="emptyChatState">
           No messages yet. Say hello to start the conversation.
@@ -113,11 +294,6 @@
         {% endfor %}
       </div>
 
-      {% if booking.status == 'completed' or booking.status == 'cancelled' %}
-      <div class="p-4 border-t border-white/10 bg-white/5 text-sm text-gray-300">
-        Chat is disabled because this session is {{ booking.status }}.
-      </div>
-      {% else %}
       <form method="post" class="p-4 sm:p-5 border-t border-white/10 bg-[#0a1428]/80 flex flex-col sm:flex-row gap-3" id="chatForm">
         {% csrf_token %}
         <input type="text"
@@ -131,10 +307,11 @@
           Send
         </button>
       </form>
-      {% endif %}
     </div>
 
-    <p class="text-sm text-gray-500 mt-3">Messages are delivered in real time.</p>
+    <p class="text-sm text-gray-500 mt-3">Messages are delivered in real time. Session ends at {{ session_end|time:"H:i" }}.</p>
+    {% endif %}
+
   </div>
 </div>
 
@@ -149,5 +326,62 @@
         counsellorUserId: {% if booking.counsellor.user_id %}{{ booking.counsellor.user_id }}{% else %}null{% endif %}
     };
 </script>
-<script src="{% static 'js/counsellor_chat.js' %}?v=1.0"></script>
+
+{% if session_state == 'early' %}
+<script>
+(function() {
+    var remaining = {{ seconds_until_start }};
+
+    function pad(n) { return n < 10 ? '0' + n : String(n); }
+
+    function tick() {
+        if (remaining <= 0) {
+            // Reload page so server re-evaluates session state
+            window.location.reload();
+            return;
+        }
+        remaining--;
+        var days  = Math.floor(remaining / 86400);
+        var hours = Math.floor((remaining % 86400) / 3600);
+        var mins  = Math.floor((remaining % 3600) / 60);
+        var secs  = remaining % 60;
+
+        document.getElementById('cdDays').textContent  = pad(days);
+        document.getElementById('cdHours').textContent = pad(hours);
+        document.getElementById('cdMins').textContent  = pad(mins);
+        document.getElementById('cdSecs').textContent  = pad(secs);
+    }
+
+    tick();
+    setInterval(tick, 1000);
+})();
+</script>
+
+{% elif session_state == 'active' %}
+<script>
+(function() {
+    // Remaining seconds in the 30-min session window
+    var sessionEndEpoch = {{ session_end|date:"U" }} * 1000; // ms
+
+    var timerEl = document.getElementById('sessionTimer');
+
+    function tickSession() {
+        var now = Date.now();
+        var diff = Math.max(0, Math.floor((sessionEndEpoch - now) / 1000));
+        var mins = Math.floor(diff / 60);
+        var secs = diff % 60;
+        timerEl.textContent = (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
+
+        if (diff <= 0) {
+            // Reload so server can send user to expired state
+            window.location.reload();
+        }
+    }
+
+    tickSession();
+    setInterval(tickSession, 1000);
+})();
+</script>
+<script src="{% static 'js/counsellor_chat.js' %}?v=1.1"></script>
+{% endif %}
 {% endblock %}

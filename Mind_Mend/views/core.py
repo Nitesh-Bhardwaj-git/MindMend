@@ -183,6 +183,20 @@ def chat_api(request):
     if not message.strip():
         return JsonResponse({'error': 'Empty message'}, status=400)
 
+    # Guest question limit: allow at most 3 questions without an account
+    GUEST_QUESTION_LIMIT = 3
+    if not request.user.is_authenticated:
+        guest_question_count = ChatMessage.objects.filter(
+            session_id=session_id,
+            user__isnull=True,
+            role='user'
+        ).count()
+        if guest_question_count >= GUEST_QUESTION_LIMIT:
+            return JsonResponse(
+                {'error': 'guest_limit_reached', 'limit': GUEST_QUESTION_LIMIT},
+                status=403
+            )
+
     if request.user.is_authenticated:
         recent = list(ChatMessage.objects.filter(user=request.user).order_by('-created_at')[:20])
     else:

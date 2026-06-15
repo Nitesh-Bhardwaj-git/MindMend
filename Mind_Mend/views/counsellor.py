@@ -57,6 +57,32 @@ def _autocomplete_past_bookings():
             booking.save(update_fields=['status'])
 
 
+SESSION_DURATION_MINUTES = 30
+
+
+def _get_session_window(booking):
+    """Return (session_start, session_end) as timezone-aware datetimes for a booking."""
+    naive_start = datetime.combine(booking.date, booking.time_slot)
+    session_start = timezone.make_aware(naive_start) if timezone.is_naive(naive_start) else naive_start
+    session_end = session_start + timedelta(minutes=SESSION_DURATION_MINUTES)
+    return session_start, session_end
+
+
+def _is_session_active(booking):
+    """Return 'early', 'active', or 'expired' based on current time vs booked slot window.
+    'expired' is also returned when booking is completed/cancelled.
+    """
+    if booking.status in ('completed', 'cancelled'):
+        return 'expired'
+    now = timezone.now()
+    session_start, session_end = _get_session_window(booking)
+    if now < session_start:
+        return 'early'
+    if now >= session_end:
+        return 'expired'
+    return 'active'
+
+
 
 @login_required
 def counsellor_booking(request):
@@ -286,22 +312,55 @@ def delete_booking(request, booking_id):
 
 @login_required
 def counsellor_chat(request, booking_id):
-    """Live chat with counsellor for a booking. User or counsellor can access."""
+    """Live chat with counsellor for a booking. User or counsellor can access.
+    Chat is only enabled during the booked 30-minute time slot.
+    All previous sessions between the same user+counsellor pair are shown as history.
+    """
     _autocomplete_past_bookings()
     booking = get_object_or_404(CounsellorBooking, pk=booking_id)
     if not _user_can_access_booking(request.user, booking):
         messages.error(request, 'You do not have access to this chat.')
         return redirect('my_bookings')
-    chat_messages = list(CounsellorChatMessage.objects.filter(
+
+    session_state = _is_session_active(booking)
+    session_start, session_end = _get_session_window(booking)
+    now = timezone.now()
+    seconds_until_start = max(0, int((session_start - now).total_seconds())) if session_state == 'early' else 0
+
+    # Fetch ALL messages between this user+counsellor pair (across all sessions).
+    # Messages are annotated so the template can render session-boundary dividers.
+    raw_messages = list(CounsellorChatMessage.objects.filter(
         booking__user=booking.user,
         booking__counsellor=booking.counsellor
-    ).select_related('sender').order_by('created_at'))
-    for msg in chat_messages:
+    ).select_related('sender', 'booking').order_by('created_at', 'id'))
+
+    # Collect all past bookings for this pair (ordered chronologically) to build session labels.
+    from ..models import CounsellorBooking as _CB
+    past_bookings_qs = _CB.objects.filter(
+        user=booking.user,
+        counsellor=booking.counsellor
+    ).order_by('date', 'time_slot')
+    booking_session_num = {b.id: idx + 1 for idx, b in enumerate(past_bookings_qs)}
+    total_sessions = len(booking_session_num)
+
+    chat_messages = []
+    prev_booking_id = None
+    for msg in raw_messages:
         msg.sender_label = _chat_sender_name(booking, msg.sender)
+        msg.is_current_session = (msg.booking_id == booking.id)
+        # Mark the first message of each new session so the template can draw a divider.
+        msg.is_new_session = (msg.booking_id != prev_booking_id)
+        msg.session_number = booking_session_num.get(msg.booking_id, 1)
+        msg.session_date = msg.booking.date
+        msg.session_time = msg.booking.time_slot
+        prev_booking_id = msg.booking_id
+        chat_messages.append(msg)
+
     if request.method == 'POST':
         content = (request.POST.get('content') or '').strip()
-        if booking.status in ('completed', 'cancelled'):
-            messages.info(request, f'This session is {booking.status}. Chat is disabled.')
+        if session_state != 'active':
+            err = 'Session has not started yet.' if session_state == 'early' else f'This session is {booking.status if booking.status in ("completed", "cancelled") else "over"}. Chat is disabled.'
+            messages.info(request, err)
             return redirect('counsellor_chat', booking_id=booking.pk)
         if content:
             is_first_message = not CounsellorChatMessage.objects.filter(booking=booking).exists()
@@ -316,11 +375,17 @@ def counsellor_chat(request, booking_id):
                     actor=request.user
                 )
         return redirect('counsellor_chat', booking_id=booking.pk)
+
     return render(request, 'Mind_Mend/counsellor/counsellor_chat.html', {
         'booking': booking,
         'chat_messages': chat_messages,
         'chat_locked': booking.status in ('completed', 'cancelled'),
+        'session_state': session_state,
+        'session_start': session_start,
+        'session_end': session_end,
+        'seconds_until_start': seconds_until_start,
         'is_counsellor_view': (booking.counsellor.user_id == request.user.id),
+        'total_sessions': total_sessions,
     })
 
 
@@ -359,7 +424,9 @@ def finish_session(request, booking_id):
 
 @login_required
 def counsellor_video_call(request, booking_id):
-    """Virtual video call room with counsellor for a booking. User or counsellor can access."""
+    """Virtual video call room with counsellor for a booking. User or counsellor can access.
+    Video call is only enabled during the booked 30-minute time slot.
+    """
     _autocomplete_past_bookings()
     booking = get_object_or_404(CounsellorBooking, pk=booking_id)
     if not _user_can_access_booking(request.user, booking):
@@ -372,6 +439,11 @@ def counsellor_video_call(request, booking_id):
         messages.error(request, 'Please complete payment before joining the session.')
         return redirect('checkout_payment', booking_id=booking.id)
 
+    session_state = _is_session_active(booking)
+    session_start, session_end = _get_session_window(booking)
+    now = timezone.now()
+    seconds_until_start = max(0, int((session_start - now).total_seconds())) if session_state == 'early' else 0
+
     chat_messages = list(CounsellorChatMessage.objects.filter(
         booking__user=booking.user,
         booking__counsellor=booking.counsellor
@@ -383,6 +455,10 @@ def counsellor_video_call(request, booking_id):
         'booking': booking,
         'chat_messages': chat_messages,
         'chat_locked': booking.status in ('completed', 'cancelled'),
+        'session_state': session_state,
+        'session_start': session_start,
+        'session_end': session_end,
+        'seconds_until_start': seconds_until_start,
         'is_counsellor_view': (booking.counsellor.user_id == request.user.id),
     })
 
@@ -422,16 +498,51 @@ def doctor_dashboard(request):
     for b in bookings:
         b.review = reviews_by_booking.get(b.id)
         b.has_review = b.review is not None
-    notifications_qs = CounsellorNotification.objects.filter(counsellor=counsellor)
-    
+
+    # Only show booking-level notifications (not chat message events) in the dashboard panel.
+    BOOKING_EVENT_TYPES = ('booking_created', 'booking_status')
+    notifications_qs = CounsellorNotification.objects.filter(
+        counsellor=counsellor,
+        event_type__in=BOOKING_EVENT_TYPES
+    )
+    unread_count = notifications_qs.filter(is_read=False).count()
+
+    # Compute unread message count per booking (messages from patient only, during the session window).
+    booking_ids = [b.id for b in bookings]
+    all_messages = CounsellorChatMessage.objects.filter(
+        booking_id__in=booking_ids
+    ).exclude(sender=counsellor.user).values('booking_id', 'created_at')
+
+    # Group message counts per booking, restricted to the session's 30-min window.
+    from collections import defaultdict
+    msg_counts = defaultdict(int)
+    booking_map = {b.id: b for b in bookings}
+    for msg in all_messages:
+        bk = booking_map.get(msg['booking_id'])
+        if bk is None:
+            continue
+        session_start, session_end = _get_session_window(bk)
+        msg_ts = msg['created_at']
+        # Make message timestamp offset-aware for comparison
+        if timezone.is_naive(msg_ts):
+            msg_ts = timezone.make_aware(msg_ts)
+        if session_start <= msg_ts <= session_end:
+            msg_counts[msg['booking_id']] += 1
+
+    for b in bookings:
+        b.session_message_count = msg_counts.get(b.id, 0)
+
     today_date = timezone.localdate()
-    today_bookings_count = len([b for b in bookings if b.date == today_date])
+    today_bookings = [b for b in bookings if b.date == today_date and b.status not in ('cancelled',)]
+    upcoming_bookings = [b for b in bookings if b.date > today_date and b.status not in ('completed', 'cancelled')]
+    today_bookings_count = len(today_bookings)
+    upcoming_bookings_count = len(upcoming_bookings)
     pending_count = len([b for b in bookings if b.status == 'pending'])
     completed_bookings = [b for b in bookings if b.status == 'completed']
     total_completed_sessions = len(completed_bookings)
     monthly_revenue = sum(
         (b.counsellor.instant_session_fee if b.is_instant else b.counsellor.session_fee)
-        for b in completed_bookings 
+        for b in completed_bookings
         if b.is_paid and b.date.month == today_date.month and b.date.year == today_date.year
     )
 
@@ -439,12 +550,16 @@ def doctor_dashboard(request):
         'counsellor': counsellor,
         'pending_bookings': [b for b in bookings if b.status == 'pending'],
         'bookings': bookings,
+        'today_bookings': today_bookings,
+        'upcoming_bookings': upcoming_bookings,
         'notifications': notifications_qs[:20],
-        'unread_count': notifications_qs.filter(is_read=False).count(),
+        'unread_count': unread_count,
         'today_bookings_count': today_bookings_count,
+        'upcoming_bookings_count': upcoming_bookings_count,
         'pending_count': pending_count,
         'total_completed_sessions': total_completed_sessions,
         'monthly_revenue': monthly_revenue,
+        'today_date': today_date,
     })
 
 
@@ -476,8 +591,12 @@ def doctor_notifications_api(request):
     counsellor = Counsellor.objects.filter(user=request.user).first()
     if not counsellor:
         return JsonResponse({'error': 'Forbidden'}, status=403)
+    BOOKING_EVENT_TYPES = ('booking_created', 'booking_status')
     unread_only = request.GET.get('unread') in ('1', 'true', 'True')
-    qs = CounsellorNotification.objects.filter(counsellor=counsellor)
+    qs = CounsellorNotification.objects.filter(
+        counsellor=counsellor,
+        event_type__in=BOOKING_EVENT_TYPES
+    )
     if unread_only:
         qs = qs.filter(is_read=False)
     notifications = [
@@ -507,11 +626,17 @@ def doctor_notifications_mark_read_api(request):
         ids = payload.get('ids') or []
     except json.JSONDecodeError:
         ids = []
+    BOOKING_EVENT_TYPES = ('booking_created', 'booking_status')
     qs = CounsellorNotification.objects.filter(counsellor=counsellor, is_read=False)
     if ids:
         qs = qs.filter(id__in=ids)
     updated = qs.update(is_read=True)
-    unread_count = CounsellorNotification.objects.filter(counsellor=counsellor, is_read=False).count()
+    # Return unread count for booking-level events only
+    unread_count = CounsellorNotification.objects.filter(
+        counsellor=counsellor,
+        event_type__in=BOOKING_EVENT_TYPES,
+        is_read=False
+    ).count()
     return JsonResponse({'updated': updated, 'unread_count': unread_count})
 
 
@@ -522,8 +647,20 @@ def booking_messages_api(request, booking_id):
     if not _user_can_access_booking(request.user, booking):
         return JsonResponse({'error': 'Forbidden'}, status=403)
     if request.method == 'POST':
-        if booking.status in ('completed', 'cancelled'):
-            return JsonResponse({'error': f'Chat is disabled because this session is {booking.status}.'}, status=409)
+        # Time-window enforcement
+        api_session_state = _is_session_active(booking)
+        if api_session_state == 'early':
+            session_start, _ = _get_session_window(booking)
+            return JsonResponse({
+                'error': 'Session has not started yet.',
+                'session_state': 'early',
+                'session_start': session_start.isoformat(),
+            }, status=425)
+        if api_session_state == 'expired':
+            return JsonResponse({
+                'error': f'Chat is disabled. Session is {booking.status if booking.status in ("completed", "cancelled") else "over"}.',
+                'session_state': 'expired',
+            }, status=423)
         try:
             payload = json.loads(request.body or '{}')
         except json.JSONDecodeError:

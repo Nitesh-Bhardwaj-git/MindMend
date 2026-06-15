@@ -5,8 +5,7 @@
 <div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-4 md:pt-6 pb-20">
 
   <!-- Background Glows -->
-  <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#00d1b2]/10 rounded-full blur-[120px] -z-10 animate-pulse"></div>
-  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] -z-10 animate-pulse delay-1000"></div>
+  {% include 'Mind_Mend/partials/_bg_glows.html' %}
 
   <div class="max-w-6xl mx-auto px-6 space-y-12">
 
@@ -41,10 +40,10 @@
       <div class="bg-[#0a1428]/40 backdrop-blur-sm rounded-[40px] border border-white/5 p-10 space-y-8 group hover:bg-[#0a1428]/60 transition-all">
         <div class="space-y-4">
           <div class="flex items-center justify-between">
-            <span class="px-3 py-1 rounded-full bg-white/5 border border-white/5 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+            <span class="px-2 py-1 rounded-full bg-white/5 border border-white/5 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
               Support Line
             </span>
-            <div class="flex items-center gap-2 text-[10px] font-bold text-gray-600 uppercase tracking-widest">
+            <div class="flex items-center gap-5 text-[10px] font-bold text-gray-600 uppercase tracking-widest">
               🌐 {{ helpline.languages }}
             </div>
           </div>

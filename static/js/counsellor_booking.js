@@ -8,13 +8,86 @@
   const hiddenTime    = document.getElementById('id_time_slot');
   const slotGrid      = document.getElementById('slotGrid');
   const submitBtn     = document.getElementById('submitBtn');
-  const slotHint      = document.getElementById('slotHint');
+  const bookingForm   = document.getElementById('bookingForm');
 
   const includeChat   = document.getElementById('id_include_chat');
   const includeVideo  = document.getElementById('id_include_video');
 
-  let selectedSlot    = hiddenTime ? (hiddenTime.value || '') : '';   // preserve on re-render after error
-  let bookedStartTimes = new Set();               // "HH:MM" strings
+  let selectedSlot    = hiddenTime ? (hiddenTime.value || '') : '';
+  let bookedStartTimes = new Set();
+
+  // ── Inline validation toast ─────────────────────────────────────────────
+  function showValidationError(msg) {
+    // Remove any existing error
+    const existing = document.getElementById('bookingValidationError');
+    if (existing) existing.remove();
+
+    const el = document.createElement('div');
+    el.id = 'bookingValidationError';
+    el.style.cssText = 'animation: fadeInUp .25s ease both;';
+    el.className = [
+      'flex items-start gap-3 mt-4 px-5 py-4 rounded-2xl',
+      'bg-red-500/10 border border-red-500/30 text-red-300 text-sm font-medium',
+    ].join(' ');
+    el.innerHTML = `
+      <span class="text-lg leading-none mt-0.5 shrink-0">⚠️</span>
+      <span>${msg}</span>`;
+
+    // Insert after the submit button's parent div
+    const btnWrap = submitBtn ? submitBtn.parentElement : null;
+    if (btnWrap && btnWrap.parentElement) {
+      btnWrap.parentElement.insertBefore(el, btnWrap.nextSibling);
+    } else if (bookingForm) {
+      bookingForm.appendChild(el);
+    }
+
+    // Auto-dismiss after 4s
+    setTimeout(function () { if (el.parentElement) el.remove(); }, 4000);
+
+    // Scroll into view
+    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function clearValidationError() {
+    const el = document.getElementById('bookingValidationError');
+    if (el) el.remove();
+  }
+
+  // ── Client-side form validation on submit ───────────────────────────────
+  function validateOnSubmit(e) {
+    const isInstant = !slotGrid; // instant booking has no slot grid
+
+    const cId = counsellorSel ? counsellorSel.value : null;
+    const chatChecked  = includeChat  ? includeChat.checked  : false;
+    const videoChecked = includeVideo ? includeVideo.checked : false;
+    const timeChosen   = hiddenTime   ? hiddenTime.value     : '';
+
+    // Build list of problems
+    const errors = [];
+
+    if (!cId) errors.push('Please select a counsellor.');
+    if (!isInstant && !dateSel?.value) errors.push('Please select a date.');
+    if (!isInstant && !timeChosen) errors.push('Please select an available time slot.');
+    if (!chatChecked && !videoChecked) errors.push('Please select at least one session format (Chat or Video).');
+
+    if (errors.length) {
+      e.preventDefault();
+      showValidationError(errors.join('<br>'));
+      return false;
+    }
+
+    clearValidationError();
+    return true;
+  }
+
+  if (bookingForm) {
+    bookingForm.addEventListener('submit', validateOnSubmit);
+  }
+
+  // Clear error when user starts filling the form
+  [counsellorSel, dateSel, includeChat, includeVideo].forEach(function (el) {
+    if (el) el.addEventListener('change', clearValidationError);
+  });
 
   // ── Helpers ────────────────────────────────────────────────────────────
   function getCounsellorData(id) {
@@ -24,6 +97,23 @@
   function timeToMinutes(hhmm) {
     const [h, m] = hhmm.split(':').map(Number);
     return h * 60 + m;
+  }
+
+  function minutesToHHMM(mins) {
+    const h = String(Math.floor(mins / 60)).padStart(2, '0');
+    const m = String(mins % 60).padStart(2, '0');
+    return `${h}:${m}`;
+  }
+
+  function generateSlots(start, end) {
+    const slots = [];
+    let cur = timeToMinutes(start);
+    const endMin = timeToMinutes(end);
+    while (cur + SESSION_MIN <= endMin) {
+      slots.push(minutesToHHMM(cur));
+      cur += SESSION_MIN;
+    }
+    return slots;
   }
 
   // ── Render slot grid ────────────────────────────────────────────────────
@@ -70,18 +160,8 @@
   function selectSlot(slot) {
     selectedSlot = slot;
     if (hiddenTime) hiddenTime.value = slot;
+    clearValidationError();
 
-    // Enable submit
-    if (submitBtn) {
-      submitBtn.disabled = false;
-      submitBtn.title = '';
-    }
-    if (slotHint) {
-      slotHint.textContent = `✅ Selected: ${slot} – ${minutesToHHMM(timeToMinutes(slot) + SESSION_MIN)}`;
-      slotHint.className = 'text-sm text-center text-[#00d1b2] mt-4 tracking-wide font-semibold';
-    }
-
-    // Re-style all buttons
     if (slotGrid) {
       slotGrid.querySelectorAll('button[data-slot]').forEach(btn => {
         applySlotStyle(btn, btn.dataset.slot);
@@ -90,15 +170,10 @@
   }
 
   function deselectSlot(slot) {
-    // Only deselect if this slot is currently selected
     if (selectedSlot !== slot) return;
     selectedSlot = '';
     if (hiddenTime) hiddenTime.value = '';
 
-    // Disable submit & reset hint
-    disableSubmit();
-
-    // Re-style all buttons so the slot loses its highlight
     if (slotGrid) {
       slotGrid.querySelectorAll('button[data-slot]').forEach(btn => {
         applySlotStyle(btn, btn.dataset.slot);
@@ -106,55 +181,16 @@
     }
   }
 
-  function minutesToHHMM(mins) {
-    const h = String(Math.floor(mins / 60)).padStart(2, '0');
-    const m = String(mins % 60).padStart(2, '0');
-    return `${h}:${m}`;
-  }
-
-
-  function generateSlots(start, end) {
-    const slots = [];
-    let cur = timeToMinutes(start);
-    const endMin = timeToMinutes(end);
-    while (cur + SESSION_MIN <= endMin) {
-      slots.push(minutesToHHMM(cur));
-      cur += SESSION_MIN;
-    }
-    return slots;
-  }
-
-  // ── Instant booking button validation (no slot grid needed) ───────────
-  function validateInstantBooking() {
-    if (!submitBtn) return;
-    const cId = counsellorSel ? counsellorSel.value : null;
-    const chatChecked  = includeChat  ? includeChat.checked  : false;
-    const videoChecked = includeVideo ? includeVideo.checked : false;
-    if (cId && (chatChecked || videoChecked)) {
-      submitBtn.disabled = false;
-      submitBtn.title = '';
-    } else {
-      submitBtn.disabled = true;
-      submitBtn.title = cId ? 'Please select at least one session format' : 'Please select a counsellor';
-    }
-  }
-
   // ── Fetch booked slots & rebuild grid ──────────────────────────────────
   function refresh() {
-
-    const cId  = counsellorSel ? counsellorSel.value : null;
-    const date = dateSel ? dateSel.value : null;
+    const cId   = counsellorSel ? counsellorSel.value : null;
+    const date  = dateSel ? dateSel.value : null;
     const cData = getCounsellorData(cId);
 
-    if (!slotGrid) {
-      // Instant booking page — no time slot needed, validate counsellor + format
-      validateInstantBooking();
-      return;
-    }
+    if (!slotGrid) return; // instant booking — no slot grid
 
     if (!cId || !date || !cData) {
       slotGrid.innerHTML = '<p class="text-sm text-gray-500 italic">Select a counsellor and date to see available time slots.</p>';
-      disableSubmit();
       return;
     }
 
@@ -169,12 +205,10 @@
       const allSlots = generateSlots(cData.start, cData.end);
       renderSlots(allSlots);
 
-      // If a slot was previously selected (e.g. after form error), re-validate it
       if (selectedSlot) {
         if (bookedStartTimes.has(selectedSlot) || !allSlots.includes(selectedSlot)) {
           selectedSlot = '';
           if (hiddenTime) hiddenTime.value = '';
-          disableSubmit();
         } else {
           selectSlot(selectedSlot);
         }
@@ -185,43 +219,24 @@
     });
   }
 
-  function disableSubmit() {
-    if (!submitBtn) return;
-    submitBtn.disabled = true;
-    submitBtn.title = 'Please select a time slot first';
-    if (slotHint) {
-      slotHint.textContent = 'Select a time slot above to continue.';
-      slotHint.className = 'text-sm text-center text-gray-500 mt-4 tracking-wide';
-    }
-  }
-
   // ── Events ─────────────────────────────────────────────────────────────
   if (counsellorSel) counsellorSel.addEventListener('change', () => {
     selectedSlot = '';
     if (hiddenTime) hiddenTime.value = '';
-    if (slotGrid) disableSubmit();
     refresh();
   });
+
   if (dateSel) dateSel.addEventListener('change', () => {
     selectedSlot = '';
     if (hiddenTime) hiddenTime.value = '';
-    if (slotGrid) disableSubmit();
     refresh();
   });
 
-  // Instant booking: re-validate when session format checkboxes change
-  if (!slotGrid) {
-    if (includeChat)  includeChat.addEventListener('change',  validateInstantBooking);
-    if (includeVideo) includeVideo.addEventListener('change', validateInstantBooking);
-  }
-
-  // On page load — trigger if values are prefilled
-  if (!slotGrid) {
-    // Instant booking page: validate button state immediately
-    validateInstantBooking();
-  } else if (counsellorSel && counsellorSel.value) {
+  // On page load — trigger slot grid if counsellor + date are prefilled
+  if (slotGrid && counsellorSel && counsellorSel.value) {
     if (dateSel && dateSel.value) {
       refresh();
     }
   }
+
 })();

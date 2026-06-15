@@ -261,8 +261,10 @@
 <script>
   window.MINDMEND_CONFIG = {
     chatApiUrl: "{% url 'chat_api' %}",
-    transliterateApiUrl: "{% url 'transliterate_api' %}"
+    transliterateApiUrl: "{% url 'transliterate_api' %}",
+    isAuthenticated: {% if user.is_authenticated %}true{% else %}false{% endif %}
   };
 </script>
-<script src="{% static 'js/chat.js' %}?v=1.0"></script>
+<script src="{% static 'js/chat.js' %}?v=1.1"></script>
 {% endblock %}
+

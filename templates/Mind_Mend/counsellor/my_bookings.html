@@ -25,11 +25,18 @@
   <div class="grid grid-cols-1 gap-6">
     {% if bookings %}
       {% for b in bookings %}
-        <div class="bg-[#0a1428]/40 backdrop-blur-sm rounded-[32px] border border-white/5 p-8 flex flex-col md:flex-row items-center gap-8 group hover:bg-[#0a1428]/60 transition-all">
+        <div class="bg-[#0a1428]/40 backdrop-blur-sm rounded-[32px] border border-white/5 p-8 flex flex-col md:flex-row items-center gap-8 group hover:bg-[#0a1428]/60 transition-all
+          {% if b.status == 'confirmed' %}border-l-4 border-l-[#00d1b2]{% elif b.status == 'pending' %}border-l-4 border-l-amber-400{% elif b.status == 'completed' %}border-l-4 border-l-gray-600{% elif b.status == 'cancelled' %}border-l-4 border-l-red-500{% endif %}">
 
           <!-- Avatar & Status -->
           <div class="relative">
-            <img src="{{ b.counsellor.avatar }}" alt="{{ b.counsellor.name }}" class="h-20 w-20 rounded-2xl object-cover">
+            {% if b.counsellor.profile_picture %}
+            <img src="{{ b.counsellor.profile_picture.url }}" alt="{{ b.counsellor.name }}" class="h-20 w-20 rounded-2xl object-cover">
+            {% else %}
+            <div class="h-20 w-20 rounded-2xl bg-gradient-to-br from-[#00d1b2]/20 to-purple-500/20 border border-white/10 flex items-center justify-center text-2xl font-black text-white">
+              {{ b.counsellor.name|first|upper }}
+            </div>
+            {% endif %}
             <div class="absolute -bottom-1 -right-1 h-6 w-6 rounded-lg flex items-center justify-center border-2 border-[#0a1428]
                         {% if b.status == 'confirmed' %}bg-[#00d1b2]{% else %}bg-gray-600{% endif %}">
               {% if b.status == 'confirmed' %} ✅ {% else %} ⟳ {% endif %}
@@ -48,8 +55,8 @@
               <span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest
                           {% if b.status == 'confirmed' %}bg-[#00d1b2]/10 text-[#00d1b2] border border-[#00d1b2]/20
                           {% elif b.status == 'completed' %}bg-white/5 text-gray-500 border border-white/10
-                          {% elif b.status == 'pending' %}bg-amber-100 text-amber-800 border border-amber-200
-                          {% else %}bg-red-500/10 text-red-500 border border-red-500/20{% endif %}">
+                          {% elif b.status == 'pending' %}bg-amber-500/10 text-amber-300 border border-amber-500/20
+                          {% else %}bg-red-500/10 text-red-400 border border-red-500/20{% endif %}">
                 {{ b.status|title }}
               </span>
               {% if b.is_instant %}
@@ -134,7 +141,7 @@
               <!-- Dropdown panel (opens upward to avoid overflow) -->
               <div
                 id="menu-{{ b.id }}"
-                class="hidden absolute right-0 bottom-full mb-2 w-52 bg-[#0d1f3c] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
+                class="hidden absolute right-0 bottom-full mb-2 w-52 max-w-[calc(100vw-2rem)] bg-[#0d1f3c] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
               >
                 {% if b.status == 'pending' and not b.is_paid %}
                   <!-- Cancel Session: only before payment is completed -->

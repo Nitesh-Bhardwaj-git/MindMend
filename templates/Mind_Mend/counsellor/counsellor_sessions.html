@@ -1,121 +1,127 @@
 {% extends "base.html" %}
 {% load profile_tags %}
-{% block title %}My Sessions{% endblock %}
+{% block title %}My Sessions — MindMend{% endblock %}
 {% block content %}
 
-<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-4 md:pt-6 pb-20">
+<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-6 pb-20">
 
-  <!-- Background Glow -->
-  <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#00d1b2]/10 rounded-full blur-[120px] animate-pulse pointer-events-none"></div>
-  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse pointer-events-none"></div>
+  {% include 'Mind_Mend/partials/_bg_glows.html' %}
 
-  <div class="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 relative z-10">
+  <div class="max-w-5xl mx-auto px-6 md:px-12 relative z-10 space-y-10">
 
     <!-- HEADER -->
-    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8 mb-14">
-      <div class="max-w-3xl">
-        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#00d1b2]/30 bg-[#00d1b2]/5 text-[#00d1b2] text-[10px] font-bold tracking-[0.2em] mb-6">
-          📅 SESSION MANAGEMENT
-        </div>
-
-        <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">
-          My
-          <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#00d1b2] to-purple-400">
-            Sessions
-          </span>
-        </h1>
-
-        <p class="text-gray-400 text-lg">
-          Bookings with your clients. Open chat to communicate and manage session completion.
-        </p>
-      </div>
-
+    <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-6" data-reveal>
       <div>
-        <a href="{% url 'doctor_dashboard' %}"
-           class="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-[#00d1b2]/10 text-[#00d1b2] border border-[#00d1b2]/20 hover:bg-[#00d1b2] hover:text-[#04111d] transition font-semibold">
-          Doctor Dashboard
-        </a>
+        <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-[#00d1b2] mb-2">SESSION MANAGEMENT</p>
+        <h1 class="text-4xl md:text-5xl font-display font-bold text-white leading-tight">
+          My <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#00d1b2] to-purple-400">Sessions</span>
+        </h1>
+        <p class="text-gray-400 mt-3 max-w-lg">Bookings with your clients. Open chat or video to start, then mark complete when done.</p>
       </div>
+      <a href="{% url 'doctor_dashboard' %}"
+         class="self-start md:self-auto inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-white/5 border border-white/10 text-white text-sm font-bold hover:bg-white/10 active:scale-95 transition-all">
+        ← Doctor Dashboard
+      </a>
     </div>
 
     <!-- SESSIONS LIST -->
-    <div class="space-y-6">
+    <div class="space-y-4">
       {% for b in bookings %}
-      <div class="bg-[#0a1428]/60 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 md:p-8 shadow-2xl hover:border-[#00d1b2]/30 transition">
+      <div class="group bg-[#0a1428]/60 backdrop-blur-xl border border-white/8 rounded-[1.75rem] p-6 md:p-8 shadow-xl hover:border-[#00d1b2]/25 transition-all duration-300
+        {% if b.status == 'confirmed' %}border-l-4 border-l-emerald-400/60
+        {% elif b.status == 'pending' %}border-l-4 border-l-amber-400/60
+        {% elif b.status == 'completed' %}border-l-4 border-l-white/20
+        {% else %}border-l-4 border-l-red-400/60{% endif %}"
+           data-reveal>
+
         <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-6">
 
-          <!-- LEFT -->
-          <div class="flex-1 min-w-0">
-            <div class="flex flex-wrap items-center gap-3 mb-3">
-              <h3 class="text-2xl font-bold text-white">{{ b.patient_display_name }}</h3>
+          <!-- LEFT INFO -->
+          <div class="flex-1 min-w-0 space-y-3">
+
+            <!-- Name + badges row -->
+            <div class="flex flex-wrap items-center gap-2">
+              <h3 class="text-xl font-bold text-white font-display">{{ b.patient_display_name }}</h3>
+
               {% if b.is_anonymous %}
-              <span class="px-2 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                Anonymous Session
+              <span class="px-2.5 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-gray-400">Anonymous</span>
+              {% endif %}
+
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest
+                {% if b.status == 'confirmed' %}bg-emerald-500/12 text-emerald-300 border border-emerald-400/20
+                {% elif b.status == 'pending' %}bg-amber-500/12 text-amber-300 border border-amber-400/20
+                {% elif b.status == 'completed' %}bg-white/8 text-gray-300 border border-white/10
+                {% else %}bg-red-500/12 text-red-300 border border-red-400/20{% endif %}">
+                {% if b.status == 'confirmed' %}● {% elif b.status == 'pending' %}◌ {% elif b.status == 'completed' %}✓ {% else %}✕ {% endif %}{{ b.status|title }}
+              </span>
+
+              {% if b.is_instant %}
+              <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-purple-500/12 text-purple-300 border border-purple-500/20 shadow-[0_0_10px_rgba(168,85,247,0.12)]">
+                ⚡ Instant
               </span>
               {% endif %}
 
-              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold
-                {% if b.status == 'confirmed' %}bg-green-500/15 text-green-300 border border-green-400/20
-                {% elif b.status == 'pending' %}bg-amber-500/15 text-amber-300 border border-amber-400/20
-                {% elif b.status == 'completed' %}bg-white/10 text-gray-200 border border-white/10
-                {% else %}bg-red-500/15 text-red-300 border border-red-400/20{% endif %}">
-                {{ b.status|title }}
-              </span>
-              {% if b.is_instant %}
-              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/20 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
-                ⚡ Instant Session
-              </span>
-              {% endif %}
-              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-white/5 text-gray-300 border border-white/10">
-                {% if b.include_chat and b.include_video %}
-                  💬 Chat + 📹 Video
-                {% elif b.include_video %}
-                  📹 Video Session
-                {% else %}
-                  💬 Chat Session
-                {% endif %}
+              <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-semibold bg-white/5 text-gray-400 border border-white/8">
+                {% if b.include_chat and b.include_video %}💬 Chat + 📹 Video
+                {% elif b.include_video %}📹 Video
+                {% else %}💬 Chat{% endif %}
               </span>
             </div>
 
-            <p class="text-gray-300 mb-2">
-              {{ b.date|date:"l, M d, Y" }} at {{ b.time_slot|time:"H:i" }}
-            </p>
+            <!-- Date + time -->
+            <div class="flex items-center gap-2 text-gray-400 text-sm">
+              <svg class="w-4 h-4 text-[#00d1b2]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+              </svg>
+              {{ b.date|date:"l, M d, Y" }} &nbsp;·&nbsp; {{ b.time_slot|time:"H:i" }}
+            </div>
 
+            <!-- Review -->
             {% if b.review %}
-            <div class="mt-4 rounded-2xl bg-white/5 border border-white/10 p-4">
-              <p class="font-medium text-amber-300">User Feedback: ★ {{ b.review.rating }}/5</p>
-              {% if b.review.review_text %}
-              <p class="text-gray-400 mt-2 text-sm leading-relaxed">{{ b.review.review_text }}</p>
-              {% endif %}
+            <div class="mt-2 rounded-2xl bg-white/4 border border-white/8 p-4 flex items-start gap-3">
+              <span class="text-amber-400 text-lg flex-shrink-0">★</span>
+              <div>
+                <p class="text-amber-300 font-semibold text-sm">{{ b.review.rating }}/5 — Client Feedback</p>
+                {% if b.review.review_text %}
+                <p class="text-gray-400 mt-1 text-sm leading-relaxed">{{ b.review.review_text }}</p>
+                {% endif %}
+              </div>
             </div>
             {% endif %}
           </div>
 
           <!-- RIGHT ACTIONS -->
-          <div class="flex flex-wrap gap-3 xl:justify-end">
+          <div class="flex flex-wrap gap-3 xl:flex-col xl:items-end xl:min-w-[10rem]">
             {% if b.status == 'confirmed' or b.status == 'completed' %}
               {% if b.include_chat %}
-                <a href="{% url 'counsellor_chat' b.id %}"
-                   class="inline-flex items-center gap-2 px-5 py-3 bg-[#00d1b2] text-[#04111d] rounded-2xl transition text-sm font-bold">
-                  💬 Open Chat
-                </a>
+              <a href="{% url 'counsellor_chat' b.id %}"
+                 class="inline-flex items-center gap-2 px-5 py-3 bg-[#00d1b2] text-black rounded-2xl text-sm font-extrabold hover:shadow-[0_0_20px_rgba(0,209,178,0.35)] active:scale-95 transition-all">
+                💬 Open Chat
+              </a>
               {% endif %}
               {% if b.include_video %}
-                <a href="{% url 'counsellor_video_call' b.id %}"
-                   class="inline-flex items-center gap-2 px-5 py-3 bg-purple-500 text-white rounded-2xl transition text-sm font-bold shadow-[0_0_15px_rgba(168,85,247,0.3)] hover:bg-purple-600">
-                  📹 Join Video Call
-                </a>
+              <a href="{% url 'counsellor_video_call' b.id %}"
+                 class="inline-flex items-center gap-2 px-5 py-3 bg-purple-500 text-white rounded-2xl text-sm font-extrabold hover:bg-purple-600 hover:shadow-[0_0_20px_rgba(168,85,247,0.35)] active:scale-95 transition-all">
+                📹 Join Video
+              </a>
               {% endif %}
             {% endif %}
 
             {% if b.status == 'confirmed' %}
-            <form method="post" action="{% url 'finish_session' b.id %}" onsubmit="return confirm('Finish this session now? This will disable chat and mark it as completed.');">
+            <form method="post" action="{% url 'finish_session' b.id %}">
               {% csrf_token %}
               <input type="hidden" name="next" value="{% url 'counsellor_sessions' %}">
-              <button type="submit"
-                      class="inline-flex items-center gap-2 px-5 py-3 bg-white/5 text-white border border-white/10 rounded-2xl hover:bg-red-500 hover:border-red-500 hover:text-white transition text-sm font-semibold">
-                Finish Session
+              <button type="button"
+                onclick="openFinishModal(this)"
+                data-form-id="finishForm{{ b.id }}"
+                class="inline-flex items-center gap-2 px-5 py-3 bg-white/5 text-gray-300 border border-white/10 rounded-2xl hover:bg-red-500/15 hover:border-red-400/40 hover:text-red-300 active:scale-95 transition-all text-sm font-semibold w-full xl:w-auto justify-center">
+                ✓ Finish Session
               </button>
+            </form>
+            <!-- Hidden form for finish -->
+            <form id="finishForm{{ b.id }}" method="post" action="{% url 'finish_session' b.id %}" class="hidden">
+              {% csrf_token %}
+              <input type="hidden" name="next" value="{% url 'counsellor_sessions' %}">
             </form>
             {% endif %}
           </div>
@@ -123,8 +129,10 @@
         </div>
       </div>
       {% empty %}
-      <div class="bg-[#0a1428]/60 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 text-center shadow-2xl">
-        <p class="text-gray-400 text-lg">No sessions yet.</p>
+      <div class="bg-[#0a1428]/60 backdrop-blur-xl border border-white/8 rounded-[1.75rem] p-12 text-center shadow-xl" data-reveal>
+        <div class="text-5xl mb-4">📅</div>
+        <h3 class="text-xl font-bold text-white mb-2">No sessions yet</h3>
+        <p class="text-gray-400 text-sm">Your upcoming client sessions will appear here once bookings are confirmed.</p>
       </div>
       {% endfor %}
     </div>
@@ -132,4 +140,49 @@
   </div>
 </div>
 
+<!-- Finish Session Confirm Modal -->
+<div id="finishModal" class="fixed inset-0 bg-black/70 backdrop-blur-md z-[99998] hidden items-center justify-center px-4">
+  <div class="bg-[#0a1428] border border-white/15 rounded-[2rem] p-8 max-w-sm w-full shadow-2xl text-center"
+       style="animation: fadeInUp .3s cubic-bezier(0.16,1,0.3,1) both;">
+    <div class="h-16 w-16 rounded-[1.25rem] bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-3xl mx-auto mb-4">✓</div>
+    <h3 class="text-xl font-bold text-white mb-2">Finish this session?</h3>
+    <p class="text-gray-400 text-sm mb-6 leading-relaxed">This will mark the session as <strong class="text-white">Completed</strong> and disable the chat. This cannot be undone.</p>
+    <div class="flex flex-col gap-3">
+      <button id="finishConfirmBtn"
+        class="w-full py-3 rounded-xl bg-[#00d1b2] text-black font-extrabold text-sm uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all">
+        Yes, Finish Session
+      </button>
+      <button onclick="closeFinishModal()"
+        class="w-full py-3 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-sm uppercase tracking-widest hover:bg-white/10 active:scale-95 transition-all">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
+
+
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+var _finishFormId = null;
+function openFinishModal(btn) {
+  _finishFormId = btn.getAttribute('data-form-id');
+  var modal = document.getElementById('finishModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+function closeFinishModal() {
+  var modal = document.getElementById('finishModal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+document.getElementById('finishConfirmBtn').addEventListener('click', function() {
+  if (_finishFormId) document.getElementById(_finishFormId).submit();
+});
+document.getElementById('finishModal').addEventListener('click', function(e) {
+  if (e.target === this) closeFinishModal();
+});
+</script>
 {% endblock %}

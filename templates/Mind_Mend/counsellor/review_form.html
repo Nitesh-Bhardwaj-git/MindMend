@@ -1,80 +1,98 @@
 {% extends 'base.html' %}
 {% load static %}
 {% load widget_tweaks %}
-{% block title %}Submit Review{% endblock %}
+{% block title %}Rate Your Session — MindMend{% endblock %}
 
 {% block content %}
-<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-4 md:pt-6 pb-20">
+<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-6 pb-20">
 
   <!-- Background Glows -->
-  <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#00d1b2]/10 rounded-full blur-[120px] -z-10 animate-pulse"></div>
-  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] -z-10 animate-pulse delay-1000"></div>
+  <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#00d1b2]/8 rounded-full blur-[120px] animate-pulse pointer-events-none"></div>
+  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/8 rounded-full blur-[120px] animate-pulse pointer-events-none"></div>
 
-  <div class="max-w-4xl mx-auto px-6 space-y-12">
+  <div class="max-w-2xl mx-auto px-6 space-y-8 relative z-10">
 
-    <!-- Back Link -->
-    <a href="{% url 'my_bookings' %}" class="inline-flex items-center gap-2 text-gray-500 hover:text-[#00d1b2] font-bold text-xs uppercase tracking-widest transition-colors">
+    <!-- Back link -->
+    <a href="{% url 'my_bookings' %}" class="inline-flex items-center gap-2 text-gray-500 hover:text-[#00d1b2] text-xs font-bold uppercase tracking-widest transition-colors" data-reveal>
       ← Back to My Bookings
     </a>
 
     <!-- Header -->
-    <div class="space-y-4">
-      <h1 class="text-3xl md:text-5xl font-display font-bold text-white tracking-tight leading-tight">
-        Rate your session
-      </h1>
-      <p class="text-gray-500 text-lg max-w-2xl">
-        Your feedback helps us improve and helps others find the right support.
-      </p>
+    <div data-reveal>
+      <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-[#00d1b2] mb-2">Session Review</p>
+      <h1 class="text-4xl md:text-5xl font-display font-bold text-white leading-tight">Rate your session</h1>
+      <p class="text-gray-400 mt-3 text-lg">Your honest feedback helps counsellors improve and guides others.</p>
     </div>
 
-    <!-- Review Form Card -->
-    <div class="bg-[#0a1428]/40 backdrop-blur-sm rounded-[40px] border border-white/5 shadow-2xl p-10 space-y-12">
+    <!-- Review Card -->
+    <div class="bg-[#0a1428]/60 backdrop-blur-xl border border-white/8 rounded-[2.5rem] p-8 md:p-10 shadow-2xl space-y-10" data-reveal>
 
       <!-- Counsellor Info -->
-      <div class="flex items-center gap-6 p-6 rounded-3xl bg-white/5 border border-white/5">
-        <img src="{{ booking.counsellor.avatar }}" alt="{{ booking.counsellor.name }}" class="h-20 w-20 rounded-2xl object-cover">
-        <div class="space-y-1">
-          <h3 class="text-2xl font-bold text-white tracking-tight">{{ booking.counsellor.name }}</h3>
-          <p class="text-gray-500 text-sm font-bold uppercase tracking-widest">
-            Session on {{ booking.date|date:"d M Y" }}
-          </p>
+      <div class="flex items-center gap-5 p-5 rounded-2xl bg-white/4 border border-white/8">
+        {% if booking.counsellor.profile_picture %}
+        <img src="{{ booking.counsellor.profile_picture.url }}" alt="{{ booking.counsellor.name }}"
+             class="h-16 w-16 rounded-xl object-cover flex-shrink-0">
+        {% else %}
+        <div class="h-16 w-16 rounded-xl bg-gradient-to-br from-[#00d1b2] to-purple-500 flex items-center justify-center text-xl font-bold text-black flex-shrink-0">
+          {{ booking.counsellor.name|first|upper }}
+        </div>
+        {% endif %}
+        <div>
+          <h3 class="text-lg font-bold text-white">{{ booking.counsellor.name }}</h3>
+          <p class="text-[#00d1b2] text-xs font-bold uppercase tracking-widest mt-0.5">{{ booking.counsellor.specialization }}</p>
+          <p class="text-gray-500 text-xs mt-1">Session on {{ booking.date|date:"d M Y" }}</p>
         </div>
       </div>
 
       <!-- Form -->
-      <form method="POST" action="{% url 'submit_review' booking.id %}" class="space-y-10">
+      <form method="POST" action="{% url 'submit_review' booking.id %}" class="space-y-8">
         {% csrf_token %}
 
-        <!-- Rating -->
-        <div class="space-y-6">
-          <label class="text-sm font-bold text-gray-400 uppercase tracking-widest">How was your experience?</label>
-          <div class="flex items-center gap-2">
-            <!-- Integrate Django form.rating with stars -->
-            {{ form.rating|add_class:"hidden" }}
+        <!-- Star Rating -->
+        <div class="space-y-4">
+          <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">How was your experience? <span class="text-red-400">*</span></label>
+
+          <!-- Hidden Django form field -->
+          {{ form.rating|add_class:"hidden" }}
+
+          <!-- Interactive stars -->
+          <div class="flex items-center gap-2" id="starRow" role="group" aria-label="Rating">
             {% for i in "12345" %}
-            <button type="button" class="p-2 transition-all duration-300 star-button" data-value="{{ i }}">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 star-svg text-gray-500 transition-all duration-300 filter drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            <button type="button"
+              class="star-btn p-1 transition-all duration-150 focus:outline-none active:scale-90"
+              data-value="{{ i }}"
+              aria-label="{{ i }} star">
+              <svg class="star-svg w-12 h-12 text-gray-600 transition-all duration-200 drop-shadow-sm"
+                   viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
               </svg>
             </button>
             {% endfor %}
           </div>
+
+          <!-- Rating label -->
+          <div id="ratingLabel" class="h-5 flex items-center">
+            <span class="text-sm text-gray-500 italic">Click a star to rate</span>
+          </div>
+
           {{ form.rating.errors }}
         </div>
 
         <!-- Review Text -->
-        <div class="space-y-4">
-          <label class="text-sm font-bold text-gray-400 uppercase tracking-widest">Share more details</label>
-          {{ form.review_text|add_class:"w-full bg-white/5 border border-white/10 rounded-3xl px-8 py-6 text-white text-lg placeholder-gray-600 focus:border-[#00d1b2] focus:ring-0 transition-all min-h-[200px] resize-none" }}
+        <div class="space-y-3">
+          <label class="text-[10px] font-bold text-gray-400 uppercase tracking-widest block">Tell us more <span class="text-gray-600 normal-case font-normal">(optional)</span></label>
+          {{ form.review_text|add_class:"w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-5 text-white text-sm placeholder-gray-600 focus:border-[#00d1b2]/50 focus:bg-white/8 transition-all min-h-[140px] resize-none outline-none"|attr:"placeholder:What did you find most helpful? Any suggestions for improvement…" }}
           {{ form.review_text.errors }}
         </div>
 
-        <!-- Footer / Submit -->
-        <div class="flex flex-col sm:flex-row items-center justify-between gap-8 pt-6 border-t border-white/5">
-          <div class="flex items-center gap-3 text-[10px] font-bold text-gray-600 uppercase tracking-widest">
-            ✅ Your review will be public
+        <!-- Footer -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-6 pt-6 border-t border-white/8">
+          <div class="flex items-center gap-2 text-[10px] font-bold text-gray-600 uppercase tracking-widest">
+            🌐 Your review will be publicly visible
           </div>
-          <button type="submit" class="w-full sm:w-auto px-12 py-5 rounded-xl font-extrabold text-sm tracking-wider bg-[#00d1b2] text-black hover:scale-105 flex items-center justify-center gap-2">
+          <button type="submit"
+            class="w-full sm:w-auto px-10 py-4 rounded-2xl font-extrabold text-sm tracking-wider bg-[#00d1b2] text-black
+                   hover:shadow-[0_0_24px_rgba(0,209,178,0.4)] hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2">
             📨 Submit Review
           </button>
         </div>
@@ -82,35 +100,70 @@
     </div>
 
     <!-- Info Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <div class="bg-[#0a1428]/40 backdrop-blur-sm rounded-[40px] border border-white/5 p-10 space-y-6">
-        <div class="h-14 w-14 rounded-2xl bg-[#00d1b2]/10 flex items-center justify-center">❤️</div>
-        <div class="space-y-2">
-          <h4 class="text-2xl font-bold text-white tracking-tight leading-tight">Your Voice Matters</h4>
-          <p class="text-gray-500 text-base leading-relaxed">
-            Reviews help our counsellors improve their practice and help other members find the right match for their needs.
-          </p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-5" data-reveal>
+      <div class="bg-[#0a1428]/50 border border-white/8 rounded-[2rem] p-7 space-y-4 hover:border-[#00d1b2]/20 transition">
+        <div class="h-12 w-12 rounded-xl bg-[#00d1b2]/10 border border-[#00d1b2]/15 flex items-center justify-center text-xl">❤️</div>
+        <div>
+          <h4 class="text-white font-bold font-display">Your Voice Matters</h4>
+          <p class="text-gray-500 text-sm leading-relaxed mt-1">Reviews help counsellors improve their practice and help others find the right match.</p>
         </div>
       </div>
-
-      <div class="bg-[#0a1428]/40 backdrop-blur-sm rounded-[40px] border border-white/5 p-10 space-y-6">
-        <div class="h-14 w-14 rounded-2xl bg-[#7c3aed]/10 flex items-center justify-center">🛡️</div>
-        <div class="space-y-2">
-          <h4 class="text-2xl font-bold text-white tracking-tight leading-tight">Privacy First</h4>
-          <p class="text-gray-500 text-base leading-relaxed">
-            While reviews are public, your identity is protected. We only show your first name or username as per your settings.
-          </p>
+      <div class="bg-[#0a1428]/50 border border-white/8 rounded-[2rem] p-7 space-y-4 hover:border-purple-500/20 transition">
+        <div class="h-12 w-12 rounded-xl bg-purple-500/10 border border-purple-500/15 flex items-center justify-center text-xl">🛡️</div>
+        <div>
+          <h4 class="text-white font-bold font-display">Privacy First</h4>
+          <p class="text-gray-500 text-sm leading-relaxed mt-1">While reviews are public, your identity is controlled by your profile privacy settings.</p>
         </div>
       </div>
     </div>
 
   </div>
 </div>
-
-<!-- JS for Star Rating -->
-
 {% endblock %}
 
 {% block scripts %}
-<script src="{% static 'js/review_form.js' %}?v=1.0"></script>
+<script>
+(function () {
+  const labels = ['', 'Poor', 'Fair', 'Good', 'Great', 'Excellent'];
+  const colors = ['', '#ef4444', '#f97316', '#eab308', '#22c55e', '#00d1b2'];
+  const stars  = document.querySelectorAll('.star-btn');
+  const hidden = document.querySelector('input[name="rating"]');
+  const labelEl = document.getElementById('ratingLabel');
+
+  let current = 0;
+
+  function paint(upTo, isHover) {
+    stars.forEach((btn, i) => {
+      const svg = btn.querySelector('.star-svg');
+      if (i < upTo) {
+        const col = colors[upTo] || '#00d1b2';
+        svg.style.color = col;
+        svg.style.filter = `drop-shadow(0 0 8px ${col}80)`;
+        svg.style.transform = isHover ? 'scale(1.15)' : 'scale(1.08)';
+      } else {
+        svg.style.color = '#374151';
+        svg.style.filter = 'none';
+        svg.style.transform = 'scale(1)';
+      }
+    });
+  }
+
+  function setLabel(val) {
+    labelEl.innerHTML = val
+      ? `<span class="text-sm font-bold" style="color:${colors[val]}">${'★'.repeat(val)}${'☆'.repeat(5-val)}</span><span class="text-sm text-gray-400 ml-2">${labels[val]}</span>`
+      : '<span class="text-sm text-gray-500 italic">Click a star to rate</span>';
+  }
+
+  stars.forEach((btn, i) => {
+    btn.addEventListener('mouseenter', () => paint(i + 1, true));
+    btn.addEventListener('mouseleave', () => { paint(current, false); setLabel(current); });
+    btn.addEventListener('click', () => {
+      current = i + 1;
+      hidden.value = current;
+      paint(current, false);
+      setLabel(current);
+    });
+  });
+})();
+</script>
 {% endblock %}

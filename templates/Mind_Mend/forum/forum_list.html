@@ -8,7 +8,7 @@
 
 <div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-4 md:pt-6 pb-20">
 
-  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] -z-10 animate-pulse"></div>
+  {% include 'Mind_Mend/partials/_bg_glows.html' %}
 
   <div class="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 space-y-12">
 
@@ -28,35 +28,39 @@
 
       {% if user.is_authenticated %}
       <a href="{% url 'forum_create' %}{% if current_category %}?category={{ current_category }}{% endif %}"
-         class="px-8 py-4 rounded-xl bg-[#00d1b2] text-black font-extrabold text-sm tracking-wider hover:scale-105 transition-transform ">
+         class="px-8 py-4 rounded-xl bg-[#00d1b2] text-black font-extrabold text-sm tracking-wider hover:scale-105 transition-transform active:scale-95">
         + New Post
       </a>
       {% endif %}
     </div>
 
     <!-- Categories -->
-    <div class="flex flex-wrap gap-3 p-2 bg-white/5 rounded-2xl border border-white/5 w-fit">
-      
+    <div class="flex flex-wrap gap-2 p-2 bg-white/5 rounded-2xl border border-white/5 w-fit">
+
       <a href="{% url 'forum_list' %}"
-         class="px-6 py-2.5 rounded-xl text-xs font-bold tracking-wider transition-all flex items-center gap-2
+         class="px-5 py-2 rounded-xl text-xs font-bold tracking-wider transition-all flex items-center gap-2
          {% if not current_category %}
             bg-[#00d1b2] text-black
          {% else %}
             text-gray-400 hover:text-white hover:bg-white/5
          {% endif %}">
-        <span>🌐</span>
-        All
+        🌐 All
       </a>
 
       {% for value, label in categories %}
         <a href="?category={{ value }}"
-           class="px-6 py-2.5 rounded-xl text-xs font-bold tracking-wider transition-all flex items-center gap-2
+           class="px-5 py-2 rounded-xl text-xs font-bold tracking-wider transition-all flex items-center gap-2
            {% if current_category == value %}
               bg-[#00d1b2] text-black
            {% else %}
               text-gray-400 hover:text-white hover:bg-white/5
            {% endif %}">
-          <span>📌</span>
+          {% if value == 'anxiety' %}😰
+          {% elif value == 'depression' %}💙
+          {% elif value == 'stress' %}🌪️
+          {% elif value == 'relationships' %}💞
+          {% elif value == 'general' %}💬
+          {% else %}📌{% endif %}
           {{ label }}
         </a>
       {% endfor %}
@@ -79,6 +83,11 @@
               <span class="px-3 py-1 rounded-full bg-[#00d1b2]/10 border border-[#00d1b2]/20 text-[#00d1b2] text-[10px] font-bold uppercase tracking-widest">
                 {{ post.get_category_display|default:post.category }}
               </span>
+              {% if post.reply_count > 4 %}
+              <span class="px-3 py-1 rounded-full bg-orange-500/15 border border-orange-500/30 text-orange-400 text-[10px] font-black uppercase tracking-widest animate-pulse">
+                🔥 Hot
+              </span>
+              {% endif %}
               <span class="text-xs text-gray-500">
                 {{ post.created_at|date:"M d, Y" }} [{{ post.created_at|date:"H:i" }}]
               </span>
@@ -140,26 +149,36 @@
 
     <!-- Pagination -->
     {% if posts.has_other_pages %}
-    <div class="flex items-center justify-center gap-4 pt-8 flex-wrap">
+    <div class="flex items-center justify-center gap-2 pt-8 flex-wrap">
 
       {% if posts.has_previous %}
       <a href="?{% if current_category %}category={{ current_category }}&{% endif %}page={{ posts.previous_page_number }}"
-         class="px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold hover:bg-white/10">
-        Previous
+         class="flex items-center gap-1.5 px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold hover:bg-white/10 transition">
+        &larr; Prev
       </a>
       {% endif %}
 
-      <span class="text-gray-400 text-sm">
-        Page {{ posts.number }} of {{ posts.paginator.num_pages }}
-      </span>
+      {% for num in posts.paginator.page_range %}
+        {% if num == posts.number %}
+        <span class="px-4 py-3 rounded-xl bg-[#00d1b2] text-black text-xs font-black min-w-[2.75rem] text-center">
+          {{ num }}
+        </span>
+        {% elif num > posts.number|add:"-3" and num < posts.number|add:"3" %}
+        <a href="?{% if current_category %}category={{ current_category }}&{% endif %}page={{ num }}"
+           class="px-4 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold hover:bg-white/10 transition min-w-[2.75rem] text-center">
+          {{ num }}
+        </a>
+        {% endif %}
+      {% endfor %}
 
       {% if posts.has_next %}
       <a href="?{% if current_category %}category={{ current_category }}&{% endif %}page={{ posts.next_page_number }}"
-         class="px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold hover:bg-white/10">
-        Next
+         class="flex items-center gap-1.5 px-5 py-3 rounded-xl bg-white/5 border border-white/10 text-white text-xs font-bold hover:bg-white/10 transition">
+        Next &rarr;
       </a>
       {% endif %}
 
+      <span class="text-gray-500 text-xs ml-2">Page {{ posts.number }} of {{ posts.paginator.num_pages }}</span>
     </div>
     {% endif %}
 

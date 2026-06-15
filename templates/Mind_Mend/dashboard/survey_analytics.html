@@ -5,9 +5,7 @@
 {% block content %}
 <div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-4 md:pt-6 pb-20">
 
-  <!-- Background Glows -->
-  <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#00d1b2]/10 rounded-full blur-[120px] -z-10 animate-pulse"></div>
-  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] -z-10 animate-pulse delay-1000"></div>
+  {% include 'Mind_Mend/partials/_bg_glows.html' %}
 
   <div class="max-w-7xl mx-auto px-6 space-y-12">
 
@@ -93,7 +91,7 @@
         <!-- Emoji Feedback -->
         <div class="space-y-6 pt-8 border-t border-white/5">
           <p class="text-[10px] font-bold text-gray-600 uppercase tracking-widest text-center">How do you feel about these results?</p>
-          <div class="grid grid-cols-3 sm:grid-cols-3 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <button class="survey-emoji-btn flex flex-col items-center gap-3 p-4 rounded-2xl border transition-all hover:border-white/10 hover:text-white" data-emoji="😊">
               <span class="text-3xl">😊</span>
               <span class="text-[10px] font-bold uppercase tracking-widest">Happy</span>

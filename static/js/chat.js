@@ -552,6 +552,101 @@
     };
   }
 
+  // ---------- Guest Limit Modal ----------
+  function showGuestLimitModal() {
+    // Avoid showing duplicate modals
+    if (document.getElementById('guestLimitModal')) return;
+
+    const overlay = document.createElement('div');
+    overlay.id = 'guestLimitModal';
+    overlay.style.cssText = [
+      'position:fixed', 'inset:0', 'z-index:9999',
+      'display:flex', 'align-items:center', 'justify-content:center',
+      'background:rgba(5,11,26,0.82)', 'backdrop-filter:blur(8px)',
+      '-webkit-backdrop-filter:blur(8px)',
+      'padding:1.5rem',
+      'animation:fadeIn .25s ease'
+    ].join(';');
+
+    overlay.innerHTML = [
+      '<style>',
+      '@keyframes fadeIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}',
+      '@keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}',
+      '</style>',
+      '<div style="',
+        'max-width:420px;width:100%;',
+        'background:linear-gradient(145deg,#0c1931,#081525);',
+        'border:1px solid rgba(0,209,178,.22);',
+        'border-radius:2rem;',
+        'padding:2.5rem 2rem;',
+        'text-align:center;',
+        'box-shadow:0 32px 80px rgba(0,0,0,.55),0 0 0 1px rgba(0,209,178,.08);',
+        'animation:slideUp .3s ease;',
+        'position:relative',
+      '">',
+        '<div style="',
+          'width:72px;height:72px;',
+          'border-radius:50%;',
+          'background:rgba(0,209,178,.08);',
+          'border:2px solid rgba(0,209,178,.25);',
+          'display:flex;align-items:center;justify-content:center;',
+          'font-size:2rem;margin:0 auto 1.25rem;',
+        '">🔒</div>',
+        '<h2 style="color:#fff;font-size:1.4rem;font-weight:800;margin:0 0 .5rem;">Free Questions Used Up</h2>',
+        '<p style="color:rgba(255,255,255,.55);font-size:.92rem;line-height:1.6;margin:0 0 .4rem;">',
+          'You\'ve asked <strong style="color:#00d1b2;">3 free questions</strong>.',
+        '</p>',
+        '<p style="color:rgba(255,255,255,.45);font-size:.85rem;line-height:1.55;margin:0 0 2rem;">',
+          'Create a free account to unlock <strong style="color:#fff;">unlimited chat</strong>, ',
+          'personalised memory, saved history, mood tracking & more.',
+        '</p>',
+        '<div style="display:flex;flex-direction:column;gap:.75rem;">',
+          '<a href="/register/" style="',
+            'display:block;padding:.9rem 1.5rem;',
+            'background:#00d1b2;color:#03120f;',
+            'font-weight:800;font-size:.95rem;',
+            'border-radius:1rem;text-decoration:none;',
+            'transition:background .2s;',
+          '" onmouseover="this.style.background=\'#00b39a\'" onmouseout="this.style.background=\'#00d1b2\'">',
+            '✨ Create Free Account',
+          '</a>',
+          '<a href="/login/" style="',
+            'display:block;padding:.9rem 1.5rem;',
+            'background:rgba(255,255,255,.05);color:#fff;',
+            'font-weight:600;font-size:.9rem;',
+            'border:1px solid rgba(255,255,255,.12);',
+            'border-radius:1rem;text-decoration:none;',
+            'transition:background .2s;',
+          '" onmouseover="this.style.background=\'rgba(255,255,255,.1)\'" onmouseout="this.style.background=\'rgba(255,255,255,.05)\'">',
+            'Already have an account? Log In',
+          '</a>',
+        '</div>',
+        '<p style="margin-top:1.25rem;font-size:.75rem;color:rgba(255,255,255,.25);">Free — no credit card required</p>',
+      '</div>'
+    ].join('');
+
+    document.body.appendChild(overlay);
+
+    // Lock the chat input to prevent further typing
+    if (input) {
+      input.disabled = true;
+      input.placeholder = 'Sign up to keep chatting...';
+    }
+    const submitBtn = form ? form.querySelector('button[type="submit"]') : null;
+    if (submitBtn) submitBtn.disabled = true;
+    const micButton = document.getElementById('micBtn');
+    if (micButton) micButton.disabled = true;
+  }
+
+  // Check on page load — if the session already reached the limit, lock the UI.
+  // We pass `isAuthenticated` from the template via MINDMEND_CONFIG.
+  (function checkInitialGuestLimit() {
+    const cfg = window.MINDMEND_CONFIG || {};
+    if (cfg.isAuthenticated) return; // logged-in users are never limited
+    // We'll count from localStorage messages for this session
+    // The real enforcement happens server-side; this is just a UI hint after reload.
+  })();
+
   const newChatBtn = document.getElementById('newChatBtn');
   if (newChatBtn) {
     newChatBtn.addEventListener('click', function () {
@@ -665,6 +760,17 @@
           lang: langVal
         }, getClientContext()))
       });
+
+      // Handle guest question limit
+      if (res.status === 403) {
+        const errData = await res.json().catch(function() { return {}; });
+        hideTyping();
+        if (btn) btn.disabled = false;
+        if (errData.error === 'guest_limit_reached') {
+          showGuestLimitModal();
+          return;
+        }
+      }
 
       const data = await res.json();
 

@@ -6,21 +6,45 @@
 {% block content %}
 <div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-6 pb-16 px-4">
 
-  <!-- Background Glows -->
-  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse pointer-events-none"></div>
-  <div class="absolute top-0 left-1/4 w-[400px] h-[400px] bg-[#00d1b2]/5 rounded-full blur-[120px] pointer-events-none"></div>
+  {% include 'Mind_Mend/partials/_bg_glows.html' %}
 
   <div class="max-w-2xl mx-auto relative z-10">
 
     <!-- Header -->
-    <div class="mb-8 text-center">
-      <div class="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-br from-[#00d1b2] to-purple-500 flex items-center justify-center text-3xl font-bold text-black shadow-lg">
-        {{ user.username|first|upper }}
+    <div class="mb-8 text-center" data-reveal>
+      <div class="relative w-20 h-20 mx-auto mb-4">
+        <div class="w-20 h-20 rounded-full bg-gradient-to-br from-[#00d1b2] to-purple-500 flex items-center justify-center text-3xl font-bold text-black shadow-lg shadow-[#00d1b2]/20">
+          {{ user.username|first|upper }}
+        </div>
+        <!-- Online indicator -->
+        <span class="absolute bottom-0.5 right-0.5 w-4 h-4 rounded-full bg-emerald-400 border-2 border-[#050b1a]"></span>
       </div>
-      <h1 class="text-3xl font-bold text-white">
+      <h1 class="text-3xl font-bold text-white font-display">
         {% if setup_mode %}Complete Your Profile{% else %}My Profile{% endif %}
       </h1>
-      <p class="text-gray-400 mt-1 text-sm">@{{ user.username }}</p>
+      <p class="text-gray-400 mt-1 text-sm">@{{ user.username }}&nbsp;&middot;&nbsp;Member since {{ user.date_joined|date:"M Y" }}</p>
+
+      <!-- Quick Stats Row -->
+      {% if not setup_mode %}
+      <div class="flex items-center justify-center gap-3 flex-wrap mt-5">
+        <div class="flex flex-col items-center px-4 py-3 rounded-2xl bg-white/5 border border-white/8 min-w-[5rem]">
+          <span class="text-xl font-black text-[#00d1b2]">{{ mood_streak|default:"0" }}</span>
+          <span class="text-[10px] uppercase tracking-widest text-gray-500 mt-1">Day Streak</span>
+        </div>
+        <div class="flex flex-col items-center px-4 py-3 rounded-2xl bg-white/5 border border-white/8 min-w-[5rem]">
+          <span class="text-xl font-black text-purple-400">{{ total_bookings|default:"0" }}</span>
+          <span class="text-[10px] uppercase tracking-widest text-gray-500 mt-1">Sessions</span>
+        </div>
+        <div class="flex flex-col items-center px-4 py-3 rounded-2xl bg-white/5 border border-white/8 min-w-[5rem]">
+          <span class="text-xl font-black text-amber-400">{{ total_assessments|default:"0" }}</span>
+          <span class="text-[10px] uppercase tracking-widest text-gray-500 mt-1">Assessments</span>
+        </div>
+        <div class="flex flex-col items-center px-4 py-3 rounded-2xl bg-white/5 border border-white/8 min-w-[5rem]">
+          <span class="text-xl font-black text-emerald-400">{{ mood_entries|default:"0" }}</span>
+          <span class="text-[10px] uppercase tracking-widest text-gray-500 mt-1">Mood Logs</span>
+        </div>
+      </div>
+      {% endif %}
     </div>
 
     {% if setup_mode %}
@@ -192,23 +216,25 @@
             You can permanently delete either your personal data or your full account. Once deleted, this information cannot be recovered.
           </p>
           <div class="flex flex-col sm:flex-row gap-3">
-            <form method="post" action="{% url 'delete_my_data' %}" class="flex-1">
-              {% csrf_token %}
-              <button type="submit"
-                onclick="return confirm('Delete all your saved data permanently? This includes assessments, mood logs, bookings, chat history, forum content, and related records. This cannot be recovered.');"
-                class="w-full py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 font-bold text-xs uppercase tracking-widest hover:bg-red-500/20 transition">
-                Delete My Data
-              </button>
-            </form>
-            <form method="post" action="{% url 'delete_my_account' %}" class="flex-1">
-              {% csrf_token %}
-              <button type="submit"
-                onclick="return confirm('Delete your account and all associated data permanently? You will be logged out immediately and this account cannot be recovered.');"
-                class="w-full py-3 rounded-xl bg-red-500 text-white font-bold text-xs uppercase tracking-widest hover:bg-red-600 transition">
-                Delete My Account
-              </button>
-            </form>
+            <button type="button"
+              onclick="openDeleteModal('data')"
+              class="w-full py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 font-bold text-xs uppercase tracking-widest hover:bg-red-500/20 transition">
+              Delete My Data
+            </button>
+            <button type="button"
+              onclick="openDeleteModal('account')"
+              class="w-full py-3 rounded-xl bg-red-500 text-white font-bold text-xs uppercase tracking-widest hover:bg-red-600 transition">
+              Delete My Account
+            </button>
           </div>
+
+          <!-- Hidden forms (submitted by JS) -->
+          <form id="deleteDataForm" method="post" action="{% url 'delete_my_data' %}" class="hidden">
+            {% csrf_token %}
+          </form>
+          <form id="deleteAccountForm" method="post" action="{% url 'delete_my_account' %}" class="hidden">
+            {% csrf_token %}
+          </form>
         </div>
       </div>
     </div>
@@ -356,6 +382,31 @@
   </div>
 </div>
 
+<!-- ═══════════════ DELETE CONFIRM MODAL ═══════════════ -->
+<div id="deleteModal" class="fixed inset-0 bg-black/70 backdrop-blur-md z-[99998] hidden items-center justify-center px-4">
+  <div class="bg-[#0a1428] border border-red-500/30 rounded-[2rem] p-8 max-w-md w-full shadow-2xl relative"
+       style="animation: fadeInUp .3s cubic-bezier(0.16,1,0.3,1) both;">
+    <!-- Icon -->
+    <div class="h-16 w-16 rounded-[1.25rem] bg-red-500/10 border border-red-500/20 flex items-center justify-center text-3xl mx-auto mb-5">
+      ⚠️
+    </div>
+    <h3 id="deleteModalTitle" class="text-2xl font-bold text-white text-center mb-3">Are you sure?</h3>
+    <p id="deleteModalBody" class="text-gray-400 text-sm text-center leading-relaxed mb-8"></p>
+    <div class="flex flex-col gap-3">
+      <button id="deleteModalConfirm"
+        class="w-full py-3.5 rounded-xl bg-red-500 text-white font-extrabold text-sm uppercase tracking-widest hover:bg-red-600 transition">
+        Yes, delete permanently
+      </button>
+      <button onclick="closeDeleteModal()"
+        class="w-full py-3.5 rounded-xl bg-white/5 border border-white/10 text-white font-bold text-sm uppercase tracking-widest hover:bg-white/10 transition">
+        Cancel
+      </button>
+    </div>
+  </div>
+</div>
+
+
+
 {% endblock %}
 
 {% block scripts %}
@@ -439,5 +490,38 @@ function toggleIdentity() {
   .catch(() => alert('Could not update identity setting. Please try again.'))
   .finally(() => { btn.disabled = false; });
 }
+
+// ── Safe Delete Modal ────────────────────────────────────
+var _deleteTarget = null;
+function openDeleteModal(type) {
+  _deleteTarget = type;
+  var modal = document.getElementById('deleteModal');
+  var title = document.getElementById('deleteModalTitle');
+  var body  = document.getElementById('deleteModalBody');
+  var confirmBtn = document.getElementById('deleteModalConfirm');
+  if (type === 'account') {
+    title.textContent = 'Delete My Account?';
+    body.textContent  = 'Your account and all associated data will be permanently deleted. You will be logged out immediately. This action cannot be reversed.';
+    confirmBtn.textContent = 'Yes, delete my account';
+  } else {
+    title.textContent = 'Delete My Data?';
+    body.textContent  = 'All your saved data — assessments, mood logs, bookings, chat history, and forum content — will be permanently deleted. Your account remains, but this data cannot be recovered.';
+    confirmBtn.textContent = 'Yes, delete my data';
+  }
+  confirmBtn.onclick = function() {
+    var formId = type === 'account' ? 'deleteAccountForm' : 'deleteDataForm';
+    document.getElementById(formId).submit();
+  };
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+function closeDeleteModal() {
+  var modal = document.getElementById('deleteModal');
+  modal.classList.add('hidden');
+  modal.classList.remove('flex');
+}
+document.getElementById('deleteModal').addEventListener('click', function(e) {
+  if (e.target === this) closeDeleteModal();
+});
 </script>
 {% endblock %}

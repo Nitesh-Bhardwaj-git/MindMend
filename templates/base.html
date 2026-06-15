@@ -25,13 +25,16 @@
         tailwind.config = {
             theme: {
                 extend: {
+                    screens: {
+                        'xs': '360px',
+                    },
                     colors: {
                         primary: { DEFAULT: '#3B82F6', light: '#60A5FA', dark: '#1D4ED8' },
                         accent: '#00d1b2'
                     },
                     fontFamily: {
                         sans: ['Inter', 'system-ui', 'sans-serif'],
-                        display: ['Inter', 'system-ui', 'sans-serif']
+                        display: ['Plus Jakarta Sans', 'Inter', 'system-ui', 'sans-serif']
                     }
                 }
             }
@@ -41,9 +44,9 @@
     <script src="https://unpkg.com/lucide@latest"></script>
 
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=3.1">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=4.0">
     {% block extra_css %}{% endblock %}
 </head>
 
@@ -108,114 +111,105 @@
                     class="font-bold transition {% if request.resolver_match.url_name == 'contact_us' %}text-[#00d1b2]{% else %}hover:text-[#00d1b2]{% endif %}">CONTACT</a>
 
                 {% if user.is_authenticated %}
-                <!-- DASHBOARD DROPDOWN -->
+                <!-- AVATAR PILL + DROPDOWN -->
                 <div class="relative" id="dashboardDropdown">
                     <button type="button" id="dashboardDropdownBtn"
-                        class="flex items-center gap-1 font-bold transition {% if 'dashboard' in request.path or 'survey' in request.path %}text-[#00d1b2]{% else %}hover:text-[#00d1b2]{% endif %}">
-                        <!-- Hamburger (three lines) -->
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 6h16M4 12h16M4 18h16" />
+                        class="flex items-center gap-2.5 pl-1 pr-3 py-1 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 hover:border-[#00d1b2]/30 transition-all duration-200 group">
+                        <!-- Avatar circle -->
+                        <div class="h-7 w-7 rounded-full bg-gradient-to-br from-[#00d1b2] to-purple-500 flex items-center justify-center text-[11px] font-black text-black select-none flex-shrink-0">
+                            {{ user.username|first|upper }}
+                        </div>
+                        <span class="text-xs font-semibold text-white/80 group-hover:text-white transition max-w-[6rem] truncate hidden lg:block">{{ user|display_name }}</span>
+                        <svg class="w-3 h-3 text-gray-500 group-hover:text-white transition flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                         </svg>
                     </button>
 
                     <div id="dashboardDropdownMenu"
-                        class="absolute right-0 mt-2 w-56 bg-[#0a1428] rounded-xl border border-white/10 shadow-xl opacity-0 invisible transition-all duration-200 z-[9999]">
-                        <a href="{% url 'dashboard' %}"
-                            class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5 rounded-t-xl">Dashboard</a>
-
-
-                        <a href="{% url 'doctor_dashboard' %}"
-                            class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">Doctor Panel</a>
-                        <a href="{% url 'forum_list' %}"
-                            class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">Support Forum</a>
-                        <a href="{% url 'location_map' %}"
-                            class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">Location Map</a>
-                        <a href="{% url 'mental_health_heatmap' %}"
-                            class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">Heatmap</a>
-                        <a href="{% url 'survey_analytics' %}"
-                            class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">Survey Analytics</a>
-                        <a href="{% url 'survey_sentiment_dashboard' %}"
-                            class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">Survey Sentiment</a>
-                        <a href="{% url 'resources' %}"
-                            class="block px-4 py-3 hover:text-[#00d1b2] hover:bg-white/5">Helplines</a>
-                        <div class="border-t border-white/10"></div>
-                        <a href="{% url 'user_profile' %}"
-                            class="px-4 py-3 flex items-center gap-2 text-[#00d1b2] text-sm font-semibold hover:bg-white/5 transition">
-                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0z" />
-                            </svg>
-                            {{ user|display_name }}
-                        </a>
-                        <div class="border-t border-white/10"></div>
-                        <a href="{% url 'logout' %}"
-                            class="block px-4 py-3 text-red-400 hover:bg-white/5 rounded-b-xl">Logout</a>
+                        class="absolute right-0 mt-3 w-60 bg-[#0a1428]/95 backdrop-blur-2xl rounded-2xl border border-white/10 shadow-2xl opacity-0 invisible transition-all duration-200 z-[9999] overflow-hidden">
+                        <!-- User info header -->
+                        <div class="px-4 py-3.5 border-b border-white/8 flex items-center gap-3">
+                            <div class="h-9 w-9 rounded-full bg-gradient-to-br from-[#00d1b2] to-purple-500 flex items-center justify-center text-sm font-black text-black flex-shrink-0">
+                                {{ user.username|first|upper }}
+                            </div>
+                            <div class="min-w-0">
+                                <p class="text-white font-semibold text-sm truncate">{{ user|display_name }}</p>
+                                <p class="text-gray-500 text-[11px] truncate">@{{ user.username }}</p>
+                            </div>
+                        </div>
+                        <div class="py-1">
+                            <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-[#00d1b2] hover:bg-white/5 transition">📊 Dashboard</a>
+                            <a href="{% url 'mood_tracker' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-[#00d1b2] hover:bg-white/5 transition">💚 Mood Tracker</a>
+                            <a href="{% url 'my_bookings' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-[#00d1b2] hover:bg-white/5 transition">📅 My Bookings</a>
+                            <a href="{% url 'forum_list' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-300 hover:text-[#00d1b2] hover:bg-white/5 transition">💬 Support Forum</a>
+                        </div>
+                        <div class="py-1 border-t border-white/8">
+                            <a href="{% url 'doctor_dashboard' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">🩺 Doctor Panel</a>
+                            <a href="{% url 'survey_analytics' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">📈 Survey Analytics</a>
+                            <a href="{% url 'resources' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-400 hover:text-white hover:bg-white/5 transition">📞 Helplines</a>
+                        </div>
+                        <div class="py-1 border-t border-white/8">
+                            <a href="{% url 'user_profile' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-[#00d1b2] hover:bg-[#00d1b2]/5 transition font-medium">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0M12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                                My Profile
+                            </a>
+                            <a href="{% url 'logout' %}" class="flex items-center gap-3 px-4 py-2.5 text-sm text-red-400 hover:bg-red-500/5 transition">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                                Sign Out
+                            </a>
+                        </div>
                     </div>
                 </div>
                 {% else %}
                 <a href="{% url 'resources' %}" class="hover:text-[#00d1b2] font-bold transition">HELPLINES</a>
                 <a href="{% url 'login' %}" class="hover:text-[#00d1b2] font-bold transition">LOGIN</a>
-                <a href="{% url 'register' %}"
-                    class="bg-[#00d1b2] text-[#04111f] px-4 py-2 rounded-xl font-bold hover:opacity-90 transition">SIGN
-                    UP</a>
+                <a href="{% url 'register' %}" class="bg-[#00d1b2] text-[#04111f] px-4 py-2 rounded-xl font-bold hover:shadow-[0_0_20px_rgba(0,209,178,0.4)] hover:opacity-95 transition-all">SIGN UP</a>
                 {% endif %}
             </div>
         </nav>
 
         <!-- MOBILE MENU -->
         <div id="mobile-menu"
-            class="hidden md:hidden max-w-7xl mx-auto mt-2 bg-[#0a1428] border border-white/10 rounded-2xl p-4 space-y-2 shadow-xl">
-            <a href="{% url 'home' %}"
-                class="block py-2 font-bold {% if request.resolver_match.url_name == 'home' %}text-[#00d1b2]{% else %}hover:text-[#00d1b2]{% endif %}">HOME</a>
-            <a href="{% url 'chat' %}"
-                class="block py-2 font-bold {% if request.resolver_match.url_name == 'chat' %}text-[#00d1b2]{% else %}hover:text-[#00d1b2]{% endif %}">AI
-                CHAT</a>
-            <a href="{% url 'assessments' %}"
-                class="block py-2 font-bold {% if request.resolver_match.url_name == 'assessments' %}text-[#00d1b2]{% else %}hover:text-[#00d1b2]{% endif %}">ASSESSMENTS</a>
-            <a href="{% url 'counsellor_booking' %}"
-                class="block py-2 font-bold {% if request.resolver_match.url_name == 'counsellor_booking' %}text-[#00d1b2]{% else %}hover:text-[#00d1b2]{% endif %}">COUNSELLOR</a>
-
+            class="hidden md:hidden max-w-7xl mx-auto mt-2 bg-[#0a1428]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
             {% if user.is_authenticated %}
-            <a href="{% url 'mood_tracker' %}"
-                class="block py-2 font-bold {% if request.resolver_match.url_name == 'mood_tracker' %}text-[#00d1b2]{% else %}hover:text-[#00d1b2]{% endif %}">MOOD</a>
+            <!-- Mobile: user info strip -->
+            <div class="flex items-center gap-3 px-4 py-4 border-b border-white/8">
+                <div class="h-10 w-10 rounded-full bg-gradient-to-br from-[#00d1b2] to-purple-500 flex items-center justify-center text-sm font-black text-black flex-shrink-0">
+                    {{ user.username|first|upper }}
+                </div>
+                <div class="min-w-0">
+                    <p class="text-white font-semibold text-sm">{{ user|display_name }}</p>
+                    <p class="text-gray-500 text-xs">@{{ user.username }}</p>
+                </div>
+                <a href="{% url 'user_profile' %}" class="ml-auto text-[10px] font-bold uppercase tracking-widest text-[#00d1b2] border border-[#00d1b2]/30 px-2.5 py-1.5 rounded-lg hover:bg-[#00d1b2]/10 transition">Profile</a>
+            </div>
             {% endif %}
 
-            <a href="{% url 'contact_us' %}"
-                class="block py-2 font-bold {% if request.resolver_match.url_name == 'contact_us' %}text-[#00d1b2]{% else %}hover:text-[#00d1b2]{% endif %}">CONTACT</a>
-
-            <hr class="border-white/10">
+            <div class="p-3 space-y-0.5">
+            <a href="{% url 'home' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold {% if request.resolver_match.url_name == 'home' %}text-[#00d1b2] bg-[#00d1b2]/8{% else %}text-gray-300 hover:text-white hover:bg-white/5{% endif %} transition">🏠 Home</a>
+            <a href="{% url 'chat' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold {% if request.resolver_match.url_name == 'chat' %}text-[#00d1b2] bg-[#00d1b2]/8{% else %}text-gray-300 hover:text-white hover:bg-white/5{% endif %} transition">🤖 AI Chat</a>
+            <a href="{% url 'assessments' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold {% if request.resolver_match.url_name == 'assessments' %}text-[#00d1b2] bg-[#00d1b2]/8{% else %}text-gray-300 hover:text-white hover:bg-white/5{% endif %} transition">📝 Assessments</a>
+            <a href="{% url 'counsellor_booking' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold {% if request.resolver_match.url_name == 'counsellor_booking' %}text-[#00d1b2] bg-[#00d1b2]/8{% else %}text-gray-300 hover:text-white hover:bg-white/5{% endif %} transition">👨‍⚕️ Counsellor</a>
+            {% if user.is_authenticated %}
+            <a href="{% url 'mood_tracker' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold {% if request.resolver_match.url_name == 'mood_tracker' %}text-[#00d1b2] bg-[#00d1b2]/8{% else %}text-gray-300 hover:text-white hover:bg-white/5{% endif %} transition">💚 Mood Tracker</a>
+            <a href="{% url 'dashboard' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold {% if request.resolver_match.url_name == 'dashboard' %}text-[#00d1b2] bg-[#00d1b2]/8{% else %}text-gray-300 hover:text-white hover:bg-white/5{% endif %} transition">📊 Dashboard</a>
+            <a href="{% url 'my_bookings' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold {% if request.resolver_match.url_name == 'my_bookings' %}text-[#00d1b2] bg-[#00d1b2]/8{% else %}text-gray-300 hover:text-white hover:bg-white/5{% endif %} transition">📅 My Bookings</a>
+            <a href="{% url 'forum_list' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold {% if request.resolver_match.url_name == 'forum_list' %}text-[#00d1b2] bg-[#00d1b2]/8{% else %}text-gray-300 hover:text-white hover:bg-white/5{% endif %} transition">💬 Forum</a>
+            {% endif %}
+            <a href="{% url 'contact_us' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold {% if request.resolver_match.url_name == 'contact_us' %}text-[#00d1b2] bg-[#00d1b2]/8{% else %}text-gray-300 hover:text-white hover:bg-white/5{% endif %} transition">📩 Contact</a>
+            <a href="{% url 'resources' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-300 hover:text-white hover:bg-white/5 transition">📞 Helplines</a>
+            <button onclick="toggleCommandPalette(true)" class="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-400 hover:text-white hover:bg-white/5 transition text-left">🔍 Search</button>
+            </div>
 
             {% if user.is_authenticated %}
-            <p class="text-xs uppercase text-white/50 pt-2">Dashboard menu</p>
-            <a href="{% url 'dashboard' %}"
-                class="block py-2 {% if request.resolver_match.url_name == 'dashboard' %}text-[#00d1b2] font-bold{% else %}hover:text-[#00d1b2]{% endif %}">Dashboard</a>
-            <a href="{% url 'doctor_dashboard' %}"
-                class="block py-2 {% if request.resolver_match.url_name == 'doctor_dashboard' %}text-[#00d1b2] font-bold{% else %}hover:text-[#00d1b2]{% endif %}">Doctor
-                Panel</a>
-            <a href="{% url 'forum_list' %}"
-                class="block py-2 {% if request.resolver_match.url_name == 'forum_list' %}text-[#00d1b2] font-bold{% else %}hover:text-[#00d1b2]{% endif %}">Support
-                Forum</a>
-            <a href="{% url 'location_map' %}"
-                class="block py-2 {% if request.resolver_match.url_name == 'location_map' %}text-[#00d1b2] font-bold{% else %}hover:text-[#00d1b2]{% endif %}">Location
-                Map</a>
-            <a href="{% url 'mental_health_heatmap' %}"
-                class="block py-2 {% if request.resolver_match.url_name == 'mental_health_heatmap' %}text-[#00d1b2] font-bold{% else %}hover:text-[#00d1b2]{% endif %}">Heatmap</a>
-            <a href="{% url 'survey_analytics' %}"
-                class="block py-2 {% if request.resolver_match.url_name == 'survey_analytics' %}text-[#00d1b2] font-bold{% else %}hover:text-[#00d1b2]{% endif %}">Survey
-                Analytics</a>
-            <a href="{% url 'survey_sentiment_dashboard' %}"
-                class="block py-2 {% if request.resolver_match.url_name == 'survey_sentiment_dashboard' %}text-[#00d1b2] font-bold{% else %}hover:text-[#00d1b2]{% endif %}">Survey
-                Sentiment</a>
-            <a href="{% url 'resources' %}"
-                class="block py-2 {% if request.resolver_match.url_name == 'resources' %}text-[#00d1b2] font-bold{% else %}hover:text-[#00d1b2]{% endif %}">Helplines</a>
-            <a href="{% url 'logout' %}" class="block py-2 text-red-400">Logout</a>
+            <div class="p-3 pt-0 border-t border-white/8">
+                <a href="{% url 'logout' %}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-red-400 hover:bg-red-500/8 transition">↪ Sign Out</a>
+            </div>
             {% else %}
-            <a href="{% url 'forum_list' %}" class="block py-2 hover:text-[#00d1b2]">Support Forum</a>
-            <a href="{% url 'resources' %}" class="block py-2 hover:text-[#00d1b2]">Helplines</a>
-            <a href="{% url 'login' %}" class="block py-2 hover:text-[#00d1b2]">Login</a>
-            <a href="{% url 'register' %}"
-                class="block mt-2 bg-[#00d1b2] text-[#04111f] px-4 py-2 rounded-xl font-bold text-center">Sign Up</a>
+            <div class="p-3 pt-0 border-t border-white/8 space-y-2">
+                <a href="{% url 'login' %}" class="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-white/10 bg-white/5 text-white font-bold text-sm hover:bg-white/10 transition">Login</a>
+                <a href="{% url 'register' %}" class="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-[#00d1b2] text-[#04111f] font-bold text-sm hover:opacity-95 transition">Sign Up Free →</a>
+            </div>
             {% endif %}
         </div>
     </header>
@@ -223,9 +217,9 @@
     <!-- ================= FIXED BACK BUTTON ================= -->
     {% block show_back_button %}
     <a href="#" onclick="history.back(); return false;"
-        class="fixed top-[7.5rem] left-5 z-[9998] inline-flex items-center justify-center w-10 h-10 rounded-full bg-[#0a1428]/80 border border-[#00d1b2]/30 text-[#00d1b2] hover:text-[#7ef5df] hover:border-[#00d1b2]/70 hover:bg-[#00d1b2]/10 backdrop-blur-md shadow-lg transition-all duration-200 hover:scale-110 group"
+        class="fixed top-24 sm:top-[7.5rem] left-3 sm:left-5 z-[9998] inline-flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#0a1428]/80 border border-[#00d1b2]/30 text-[#00d1b2] hover:text-[#7ef5df] hover:border-[#00d1b2]/70 hover:bg-[#00d1b2]/10 backdrop-blur-md shadow-lg transition-all duration-200 hover:scale-110 group"
         aria-label="Go back">
-        <svg class="w-5 h-5 drop-shadow-[0_0_6px_rgba(0,209,178,0.7)] group-hover:drop-shadow-[0_0_12px_rgba(0,209,178,0.9)] transition-all duration-200"
+        <svg class="w-4 h-4 sm:w-5 sm:h-5 drop-shadow-[0_0_6px_rgba(0,209,178,0.7)] group-hover:drop-shadow-[0_0_12px_rgba(0,209,178,0.9)] transition-all duration-200"
              fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
                   d="M15 19l-7-7 7-7" />
@@ -580,6 +574,38 @@
                 });
             });
         }
+    </script>
+
+    <!-- ── SCROLL REVEAL ── -->
+    <script>
+    (function(){
+      var observer = new IntersectionObserver(function(entries){
+        entries.forEach(function(e){
+          if(e.isIntersecting){ e.target.classList.add('revealed'); observer.unobserve(e.target); }
+        });
+      }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+      document.querySelectorAll('[data-reveal]').forEach(function(el){ observer.observe(el); });
+    })();
+    </script>
+
+    <!-- ── GLOBAL TOAST API ── -->
+    <div class="mm-toast-wrapper" id="mmToastWrapper"></div>
+    <script>
+    window.mmToast = function(msg, type, duration) {
+      type = type || 'info'; duration = duration || 3500;
+      var wrapper = document.getElementById('mmToastWrapper');
+      if (!wrapper) return;
+      var icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
+      var t = document.createElement('div');
+      t.className = 'mm-toast toast-' + type;
+      t.innerHTML = '<span>' + (icons[type]||'') + '</span><span style="flex:1">' + msg + '</span>' +
+        '<button class="mm-toast-dismiss" onclick="this.parentElement.remove()">×</button>';
+      wrapper.appendChild(t);
+      setTimeout(function(){
+        t.style.animation = 'toastOut .3s ease forwards';
+        setTimeout(function(){ if(t.parentElement) t.remove(); }, 300);
+      }, duration);
+    };
     </script>
 
     {% block scripts %}{% endblock %}

@@ -50,7 +50,7 @@
             <h4 class="text-white font-bold text-sm">Need to talk to someone right now? ⚡</h4>
             <p class="text-gray-300 text-xs mt-1">Connect instantly with our on-duty counsellors today.</p>
           </div>
-          <a href="{% url 'instant_booking' %}" class="px-5 py-2.5 rounded-xl bg-purple-500 text-white hover:bg-purple-600 font-extrabold text-xs transition whitespace-nowrap active:scale-95 shadow-[0_0_15px_rgba(168,85,247,0.4)]">
+          <a href="{% url 'instant_booking' %}" class="px-5 py-2.5 rounded-xl bg-purple-500 text-white hover:bg-[#00b8a5] font-extrabold text-xs transition whitespace-nowrap active:scale-95">
             Book Instant Session
           </a>
         </div>
@@ -135,7 +135,7 @@
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <!-- Chat Session Checkbox Card -->
               <label for="id_include_chat" class="relative flex items-center gap-3 p-4 rounded-2xl border border-white/10 bg-white/5 cursor-pointer hover:bg-white/10 transition group">
-                <input type="checkbox" name="include_chat" id="id_include_chat" checked class="h-5 w-5 rounded border-white/20 bg-white/5 text-[#00d1b2] focus:ring-[#00d1b2] focus:ring-offset-[#050b1a] focus:ring-offset-2">
+                <input type="checkbox" name="include_chat" id="id_include_chat" class="h-5 w-5 rounded border-white/20 bg-white/5 text-[#00d1b2] focus:ring-[#00d1b2] focus:ring-offset-[#050b1a] focus:ring-offset-2">
                 <div>
                   <p class="text-sm font-bold text-white">Chat Session</p>
                 </div>
@@ -185,9 +185,8 @@
           <div class="flex justify-center mt-4">
             <button type="submit"
                     id="submitBtn"
-                    disabled
-                    class="px-8 py-4 rounded-2xl bg-purple-500 text-white font-extrabold transition-all duration-300 shadow-[0_0_20px_rgba(168,85,247,0.45)] hover:bg-[#00b8a5] disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:hover:bg-purple-500"
-                    title="Please select a time slot first">
+                    class="px-8 py-4 rounded-2xl bg-[#00b8a5] text-white font-extrabold transition-all duration-300 hover:bg-purple-500 active:scale-95"
+                    title="Book your appointment">
               Book Appointment
             </button>
           </div>
@@ -275,8 +274,9 @@
   });
 </script>
 {% endif %}
+
 <script>
   window.COUNSELLORS_DATA = {{ counsellors_json|safe }};
 </script>
-<script src="{% static 'js/counsellor_booking.js' %}?v=1.3"></script>
+<script src="{% static 'js/counsellor_booking.js' %}?v=1.4"></script>
 {% endblock %}

@@ -3,226 +3,455 @@
 {% load static %}
 {% block title %}Mood Tracker{% endblock %}
 
+{% block extra_css %}
+<style>
+  /* ── Mood card selection glow ── */
+  .mood-card-selected {
+    border-color: #00d1b2 !important;
+    background: rgba(0,209,178,0.12) !important;
+    box-shadow: 0 0 0 3px rgba(0,209,178,0.18), 0 0 24px rgba(0,209,178,0.15);
+    transform: scale(1.07);
+  }
+  @keyframes moodBounce {
+    0%,100% { transform: scale(1.07); }
+    40%      { transform: scale(1.18); }
+    70%      { transform: scale(1.04); }
+  }
+  .mood-bounce { animation: moodBounce 0.4s ease; }
+
+  /* ── Energy pill ── */
+  .energy-pill-selected {
+    background: rgba(139,92,246,0.18) !important;
+    border-color: rgba(139,92,246,0.5) !important;
+    color: #c4b5fd !important;
+  }
+
+  /* ── Activity chip ── */
+  .activity-chip-selected {
+    background: rgba(0,209,178,0.12) !important;
+    border-color: #00d1b2 !important;
+    color: #00d1b2 !important;
+  }
+
+  /* ── Heatmap cell colors ── */
+  .hm-0 { background: rgba(255,255,255,0.04); }
+  .hm-1 { background: rgba(239,68,68,0.35); }
+  .hm-2 { background: rgba(249,115,22,0.35); }
+  .hm-3 { background: rgba(234,179,8,0.35); }
+  .hm-4 { background: rgba(34,197,94,0.35); }
+  .hm-5 { background: rgba(0,209,178,0.50); }
+
+  /* ── Radial ring animation ── */
+  .mood-ring-arc {
+    stroke-dasharray: 0 220;
+    transition: stroke-dasharray 1.4s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  /* ── Chart switcher tabs ── */
+  .chart-tab { transition: all .2s; cursor: pointer; }
+  .chart-tab.active {
+    background: rgba(0,209,178,0.15);
+    border-color: rgba(0,209,178,0.4);
+    color: #00d1b2;
+  }
+
+  /* ── Inline toast ── */
+  @keyframes toastIn  { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  @keyframes toastOut { from { opacity:1; } to { opacity:0; } }
+  .mm-toast { animation: toastIn .25s ease; }
+
+  /* ── Save button shimmer ── */
+  @keyframes shimmer {
+    from { background-position: -200% center; }
+    to   { background-position:  200% center; }
+  }
+  .btn-shimmer {
+    background: linear-gradient(90deg, #00d1b2 33%, #7ef5df 50%, #00d1b2 66%);
+    background-size: 200% auto;
+    animation: shimmer 2.4s linear infinite;
+  }
+
+  /* ── Entry card hover ── */
+  .entry-card { transition: transform .2s, box-shadow .2s; }
+  .entry-card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+
+  /* ── Floating FAB ── */
+  #fabBtn {
+    box-shadow: 0 4px 24px rgba(0,209,178,0.4);
+    transition: transform .2s, box-shadow .2s;
+  }
+  #fabBtn:hover {
+    transform: scale(1.12) rotate(45deg);
+    box-shadow: 0 8px 36px rgba(0,209,178,0.6);
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="min-h-screen bg-[#050b1a] pt-4 md:pt-6 pb-20 relative overflow-hidden">
+<div class="min-h-screen bg-[#050b1a] pt-2 md:pt-4 pb-24 relative overflow-hidden">
 
-  {% if messages %}
-  <div class="max-w-7xl mx-auto px-6 pt-2">
-    {% for message in messages %}
-    <div class="toast-msg mb-3 px-5 py-3 rounded-xl text-sm font-medium flex items-center justify-between transition-all duration-500 opacity-100
-      {% if message.tags == 'error' %}bg-red-500/15 border border-red-500/30 text-red-400
-      {% else %}bg-[#00d1b2]/10 border border-[#00d1b2]/30 text-[#00d1b2]{% endif %}">
-      <span>{{ message }}</span>
-      <button type="button" class="text-lg hover:opacity-70 ml-4 shrink-0" onclick="dismissToast(this.parentElement)">×</button>
-    </div>
-    {% endfor %}
-  </div>
-  {% endif %}
+  <!-- Ambient glows -->
+  <div class="absolute top-0 left-1/4 w-[600px] h-[600px] bg-[#00d1b2]/6 rounded-full blur-[140px] pointer-events-none -z-10"></div>
+  <div class="absolute bottom-0 right-1/3 w-[500px] h-[500px] bg-purple-500/8 blur-[120px] rounded-full pointer-events-none -z-10"></div>
 
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
-  {% if crisis_alert %}
-  <div class="max-w-7xl mx-auto px-6 pt-2">
-    <div class="flex items-start gap-3 bg-red-500/10 border border-red-500/30 rounded-2xl px-5 py-4 mb-4">
+    <!-- ══ CRISIS ALERT ══ -->
+    {% if crisis_alert %}
+    <div class="flex items-start gap-3 bg-red-500/10 border border-red-500/30 rounded-2xl px-5 py-4 mb-6">
       <span class="text-xl mt-0.5">🚨</span>
       <div>
         <p class="text-red-400 text-sm font-semibold">We noticed you've been feeling very low for {{ very_low_streak }} days in a row.</p>
-        <p class="text-gray-400 text-xs mt-0.5 leading-relaxed">It's okay to reach out for support. Consider talking to a counsellor or calling a helpline — you don't have to face this alone.</p>
+        <p class="text-gray-400 text-xs mt-0.5 leading-relaxed">It's okay to reach out. You don't have to face this alone.</p>
         <div class="flex gap-3 mt-2">
-          <a href="{% url 'counsellor_booking' %}" class="text-xs font-semibold text-red-400 hover:text-red-300 transition underline">Book a Counsellor</a>
-          <a href="{% url 'resources' %}" class="text-xs font-semibold text-gray-400 hover:text-white transition underline">View Helplines</a>
+          <a href="{% url 'counsellor_booking' %}" class="text-xs font-semibold text-red-400 hover:text-red-300 underline transition">Book a Counsellor</a>
+          <a href="{% url 'resources' %}" class="text-xs font-semibold text-gray-400 hover:text-white underline transition">View Helplines</a>
         </div>
       </div>
     </div>
-  </div>
-  {% endif %}
+    {% endif %}
 
-  <!-- Glow Background -->
-  <div class="absolute bottom-0 right-1/3 w-[500px] h-[500px] bg-purple-500/10 blur-[120px] rounded-full pointer-events-none -z-10"></div>
-
-  <div class="max-w-7xl mx-auto px-6 relative z-10">
-
-    <!-- HEADER -->
-    <div class="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-12">
+    <!-- ══ HEADER ══ -->
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
       <div>
-        <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-white">Mood Tracker</h1>
-        <p class="text-gray-400 mt-2">Track your emotional journey and discover patterns that influence your well-being.</p>
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00d1b2]/10 border border-[#00d1b2]/20 text-[#00d1b2] text-[10px] font-bold tracking-[0.2em] uppercase mb-3">
+          <span class="h-1.5 w-1.5 rounded-full bg-[#00d1b2] animate-pulse"></span>
+          Emotional Journal
+        </div>
+        <h1 class="text-4xl sm:text-5xl font-bold text-white leading-tight">Mood Tracker</h1>
+        <p class="text-gray-400 mt-2 text-base">Track your emotional journey and discover patterns in your well-being.</p>
       </div>
 
-      <div class="flex flex-wrap gap-4">
-        <div class="bg-[#0a1428]/60 backdrop-blur-xl px-6 py-4 rounded-2xl">
-          <p class="text-xs text-gray-400">Logging Streak</p>
-          <p class="text-white text-xl font-bold">{{ streak|default:0 }} Days</p>
+      <!-- Stat Cards -->
+      <div class="flex flex-wrap gap-3">
+
+        <!-- Streak -->
+        <div class="bg-[#0a1428]/80 backdrop-blur-xl px-5 py-4 rounded-2xl border border-white/8 min-w-[130px]
+                    {% if streak >= 7 %}shadow-[0_0_20px_rgba(0,209,178,0.15)] border-[#00d1b2]/20{% endif %}">
+          <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Logging Streak</p>
+          <div class="flex items-center gap-2">
+            <span class="text-2xl {% if streak > 0 %}animate-bounce{% endif %}">{% if streak >= 7 %}🔥{% elif streak > 0 %}✨{% else %}💤{% endif %}</span>
+            <div>
+              <p class="text-white text-xl font-black leading-none">{{ streak|default:0 }}</p>
+              <p class="text-gray-500 text-[10px]">days</p>
+            </div>
+          </div>
         </div>
 
-        <div class="bg-[#0a1428]/60 backdrop-blur-xl px-6 py-4 rounded-2xl">
-          <p class="text-xs text-gray-400">Avg Mood</p>
-          <p class="text-white text-xl font-bold">{{ avg_mood_7|default:"0.0" }}/5</p>
+        <!-- Avg Mood with Ring -->
+        <div class="bg-[#0a1428]/80 backdrop-blur-xl px-5 py-4 rounded-2xl border border-white/8 min-w-[160px]">
+          <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Avg Mood (7d)</p>
+          <div class="flex items-center gap-3">
+            <div class="relative flex-shrink-0">
+              <svg width="52" height="52" viewBox="0 0 52 52">
+                <circle cx="26" cy="26" r="22" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="5"/>
+                <circle id="moodRingArc" cx="26" cy="26" r="22" fill="none"
+                  stroke="#00d1b2" stroke-width="5" stroke-linecap="round"
+                  stroke-dasharray="0 138.2" transform="rotate(-90 26 26)"
+                  class="mood-ring-arc"/>
+              </svg>
+              <span class="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-white">
+                {{ avg_mood_7|default:"—" }}
+              </span>
+            </div>
+            <div>
+              <p class="text-white font-bold text-lg leading-none">{{ avg_mood_7|default:"—" }}<span class="text-gray-500 text-xs font-normal">/5</span></p>
+              <p class="text-[11px] mt-0.5
+                {% if mood_trend_direction == 'up' %}text-emerald-400
+                {% elif mood_trend_direction == 'down' %}text-red-400
+                {% else %}text-gray-500{% endif %}">
+                {% if mood_trend_direction == 'up' %}↑ Improving
+                {% elif mood_trend_direction == 'down' %}↓ Declining
+                {% else %}→ Stable{% endif %}
+              </p>
+            </div>
+          </div>
         </div>
+
+        <!-- Total Logs -->
+        <div class="bg-[#0a1428]/80 backdrop-blur-xl px-5 py-4 rounded-2xl border border-white/8 min-w-[120px]">
+          <p class="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1">Total Logs</p>
+          <p class="text-white text-xl font-black">{{ total_entries_count }}</p>
+          <p class="text-gray-500 text-[10px]">entries</p>
+        </div>
+
       </div>
     </div>
 
-    <!-- MAIN GRID -->
-    <div class="grid lg:grid-cols-2 gap-10">
+    <!-- ══ MAIN GRID ══ -->
+    <div class="grid grid-cols-1 xl:grid-cols-[1fr_480px] gap-8">
 
-      <!-- LEFT PANEL -->
-      <div class="bg-[#0a1428]/60 backdrop-blur-xl rounded-3xl p-8">
+      <!-- ════ LEFT: LOG FORM ════ -->
+      <div class="bg-[#0a1428]/70 backdrop-blur-xl rounded-[2rem] border border-white/8 p-8 shadow-2xl">
 
-        <h2 class="text-white text-xl font-semibold mb-2">How are you feeling?</h2>
-        <p class="text-gray-500 text-sm mb-6">Take a moment to check in with yourself.</p>
+        <div class="flex items-center gap-3 mb-6">
+          <div class="h-10 w-10 rounded-2xl bg-[#00d1b2]/10 border border-[#00d1b2]/20 flex items-center justify-center text-xl">📝</div>
+          <div>
+            <h2 class="text-white text-xl font-bold">How are you feeling?</h2>
+            <p class="text-gray-500 text-sm">Take a moment to check in with yourself.</p>
+          </div>
+        </div>
 
-        <form method="POST">
+        <form method="POST" id="moodForm">
           {% csrf_token %}
 
-          <!-- MOOD -->
-          <p class="text-xs text-gray-500 mb-3">SELECT MOOD</p>
-          <div class="grid grid-cols-5 gap-2 mb-6">
-            {% for value, label in form.mood.field.choices %}
-            {% if value %}
-            <label class="cursor-pointer">
-              <input type="radio" name="mood" value="{{ value }}" class="sr-only mood-input" required>
-
-              <div class="mood-card w-full h-20 flex flex-col items-center justify-center 
-                          rounded-2xl bg-white/5 border border-white/10 
-                          hover:border-[#00d1b2] hover:bg-[#00d1b2]/10 transition">
-
-                <div class="text-xl">
-                  {% if value == 1 %}😢
-                  {% elif value == 2 %}😔
-                  {% elif value == 3 %}😐
-                  {% elif value == 4 %}🙂
-                  {% else %}😊{% endif %}
+          <!-- ── MOOD ── -->
+          <div class="mb-7">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-base">🎭</span>
+              <p class="text-xs font-bold text-white/60 uppercase tracking-widest">Select Mood</p>
+            </div>
+            <div class="grid grid-cols-5 gap-3">
+              {% for value, label in form.mood.field.choices %}
+              {% if value %}
+              <label class="cursor-pointer group">
+                <input type="radio" name="mood" value="{{ value }}" class="sr-only mood-input" required>
+                <div class="mood-card flex flex-col items-center justify-center h-28 rounded-2xl bg-white/4 border border-white/10 transition-all duration-200 group-hover:border-[#00d1b2]/40 group-hover:bg-[#00d1b2]/5 select-none">
+                  <span class="text-4xl mb-2 transition-transform duration-200">
+                    {% if value == 1 %}😢{% elif value == 2 %}😔{% elif value == 3 %}😐{% elif value == 4 %}🙂{% else %}😊{% endif %}
+                  </span>
+                  <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wide text-center leading-tight">{{ label }}</p>
                 </div>
+              </label>
+              {% endif %}
+              {% endfor %}
+            </div>
+          </div>
 
-                <p class="text-xs text-gray-400 mt-1 uppercase text-center">{{ label }}</p>
-              </div>
+          <!-- ── ENERGY ── -->
+          <div class="mb-7">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-base">⚡</span>
+              <p class="text-xs font-bold text-white/60 uppercase tracking-widest">Energy Level</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              {% for value, label in form.energy_level.field.choices %}
+              {% if value %}
+              <label class="cursor-pointer">
+                <input type="radio" name="energy_level" value="{{ value }}" class="sr-only energy-input">
+                <div class="energy-pill px-4 py-2 rounded-full bg-white/5 border border-white/10 text-gray-400 text-sm font-medium hover:bg-purple-500/10 hover:border-purple-500/30 hover:text-purple-300 transition-all duration-200 select-none">
+                  {{ label }}
+                </div>
+              </label>
+              {% endif %}
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- ── ACTIVITIES ── -->
+          <div class="mb-7">
+            <div class="flex items-center gap-2 mb-3">
+              <span class="text-base">🎯</span>
+              <p class="text-xs font-bold text-white/60 uppercase tracking-widest">Activities <span class="text-gray-600 normal-case font-normal">(up to 3)</span></p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              {% for chip_val, chip_emoji in activity_chips %}
+              <button type="button"
+                class="activity-chip flex items-center gap-1.5 px-4 py-2 rounded-full border border-gray-700/60 text-gray-400 text-sm font-medium hover:border-[#00d1b2]/50 hover:text-[#00d1b2] transition-all duration-200"
+                data-value="{{ chip_val }}">
+                <span>{{ chip_emoji }}</span> {{ chip_val|title }}
+              </button>
+              {% endfor %}
+            </div>
+            <input type="hidden" name="activities" id="activitiesInput">
+          </div>
+
+          <!-- ── DATE ── -->
+          <div class="mb-5">
+            <label class="flex items-center gap-2 text-xs font-bold text-white/60 uppercase tracking-widest mb-2">
+              <span>📅</span> Date
             </label>
-            {% endif %}
-            {% endfor %}
+            {{ form.date|add_class:"w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 outline-none focus:border-[#00d1b2]/50 transition" }}
           </div>
 
-          <!-- ENERGY -->
-          <p class="text-xs text-gray-500 mb-2">ENERGY LEVEL</p>
-          <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-6">
-            {% for value, label in form.energy_level.field.choices %}
-            {% if value %}
-            <label>
-              <input type="radio" name="energy_level" value="{{ value }}" class="sr-only energy-input">
-              <div class="energy-pill px-3 py-2 rounded-full bg-white/5 text-gray-400 text-xs 
-                          hover:bg-[#00d1b2]/20 hover:text-white transition text-center">
-                {{ label }}
-              </div>
+          <!-- ── NOTES ── -->
+          <div class="mb-7 relative">
+            <label class="flex items-center gap-2 text-xs font-bold text-white/60 uppercase tracking-widest mb-2">
+              <span>📝</span> Notes <span class="text-gray-600 normal-case font-normal">(optional)</span>
             </label>
-            {% endif %}
-            {% endfor %}
+            {{ form.notes|add_class:"w-full bg-white/5 border border-white/10 text-white rounded-xl px-4 py-3 outline-none focus:border-[#00d1b2]/50 transition resize-none"|attr:"rows:3"|attr:"maxlength:300"|attr:"placeholder:What's on your mind today? Any thoughts or reflections…" }}
+            <p class="text-[10px] text-gray-600 mt-1 text-right" id="notesCounter">0 / 300</p>
           </div>
 
-          <!-- ACTIVITIES -->
-          <p class="text-xs text-gray-500 mb-2">ACTIVITIES</p>
-          <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2 mb-4">
-            {% for chip in activity_chips %}
-            <button type="button"
-              class="activity-chip px-2 py-1 rounded-full border border-gray-600 text-gray-400 text-xs
-                     hover:border-[#00d1b2] hover:text-[#00d1b2] transition text-center"
-              data-value="{{ chip }}">
-              {{ chip|title }}
-            </button>
-            {% endfor %}
-          </div>
-
-          <div class="mb-4">
-            {{ form.activities|add_class:"w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white placeholder-gray-500 outline-none hover:bg-white/10 focus:border-[#00d1b2] transition"|attr:"placeholder:e.g. work, sleep, exercise" }}
-          </div>
-
-          <!-- DATE -->
-          <div class="mb-4">
-            {{ form.date|add_class:"bg-white/5 text-white rounded-xl p-3 w-full" }}
-          </div>
-
-          <!-- NOTES -->
-          <div class="mb-4">
-            {{ form.notes|add_class:"bg-white/5 text-white rounded-xl p-4 w-full" }}
-          </div>
-
-          <button class="w-full py-3 bg-[#00d1b2] text-black rounded-xl font-semibold hover:bg-[#00b8a5]">
-            + Save Entry
+          <!-- ── SAVE BUTTON ── -->
+          <button type="submit" id="saveBtn"
+            class="w-full py-4 rounded-2xl btn-shimmer text-[#03120f] font-extrabold text-base tracking-wide hover:bg-[#00b8a5] active:scale-95 transition-all duration-300 flex items-center justify-center gap-2">
+            
+            <span id="saveBtnText">Save Today's Entry</span>
           </button>
 
-          <!-- Thank You Note -->
-          <div class="mt-4 flex items-start gap-3 bg-[#00d1b2]/5 border border-[#00d1b2]/20 rounded-2xl px-5 py-4">
-            <span class="text-xl mt-0.5">💚</span>
+          <!-- Thank you note -->
+          <div class="mt-5 flex items-start gap-3 bg-[#00d1b2]/5 border border-[#00d1b2]/15 rounded-2xl px-5 py-4">
+            <span class="text-lg mt-0.5">💚</span>
             <div>
-              <p class="text-[#00d1b2] text-sm font-semibold">Thank you for checking in!</p>
-              <p class="text-gray-400 text-xs mt-0.5 leading-relaxed">Taking a moment to reflect on how you feel is a meaningful step towards better mental wellbeing. Keep it up — every entry counts.</p>
+              <p class="text-[#00d1b2] text-sm font-semibold">Checking in is an act of self-care.</p>
+              <p class="text-gray-500 text-xs mt-0.5 leading-relaxed">Every entry helps you understand patterns and celebrate progress — however small.</p>
             </div>
           </div>
 
         </form>
       </div>
 
-      <!-- RIGHT PANEL -->
+      <!-- ════ RIGHT: INSIGHTS + CHART + HISTORY ════ -->
       <div class="space-y-6">
 
-        <!-- CHART -->
-        <div class="bg-[#0a1428]/60 backdrop-blur-xl rounded-3xl p-6">
-          <div class="flex justify-between mb-4">
-            <h3 class="text-white font-semibold">Mood Trends</h3>
-            <p class="text-xs text-gray-500">LAST 7 DAYS</p>
+        <!-- ── AI INSIGHT CARD ── -->
+        {% if avg_mood_7 %}
+        <div class="bg-gradient-to-br from-[#0c1931] to-[#080f1f] border rounded-3xl p-6 shadow-xl
+          {% if avg_mood_7 >= 4.0 %}border-emerald-500/20{% elif avg_mood_7 >= 3.0 %}border-[#00d1b2]/20{% else %}border-blue-500/20{% endif %}">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="text-xs font-bold uppercase tracking-widest
+              {% if avg_mood_7 >= 4.0 %}text-emerald-400{% elif avg_mood_7 >= 3.0 %}text-[#00d1b2]{% else %}text-blue-400{% endif %}">
+              ✦ Weekly Insight
+            </span>
           </div>
+          <p class="text-white text-sm leading-relaxed">
+            {% if avg_mood_7 >= 4.5 %}
+              🌟 You're having an exceptional week! Your average mood is <strong class="text-emerald-400">{{ avg_mood_7 }}/5</strong>. Whatever you're doing — keep it up.
+            {% elif avg_mood_7 >= 4.0 %}
+              😊 A really positive week — avg mood of <strong class="text-emerald-400">{{ avg_mood_7 }}/5</strong>. You're building great emotional momentum.
+            {% elif avg_mood_7 >= 3.0 %}
+              😐 A balanced week with an avg mood of <strong class="text-[#00d1b2]">{{ avg_mood_7 }}/5</strong>. Small wins count — keep tracking.
+            {% elif avg_mood_7 >= 2.0 %}
+              💙 It's been a challenging week (avg <strong class="text-blue-400">{{ avg_mood_7 }}/5</strong>). Be gentle with yourself. Consider trying a breathing exercise.
+            {% else %}
+              🤍 It's been really tough (avg <strong class="text-blue-400">{{ avg_mood_7 }}/5</strong>). You're not alone — consider reaching out to a counsellor.
+            {% endif %}
+          </p>
+          {% if best_mood_entry %}
+          <p class="text-[11px] text-gray-500 mt-3">Best day: <strong class="text-white">{{ best_mood_entry.date|date:"M d" }}</strong>
+            {% if best_mood_entry.mood == 5 %}😊{% elif best_mood_entry.mood == 4 %}🙂{% else %}😐{% endif %}
+          </p>
+          {% endif %}
+        </div>
+        {% endif %}
 
-          <canvas id="moodChart"></canvas>
+        <!-- ── CHART ── -->
+        <div class="bg-[#0a1428]/70 backdrop-blur-xl rounded-3xl border border-white/8 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-white font-semibold">Mood Trend</h3>
+            <div class="flex gap-1">
+              <button class="chart-tab active text-[11px] font-bold px-3 py-1.5 rounded-xl border border-white/10 text-gray-400" data-period="7">7D</button>
+              <button class="chart-tab text-[11px] font-bold px-3 py-1.5 rounded-xl border border-white/10 text-gray-400" data-period="14">14D</button>
+              <button class="chart-tab text-[11px] font-bold px-3 py-1.5 rounded-xl border border-white/10 text-gray-400" data-period="30">30D</button>
+            </div>
+          </div>
+          <div class="relative">
+            <canvas id="moodChart" height="200"></canvas>
+            <p id="chartEmpty" class="text-gray-600 text-sm text-center py-8 hidden">No mood entries in this period yet.</p>
+          </div>
         </div>
 
-        <!-- RECENT -->
-        <div id="recent-entries">
+        <!-- ── 5-WEEK HEATMAP ── -->
+        <div class="bg-[#0a1428]/70 backdrop-blur-xl rounded-3xl border border-white/8 p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-white font-semibold">3-Week Calendar</h3>
+            <div class="flex items-center gap-2 text-[10px] text-gray-500">
+              <span class="flex items-center gap-1">
+                <span class="w-3 h-3 rounded-sm hm-0 inline-block border border-white/10"></span> None
+              </span>
+              <span class="flex items-center gap-1">
+                <span class="w-3 h-3 rounded-sm hm-5 inline-block"></span> Great
+              </span>
+            </div>
+          </div>
+          <div class="grid grid-cols-7 gap-1.5">
+            {% for d in heatmap_days %}
+            <div class="group relative">
+              <div class="hm-{{ d.mood }} w-full aspect-square rounded-lg cursor-default transition-transform hover:scale-110 border border-white/5"
+                   title="{{ d.date }}: {% if d.mood == 0 %}No entry{% else %}Mood {{ d.mood }}/5 ({{ d.count }} log{{ d.count|pluralize }}){% endif %}">
+              </div>
+              <!-- tooltip -->
+              <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 bg-[#0a1428] border border-white/10 rounded-lg text-[10px] text-white whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none z-10">
+                {{ d.date }}{% if d.mood > 0 %} · {% if d.mood == 1 %}😢{% elif d.mood == 2 %}😔{% elif d.mood == 3 %}😐{% elif d.mood == 4 %}🙂{% else %}😊{% endif %}{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <div class="flex justify-between mt-2 text-[10px] text-gray-600">
+            <span>3 weeks ago</span><span>Today</span>
+          </div>
+        </div>
+
+        <!-- ══ RECENT ENTRIES ══ -->
+        <div class="bg-[#0a1428]/70 backdrop-blur-xl rounded-3xl border border-white/8 p-6">
           <div class="flex justify-between items-center mb-4">
-            <h3 class="text-white font-semibold">Recent Entries</h3>
-            {% if show_all_entries %}
-              <a href="{% url 'mood_tracker' %}#recent-entries" class="text-xs font-semibold uppercase tracking-widest text-gray-400 hover:text-white transition">Show Less</a>
-            {% else %}
-              <a href="{% url 'mood_tracker' %}?all=1#recent-entries" class="text-xs font-semibold uppercase tracking-widest text-[#00d1b2] hover:text-[#7ef5df] transition">View All</a>
-            {% endif %}
+            <div class="flex items-center gap-2">
+              <span class="text-base">📋</span>
+              <h3 class="text-white font-semibold">Recent Entries</h3>
+            </div>
+            <a href="{% url 'mood_entries_all' %}"
+               class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-[#00d1b2] hover:text-[#7ef5df] transition-colors duration-200">
+              View All →
+            </a>
           </div>
 
-          <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-            {% for e in entries %}
-            <div class="bg-white/5 rounded-2xl p-4 flex justify-between items-center">
-
-              <div class="flex gap-3 items-center">
-                <div class="text-2xl">
-                  {% if e.mood == 1 %}😢
-                  {% elif e.mood == 2 %}😔
-                  {% elif e.mood == 3 %}😐
-                  {% elif e.mood == 4 %}🙂
-                  {% else %}😊{% endif %}
+          <div class="space-y-3">
+            {% for e in entries|slice:":2" %}
+            <div class="entry-card bg-white/4 hover:bg-white/6 rounded-2xl p-4 border border-white/6 cursor-default">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex items-start gap-3">
+                  <div class="text-3xl leading-none mt-0.5">
+                    {% if e.mood == 1 %}😢{% elif e.mood == 2 %}😔{% elif e.mood == 3 %}😐{% elif e.mood == 4 %}🙂{% else %}😊{% endif %}
+                  </div>
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                      <p class="text-white text-sm font-semibold">{{ e.get_mood_display }}</p>
+                      {% if e.energy_level %}
+                      <span class="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300">⚡ {{ e.get_energy_level_display }}</span>
+                      {% endif %}
+                    </div>
+                    {% if e.notes %}
+                    <p class="text-gray-400 text-xs mt-0.5 leading-relaxed line-clamp-2">{{ e.notes }}</p>
+                    {% endif %}
+                    {% if e.activities %}
+                    <div class="flex flex-wrap gap-1 mt-1.5">
+                      {% for act in e.activities.split %}
+                      <span class="text-[10px] px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-gray-400">{{ act|title }}</span>
+                      {% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
                 </div>
-
-                <div>
-                  <p class="text-white text-sm font-semibold">{{ e.get_mood_display }}</p>
-                  <p class="text-gray-400 text-xs">{{ e.notes }}</p>
+                <div class="text-right shrink-0">
+                  <p class="text-gray-500 text-[11px] whitespace-nowrap">{{ e.date|date:"M d, Y" }}</p>
                 </div>
               </div>
-
-              <p class="text-gray-500 text-xs">{{ e.date }}</p>
             </div>
             {% empty %}
-            <p class="text-gray-500">No entries yet</p>
+            <div class="text-center py-10">
+              <p class="text-5xl mb-3">📊</p>
+              <p class="text-gray-500 text-sm">No entries yet. Log your first mood!</p>
+            </div>
             {% endfor %}
           </div>
         </div>
 
-      </div>
-    </div>
-  </div>
+      </div><!-- end right -->
+    </div><!-- end main grid -->
+  </div><!-- end container -->
 </div>
+
+<!-- ══ FLOATING FAB ══ -->
+<button id="fabBtn"
+  onclick="document.getElementById('moodForm').scrollIntoView({behavior:'smooth'})"
+  class="fixed bottom-8 right-6 z-50 w-14 h-14 rounded-full bg-[#00d1b2] text-[#03120f] text-2xl font-black flex items-center justify-center"
+  title="Log your mood">
+  +
+</button>
+
 {% endblock %}
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   window.MOOD_TRACKER_DATA = {
-    labels: {{ chart_labels|safe }},
-    data: {{ chart_data|safe }}
+    chart7:  { labels: {{ chart_7.labels|safe }},  data: {{ chart_7.data|safe }}  },
+    chart14: { labels: {{ chart_14.labels|safe }}, data: {{ chart_14.data|safe }} },
+    chart30: { labels: {{ chart_30.labels|safe }}, data: {{ chart_30.data|safe }} },
+    avgMood: {{ avg_mood_7|default:"null" }},
+    trendDir: "{{ mood_trend_direction }}"
   };
 </script>
-<script src="{% static 'js/mood_tracker.js' %}?v=1.0"></script>
+<script src="{% static 'js/mood_tracker.js' %}?v=2.0"></script>
 {% endblock %}

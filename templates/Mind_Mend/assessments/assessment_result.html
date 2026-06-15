@@ -1,18 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Result{% endblock %}
+{% block title %}Result — {{ assessment_name }}{% endblock %}
 
 {% block content %}
 <div class="min-h-screen bg-[#050b1a] relative overflow-hidden py-12 text-white flex items-center justify-center">
 
-  <!-- Background Glow -->
-  <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#00d1b2]/10 rounded-full blur-[120px] animate-pulse"></div>
-  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse"></div>
+  <!-- Background Glows -->
+  {% include 'Mind_Mend/partials/_bg_glows.html' %}
 
-  <div class="w-full max-w-2xl mx-auto px-6 text-center relative z-10 -translate-y-8">
-
+  <div class="w-full max-w-2xl mx-auto px-6 text-center relative z-10">
 
     <!-- Result Card -->
-    <div class="bg-[#0a1428]/60 backdrop-blur-xl border border-white/10 rounded-[2.5rem] px-6 py-8 md:px-8 md:py-10 shadow-2xl relative overflow-hidden">
+    <div id="resultCard" class="bg-[#0a1428]/60 backdrop-blur-xl border border-white/10 rounded-[2.5rem] px-6 py-10 md:px-10 md:py-12 shadow-2xl relative overflow-hidden"
+         style="animation: fadeInUp .5s cubic-bezier(0.16,1,0.3,1) both;">
 
       <!-- Glow -->
       <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-[#00d1b2]/10 rounded-full blur-[80px]"></div>
@@ -23,66 +22,99 @@
       </div>
 
       <!-- Title -->
-      <h3 class="relative z-10 text-3xl md:text-4xl font-bold text-white mb-4 uppercase">
+      <p class="relative z-10 text-[10px] font-bold uppercase tracking-[0.3em] text-[#00d1b2] mb-2">Assessment Complete</p>
+      <h1 class="relative z-10 text-3xl md:text-4xl font-bold text-white mb-6">
         {{ assessment_name }} Result
-      </h3>
+      </h1>
 
-      <!-- Score -->
-      <div class="relative z-10 flex flex-col items-center gap-4 mb-8">
-        <div class="text-5xl md:text-7xl font-extrabold text-white">
-          {{ score }}
-          <span class="text-2xl text-gray-500 ml-2">/ {{ max_score }}</span>
+      <!-- Score with count-up -->
+      <div class="relative z-10 flex flex-col items-center gap-4 mb-6">
+        <div class="text-6xl md:text-8xl font-extrabold text-white tabular-nums">
+          <span id="scoreDisplay">0</span><span class="text-2xl text-gray-500 ml-1">/ {{ max_score }}</span>
         </div>
 
         <!-- Level Badge -->
-        <div
-          id="levelBadge"
-          class="px-6 py-2 rounded-full border font-bold uppercase text-xs
-          {% if result_level == 'Minimal' %}
-            text-emerald-400 bg-emerald-500/10 border-emerald-500/20
-          {% elif result_level == 'Mild' %}
-            text-yellow-400 bg-yellow-500/10 border-yellow-500/20
-          {% elif result_level == 'Moderate' %}
-            text-orange-400 bg-orange-500/10 border-orange-500/20
-          {% else %}
-            text-red-400 bg-red-500/10 border-red-500/20
-          {% endif %}">
+        <div id="levelBadge" class="px-6 py-2 rounded-full border font-bold uppercase text-xs tracking-widest
+          {% if result_level == 'Minimal' %}text-emerald-400 bg-emerald-500/10 border-emerald-500/20
+          {% elif result_level == 'Mild' %}text-yellow-400 bg-yellow-500/10 border-yellow-500/20
+          {% elif result_level == 'Moderate' %}text-orange-400 bg-orange-500/10 border-orange-500/20
+          {% else %}text-red-400 bg-red-500/10 border-red-500/20{% endif %}">
           {{ result_level }} Symptoms
         </div>
       </div>
 
+      <!-- Score progress bar -->
+      <div class="relative z-10 w-full max-w-xs mx-auto mb-8">
+        <div class="h-2 bg-white/10 rounded-full overflow-hidden">
+          <div id="scoreBar" class="h-full rounded-full transition-all duration-1000
+            {% if result_level == 'Minimal' %}bg-emerald-400
+            {% elif result_level == 'Mild' %}bg-yellow-400
+            {% elif result_level == 'Moderate' %}bg-orange-400
+            {% else %}bg-red-400{% endif %}" style="width:0%"></div>
+        </div>
+        <p class="text-[10px] text-gray-500 mt-2">{{ score }} of {{ max_score }} points</p>
+      </div>
+
       <!-- Description -->
-      <div class="relative z-10 max-w-xl mx-auto mb-10">
-        <p class="text-gray-300 text-lg leading-relaxed mb-4">
+      <div class="relative z-10 max-w-xl mx-auto mb-8 text-left bg-white/5 border border-white/8 rounded-2xl p-5">
+        <p class="text-gray-300 leading-relaxed">
           {% if result_level == 'Minimal' %}
-            You are showing minimal symptoms. Keep maintaining your mental well-being.
+            You are showing minimal symptoms. Keep maintaining your mental well-being with healthy habits and regular mood check-ins.
           {% elif result_level == 'Mild' %}
-            You are showing mild symptoms. Consider tracking your mood more closely.
+            You are showing mild symptoms. Consider tracking your mood more closely and practising self-care daily.
           {% elif result_level == 'Moderate' %}
-            You are showing moderate symptoms. It might be helpful to talk to a counselor.
+            You are showing moderate symptoms. Talking to a counsellor can make a real difference — support is available.
           {% else %}
-            You are showing severe symptoms. We strongly recommend speaking with a professional.
+            You are showing severe symptoms. We strongly recommend speaking with a professional right away.
           {% endif %}
         </p>
-
-        <p class="text-gray-500 text-xs">
-          This is a screening tool only, not a diagnosis. Consider speaking with a mental health professional for guidance.
+        <p class="text-gray-500 text-xs mt-3">
+          This is a screening tool only, not a clinical diagnosis. Always consult a qualified professional.
         </p>
       </div>
 
       <!-- Action Buttons -->
-      <div class="relative z-10 grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <a href="{{ next_url }}"
-           class="px-8 py-4 rounded-xl border border-[#00d1b2] text-[#00d1b2] hover:bg-[#00d1b2] hover:text-black transition font-bold flex items-center justify-center gap-2 text-sm">
+      <div class="relative z-10 flex flex-col sm:flex-row gap-3 justify-center">
+        <a href="{{ next_url }}" class="px-8 py-4 rounded-xl border border-white/20 text-white hover:bg-white/5 transition font-bold flex items-center justify-center gap-2 text-sm">
           ← Back to Assessments
         </a>
-
-        <a href="{% url 'resources' %}"
-           class="px-8 py-4 rounded-xl bg-[#00d1b2] text-black font-extrabold hover:scale-102 transition flex items-center justify-center gap-2 text-sm">
+        {% if result_level == 'Moderate' or result_level == 'Severe' %}
+        <a href="{% url 'counsellor_booking' %}" class="px-8 py-4 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-extrabold transition flex items-center justify-center gap-2 text-sm shadow-[0_0_20px_rgba(168,85,247,0.4)]">
+          ⚡ Book a Counsellor
+        </a>
+        {% else %}
+        <a href="{% url 'resources' %}" class="px-8 py-4 rounded-xl bg-[#00d1b2] text-black font-extrabold hover:opacity-95 transition flex items-center justify-center gap-2 text-sm shadow-[0_0_20px_rgba(0,209,178,0.3)]">
           🛡️ View Helplines
         </a>
+        {% endif %}
       </div>
     </div>
   </div>
 </div>
+
+
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function(){
+  var target = {{ score }};
+  var maxScore = {{ max_score }};
+  var pct = Math.round((target / maxScore) * 100);
+  var display = document.getElementById('scoreDisplay');
+  var bar = document.getElementById('scoreBar');
+  var start = null;
+  var duration = 900;
+  function step(ts) {
+    if (!start) start = ts;
+    var progress = Math.min((ts - start) / duration, 1);
+    var ease = 1 - Math.pow(1 - progress, 3);
+    if (display) display.textContent = Math.round(ease * target);
+    if (bar) bar.style.width = (ease * pct) + '%';
+    if (progress < 1) requestAnimationFrame(step);
+  }
+  setTimeout(function(){ requestAnimationFrame(step); }, 300);
+})();
+</script>
 {% endblock %}

@@ -7,9 +7,7 @@
 {% block content %}
 <div class="min-h-screen flex items-start justify-center px-6 pt-6 md:pt-8 bg-[#050b1a] relative overflow-hidden">
 
-  <!-- Background Glows (matching assessments page) -->
-  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse pointer-events-none"></div>
-  <div class="absolute top-0 left-1/4 w-[400px] h-[400px] bg-[#00d1b2]/5 rounded-full blur-[120px] pointer-events-none"></div>
+  {% include 'Mind_Mend/partials/_bg_glows.html' %}
 
 
   <div class="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-10 items-start relative z-10">
@@ -56,17 +54,20 @@
 
       <!-- Error Popup -->
       {% if form.errors %}
-      <div class="mb-4 p-4 rounded-lg bg-red-50 border-2 border-red-400 text-red-700 text-sm flex items-center justify-between shadow-lg">
-        <div>
-          {% for field, errors in form.errors.items %}
-            {% for err in errors %}
-            <p class="mb-1">
-              {% if field == 'username' %}Username: {% elif field == 'email' %}Email: {% elif field == 'password1' %}Password: {% elif field == 'password2' %}Confirm Password: {% endif %}{{ err }}
-            </p>
+      <div class="mb-4 p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-300 text-sm flex items-start justify-between gap-3">
+        <div class="flex items-start gap-3">
+          <span class="text-lg shrink-0">⚠️</span>
+          <div>
+            {% for field, errors in form.errors.items %}
+              {% for err in errors %}
+              <p class="mb-1">
+                {% if field == 'username' %}Username: {% elif field == 'email' %}Email: {% elif field == 'password1' %}Password: {% elif field == 'password2' %}Confirm Password: {% endif %}{{ err }}
+              </p>
+              {% endfor %}
             {% endfor %}
-          {% endfor %}
+          </div>
         </div>
-        <button type="button" onclick="this.parentElement.remove()" class="text-red-500 hover:text-red-700 font-bold text-lg">×</button>
+        <button type="button" onclick="this.parentElement.remove()" class="text-red-400 hover:text-red-200 font-bold text-xl leading-none shrink-0">&times;</button>
       </div>
       {% endif %}
 
@@ -110,7 +111,7 @@
         </div>
         {% endfor %}
 
-        <button type="submit" class="w-full py-6 rounded-2xl bg-[#00d1b2] text-black font-extrabold text-sm tracking-widest hover:scale-[1.02] transition-transform flex items-center justify-center gap-3">
+        <button type="submit" class="w-full py-6 rounded-2xl bg-[#00d1b2] text-black font-extrabold text-sm tracking-widest hover:scale-[1.02] active:scale-95 transition-transform flex items-center justify-center gap-3">
           Create Account ➡️
         </button>
 

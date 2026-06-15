@@ -5,9 +5,7 @@
 {% block content %}
 <div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-4 md:pt-6 pb-20">
 
-  <!-- Background Glows -->
-  <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#00d1b2]/10 rounded-full blur-[120px] -z-10 animate-pulse"></div>
-  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] -z-10 animate-pulse delay-1000"></div>
+  {% include 'Mind_Mend/partials/_bg_glows.html' %}
 
   <div class="max-w-7xl mx-auto px-6 space-y-12">
 
@@ -104,7 +102,7 @@
             📅
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
+        <div class="grid grid-cols-1 xs:grid-cols-2 gap-4 pt-4 border-t border-white/5">
           <div>
             <p class="text-[9px] text-gray-600 font-bold uppercase tracking-widest">Responses</p>
             <p class="text-lg font-bold text-white">{{ card.responses }}</p>

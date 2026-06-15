@@ -6,31 +6,48 @@
 
 <div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-4 md:pt-6 pb-20">
 
-  <!-- Background Glow -->
-  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] pointer-events-none"></div>
+  {% include 'Mind_Mend/partials/_bg_glows.html' %}
 
   <div class="max-w-7xl mx-auto px-6 md:px-12 lg:px-20 space-y-10 relative z-10">
 
     <!-- HEADER -->
-    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6" data-reveal>
       <div>
-        <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-[#00d1b2] mb-2">
-          OVERVIEW
-        </p>
-        <h1 class="text-4xl font-bold text-white">My Dashboard</h1>
+        <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-[#00d1b2] mb-2">OVERVIEW</p>
+        <h1 class="text-4xl font-bold text-white font-display">My Dashboard</h1>
       </div>
 
       <div class="flex gap-3 flex-wrap">
-        <a href="{% url 'mood_tracker' %}" class="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-bold hover:bg-white/10">
-          Mood
+      
+        <a href="{% url 'location_map' %}" class="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-bold hover:bg-white/10 transition active:scale-95">
+          📍 Map
         </a>
-        <a href="{% url 'location_map' %}" class="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-bold hover:bg-white/10">
-          Map
-        </a>
-        <a href="{% url 'mental_health_heatmap' %}" class="px-4 py-2 rounded-xl bg-purple-500/20 border border-purple-500/30 text-purple-300 text-sm font-bold hover:bg-purple-500/30">
+        <a href="{% url 'mental_health_heatmap' %}" class="px-4 py-2 rounded-xl bg-purple-500/20 border border-purple-500/30 text-purple-300 text-sm font-bold hover:bg-purple-500/30 transition active:scale-95">
           🧠 Heatmap
         </a>
       </div>
+    </div>
+
+    <!-- QUICK ACTIONS -->
+    <div class="flex gap-3 overflow-x-auto pb-1 scrollbar-hide -mx-2 px-2" data-reveal data-delay="1">
+      <a href="{% url 'mood_tracker' %}" class="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#0a1428]/80 border border-white/8 text-sm font-semibold text-gray-300 hover:text-[#00d1b2] hover:border-[#00d1b2]/30 transition active:scale-95">
+        💚 Log Mood
+      </a>
+      <a href="{% url 'assessments' %}" class="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#0a1428]/80 border border-white/8 text-sm font-semibold text-gray-300 hover:text-[#00d1b2] hover:border-[#00d1b2]/30 transition active:scale-95">
+        📝 Take Assessment
+      </a>
+      <a href="{% url 'counsellor_booking' %}" class="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#0a1428]/80 border border-white/8 text-sm font-semibold text-gray-300 hover:text-purple-300 hover:border-purple-500/30 transition active:scale-95">
+        📅 Book Session
+      </a>
+      <a href="{% url 'forum_list' %}" class="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#0a1428]/80 border border-white/8 text-sm font-semibold text-gray-300 hover:text-[#00d1b2] hover:border-[#00d1b2]/30 transition active:scale-95">
+        💬 Community
+      </a>
+      <a href="{% url 'survey_sentiment_dashboard' %}" class="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#0a1428]/80 border border-white/8 text-sm font-semibold text-gray-300 hover:text-[#00d1b2] hover:border-[#00d1b2]/30 transition active:scale-95">
+        📊 Survey Analytics
+      </a>
+      <a href="{% url 'resources' %}" class="flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#0a1428]/80 border border-white/8 text-sm font-semibold text-gray-300 hover:text-purple-300 hover:border-purple-500/30 transition active:scale-95">
+        📞 Helplines
+      </a>
     </div>
 
     <!-- DAILY AFFIRMATION -->
@@ -52,19 +69,34 @@
       <div class="space-y-6">
 
         <!-- SCORE -->
-        <div class="bg-[#0a1428]/50 border border-white/10 rounded-3xl p-6 shadow-xl">
-          <p class="text-xs text-gray-400 uppercase mb-2">🧠 Mental Health Score</p>
-          <div class="flex items-center gap-2">
-            <span class="text-5xl font-bold text-[#00d1b2]">
-              {{ mental_health_score|default_if_none:"0" }}
-            </span>
-            <span class="text-gray-500">/100</span>
+        <div class="bg-[#0a1428]/50 border border-white/10 rounded-3xl p-6 shadow-xl" data-reveal data-delay="2">
+          <p class="text-xs text-gray-400 uppercase mb-3">🧠 Mental Health Score</p>
+          <div class="flex items-center gap-4">
+            <!-- Color ring -->
+            <div class="relative h-16 w-16 flex-shrink-0">
+              <svg class="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="15.9" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="3"/>
+                <circle cx="18" cy="18" r="15.9" fill="none"
+                  stroke="{% if mental_health_score >= 70 %}#00d1b2{% elif mental_health_score >= 40 %}#f59e0b{% else %}#ef4444{% endif %}"
+                  stroke-width="3" stroke-linecap="round"
+                  stroke-dasharray="{{ mental_health_score|default_if_none:0 }} 100"/>
+              </svg>
+              <span class="absolute inset-0 flex items-center justify-center text-sm font-bold text-white">
+                {{ mental_health_score|default_if_none:"0" }}
+              </span>
+            </div>
+            <div>
+              <span class="text-3xl font-bold {% if mental_health_score >= 70 %}text-[#00d1b2]{% elif mental_health_score >= 40 %}text-amber-400{% else %}text-red-400{% endif %}">
+                {{ mental_health_score|default_if_none:"0" }}
+              </span>
+              <span class="text-gray-500">/100</span>
+              <p class="text-xs text-gray-500 mt-1">
+                {% if mental_health_score >= 70 %}Good — keep it up!{% elif mental_health_score >= 40 %}Fair — room to grow{% else %}Low — take care{% endif %}
+              </p>
+            </div>
           </div>
-          <p class="text-xs text-gray-500 mt-2">
-            From mood + assessments. Higher = better.
-          </p>
           {% if mental_health_score == 0 %}
-          <p class="text-xs text-[#00d1b2] mt-2">
+          <p class="text-xs text-[#00d1b2] mt-3">
             No mood logs or assessments yet — your score starts when you log your first entry.
           </p>
           {% endif %}
@@ -131,20 +163,21 @@
         </div>
 
         <!-- WELLNESS -->
-        <div class="bg-[#0a1428]/50 border border-white/10 rounded-3xl p-6 shadow-xl">
-          <h4 class="text-white font-semibold mb-2">📈 Wellness Suggestions</h4>
+        <div class="bg-[#0a1428]/50 border border-white/10 rounded-3xl p-6 shadow-xl" data-reveal data-delay="3">
+          <h4 class="text-white font-semibold mb-2 font-display">📈 Wellness Suggestions</h4>
           <p class="text-xs text-purple-400 mb-4">Personalised Tips</p>
 
           {% if wellness_suggestions %}
           <ul class="space-y-3">
             {% for tip in wellness_suggestions %}
-            <li class="bg-white/5 border border-white/10 rounded-xl p-3 text-sm text-gray-300">
-              • {{ tip }}
+            <li class="bg-white/5 border border-white/8 rounded-xl p-3 text-sm text-gray-300 flex items-start gap-3">
+              <span class="text-lg flex-shrink-0">{% cycle '🧘' '🏃' '😴' '💧' '🌿' %}</span>
+              <span>{{ tip }}</span>
             </li>
             {% endfor %}
           </ul>
           {% else %}
-          <p class="text-gray-400 text-sm">No suggestions yet.</p>
+          <p class="text-gray-400 text-sm">Complete an assessment to unlock personalised tips.</p>
           {% endif %}
         </div>
 
@@ -202,7 +235,7 @@
         <!-- PDF download with period selector -->
         <div class="flex items-center rounded-xl overflow-hidden border border-[#00d1b2]/40">
           <a id="pdfDownloadBtn" href="{% url 'download_progress_report_pdf' %}?period=monthly"
-             class="px-5 py-3 bg-[#00d1b2] text-black font-bold text-sm tracking-wide hover:bg-[#00b8a5] transition-all flex items-center gap-2">
+             class="px-5 py-3 bg-[#00d1b2] text-black font-bold text-sm tracking-wide hover:bg-[#00b8a5] transition-all flex items-center gap-2 active:scale-95">
             ⬇️ Download PDF
           </a>
           <select id="pdfPeriodSelect" onchange="document.getElementById('pdfDownloadBtn').href='{% url 'download_progress_report_pdf' %}?period='+this.value"

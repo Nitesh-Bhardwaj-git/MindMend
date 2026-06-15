@@ -67,6 +67,7 @@ urlpatterns = [
     path('api/counsellor/<int:counsellor_id>/booked-slots/', counsellor.get_booked_slots, name='get_booked_slots'),
     # Mood
     path('mood/', analytics.mood_tracker, name='mood_tracker'),
+    path('mood/entries/', analytics.mood_entries_all, name='mood_entries_all'),
 
     # Resources & Helplines
     path('resources/', core.resources, name='resources'),

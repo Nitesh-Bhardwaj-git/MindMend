@@ -1,86 +1,111 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Connecting...{% endblock %}
+{% block title %}Connecting… — MindMend{% endblock %}
 {% block content %}
 
 <div class="min-h-screen bg-[#050b1a] relative overflow-hidden flex items-center justify-center text-white">
 
-  <!-- Background Glow -->
-  <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] animate-pulse"></div>
-  <div class="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-[#00d1b2]/10 rounded-full blur-[120px] animate-pulse"></div>
+  {% include 'Mind_Mend/partials/_bg_glows.html' %}
 
-  <div class="w-full max-w-lg mx-auto px-6 text-center relative z-10 -translate-y-8">
-    <div class="bg-[#0a1428]/60 backdrop-blur-xl border border-white/10 rounded-[3rem] p-10 md:p-12 shadow-2xl relative overflow-hidden">
-      <!-- Glow -->
-      <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-purple-500/10 rounded-full blur-[80px]"></div>
+  <div class="w-full max-w-md mx-auto px-6 text-center relative z-10">
+    <div class="bg-[#0a1428]/70 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-10 md:p-12 shadow-2xl relative overflow-hidden"
+         style="animation: fadeInUp .5s cubic-bezier(0.16,1,0.3,1) both;">
 
-      <!-- Spinner / Progress Circle -->
-      <div class="relative z-10 h-32 w-32 mx-auto mb-10 flex items-center justify-center">
-        <!-- SVG Ring -->
-        <svg class="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-          <circle cx="50" cy="50" r="44" stroke="rgba(255,255,255,0.05)" stroke-width="6" fill="transparent" />
-          <circle id="progressRing" cx="50" cy="50" r="44" stroke="#8b5cf6" stroke-width="6" fill="transparent"
-                  stroke-dasharray="276.46" stroke-dashoffset="0" stroke-linecap="round" class="transition-all duration-1000 ease-linear" />
+      <!-- Card inner glow -->
+      <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[280px] h-[280px] bg-purple-500/10 rounded-full blur-[80px] pointer-events-none"></div>
+
+      <!-- Live indicator -->
+      <div class="relative z-10 inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-purple-500/30 bg-purple-500/8 text-purple-300 text-[10px] font-bold tracking-widest uppercase mb-8 animate-pulse">
+        <span class="h-2 w-2 rounded-full bg-purple-400 shadow-[0_0_6px_rgba(168,85,247,0.8)]"></span>
+        Secure Tunnel Active
+      </div>
+
+      <!-- Countdown ring -->
+      <div class="relative z-10 h-36 w-36 mx-auto mb-8 flex items-center justify-center">
+        <!-- Outer pulse ring -->
+        <div class="absolute inset-0 rounded-full border-2 border-purple-500/20 animate-ping"></div>
+        <!-- SVG progress ring -->
+        <svg class="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="44" stroke="rgba(255,255,255,0.05)" stroke-width="6" fill="transparent"/>
+          <circle id="progressRing" cx="50" cy="50" r="44"
+            stroke="url(#ringGradient)" stroke-width="6" fill="transparent"
+            stroke-dasharray="276.46" stroke-dashoffset="0"
+            stroke-linecap="round" class="transition-all duration-1000 ease-linear"/>
+          <defs>
+            <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#8b5cf6"/>
+              <stop offset="100%" stop-color="#00d1b2"/>
+            </linearGradient>
+          </defs>
         </svg>
-        <!-- Numeric Countdown text -->
-        <div id="countdownNumber" class="text-4xl font-extrabold text-white">60</div>
+        <!-- Inner countdown number -->
+        <div class="relative text-center">
+          <div id="countdownNumber" class="text-4xl font-extrabold text-white tabular-nums">60</div>
+          <div class="text-[9px] text-gray-500 uppercase tracking-widest mt-1">seconds</div>
+        </div>
       </div>
 
-      <!-- Connecting Title -->
-      <h3 class="relative z-10 text-3xl font-bold text-white mb-4 uppercase tracking-wide">
-        Connecting...
-      </h3>
+      <!-- Title -->
+      <p class="relative z-10 text-[10px] font-bold uppercase tracking-[0.3em] text-purple-300 mb-2">Instant Session</p>
+      <h1 class="relative z-10 text-3xl md:text-4xl font-display font-bold text-white mb-4">
+        Connecting…
+      </h1>
 
-      <!-- Info Message -->
-      <div class="relative z-10 max-w-sm mx-auto mb-6">
-        <p class="text-gray-300 text-base leading-relaxed mb-2">
-          Establishing a secure chat room with <span class="text-[#00d1b2] font-semibold">{{ booking.counsellor.name }}</span>.
-        </p>
-        <p class="text-gray-500 text-xs leading-normal">
-          Please do not refresh or close this page. Your instant counseling session is starting soon.
-        </p>
+      <!-- Counsellor info -->
+      <div class="relative z-10 flex items-center gap-3 justify-center bg-white/5 border border-white/8 rounded-2xl px-5 py-4 mb-6">
+        <div class="h-10 w-10 rounded-full bg-gradient-to-br from-[#00d1b2] to-purple-500 flex items-center justify-center text-sm font-bold text-black flex-shrink-0">
+          {{ booking.counsellor.name|first|upper }}
+        </div>
+        <div class="text-left">
+          <p class="text-white font-semibold text-sm">{{ booking.counsellor.name }}</p>
+          <p class="text-[#00d1b2] text-xs">{{ booking.counsellor.specialization }}</p>
+        </div>
       </div>
 
-      <!-- Visual Pulse Badge -->
-      <div class="relative z-10 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-purple-500/30 bg-purple-500/5 text-purple-300 text-xs font-semibold tracking-wider animate-pulse">
-        <span class="h-2 w-2 rounded-full bg-purple-400"></span> SECURE TUNNEL ACTIVE
+      <p class="relative z-10 text-gray-400 text-sm leading-relaxed max-w-xs mx-auto">
+        Establishing a secure room. Please keep this page open — your session will start automatically.
+      </p>
+
+      <!-- Progress bar -->
+      <div class="relative z-10 w-full bg-white/8 rounded-full h-1 mt-6 overflow-hidden">
+        <div id="progressBar" class="h-full rounded-full bg-gradient-to-r from-purple-500 to-[#00d1b2] transition-all duration-1000" style="width:0%"></div>
       </div>
+
     </div>
   </div>
 </div>
+
+
 
 {% endblock %}
 
 {% block scripts %}
 <script>
-  document.addEventListener("DOMContentLoaded", function () {
-    const countdownNumber = document.getElementById("countdownNumber");
-    const progressRing = document.getElementById("progressRing");
-    const redirectUrl = "{% url 'counsellor_chat' booking.id %}";
+document.addEventListener("DOMContentLoaded", function () {
+  const countdownEl  = document.getElementById("countdownNumber");
+  const progressRing = document.getElementById("progressRing");
+  const progressBar  = document.getElementById("progressBar");
+  const redirectUrl  = "{% url 'counsellor_chat' booking.id %}";
 
-    let timeLeft = 60;
-    const totalDuration = 60;
-    const maxOffset = 276.46; // circumference = 2 * pi * r (2 * 3.14159 * 44)
+  let timeLeft = 60;
+  const total  = 60;
+  const circ   = 276.46;
 
-    function updateTimer() {
-      countdownNumber.textContent = timeLeft;
-      
-      // Update SVG Stroke Offset to show circular progress
-      const offset = maxOffset - ((timeLeft / totalDuration) * maxOffset);
-      progressRing.style.strokeDashoffset = offset;
+  function tick() {
+    countdownEl.textContent = timeLeft;
+    const pct = (total - timeLeft) / total;
+    progressRing.style.strokeDashoffset = circ * (1 - pct);
+    progressBar.style.width = (pct * 100) + '%';
 
-      if (timeLeft <= 0) {
-        clearInterval(timerInterval);
-        window.location.href = redirectUrl;
-      }
-      timeLeft--;
+    if (timeLeft <= 0) {
+      clearInterval(iv);
+      window.location.href = redirectUrl;
     }
+    timeLeft--;
+  }
 
-    // Run first tick immediately
-    updateTimer();
-
-    // Start interval
-    const timerInterval = setInterval(updateTimer, 1000);
-  });
+  tick();
+  const iv = setInterval(tick, 1000);
+});
 </script>
 {% endblock %}

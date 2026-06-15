@@ -9,9 +9,10 @@
   <div class="absolute top-0 left-1/4 w-[360px] h-[360px] bg-[#00d1b2]/10 rounded-full blur-[120px] animate-pulse"></div>
 
   <div class="max-w-4xl mx-auto px-4 md:px-12">
-    
-    <div class="text-center mb-10">
-      <h1 class="text-3xl md:text-5xl font-bold text-white mb-4">
+
+    <div class="text-center mb-10" data-reveal>
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00d1b2]/10 border border-[#00d1b2]/20 text-[#00d1b2] text-[10px] font-bold uppercase tracking-widest mb-4">🔒 Secure Checkout</div>
+      <h1 class="text-3xl md:text-5xl font-bold text-white mb-4 font-display">
         Checkout &amp; Confirm
       </h1>
       <p class="text-gray-400">
@@ -82,13 +83,14 @@
       </div>
 
       <!-- Payment UI Column -->
-      <div class="bg-[#0b162d] border border-emerald-500/20 rounded-[2rem] p-8 shadow-2xl relative overflow-hidden">
+      <div class="bg-[#0b162d] border border-[#00d1b2]/20 rounded-[2rem] p-8 shadow-2xl relative overflow-hidden" data-reveal data-delay="1">
         <div class="absolute -top-10 -right-10 w-40 h-40 bg-[#00d1b2]/5 rounded-full blur-[50px]"></div>
-        
-        <h3 class="text-xl font-bold text-white mb-6">Pay with Razorpay</h3>
+
+        <h3 class="text-xl font-bold text-white mb-2 font-display">Pay with Razorpay</h3>
+        <p class="text-gray-500 text-sm mb-6">Your payment is encrypted end-to-end.</p>
 
         <!-- Accepted methods strip -->
-        <div class="flex flex-wrap items-center gap-2 mb-8 p-3 bg-[#111c33] rounded-2xl border border-white/5">
+        <div class="flex flex-wrap items-center gap-2 mb-6 p-3 bg-[#111c33] rounded-2xl border border-white/5">
           <span class="text-[#3395FF] font-bold tracking-tight">razorpay</span>
           <div class="ml-auto flex flex-wrap gap-1.5">
             <span class="text-[10px] text-gray-400 bg-white/5 rounded-md px-2 py-1 whitespace-nowrap">UPI</span>
@@ -106,12 +108,30 @@
           <input type="hidden" name="razorpay_signature"  id="rzp_signature">
         </form>
 
-        <p class="text-xs text-gray-400 mb-6 text-center">
-          Secured by Razorpay &mdash; your payment details are never stored on our servers.
-        </p>
+        <!-- Trust badges -->
+        <div class="grid grid-cols-3 gap-3 mb-6">
+          <div class="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white/5 border border-white/8 text-center">
+            <span class="text-lg">🔒</span>
+            <span class="text-[10px] text-gray-400 font-semibold leading-tight">SSL Encrypted</span>
+          </div>
+          <div class="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white/5 border border-white/8 text-center">
+            <span class="text-lg">✅</span>
+            <span class="text-[10px] text-gray-400 font-semibold leading-tight">Refund Policy</span>
+          </div>
+          <div class="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-white/5 border border-white/8 text-center">
+            <span class="text-lg">🛡️</span>
+            <span class="text-[10px] text-gray-400 font-semibold leading-tight">Safe &amp; Secure</span>
+          </div>
+        </div>
 
         <button id="rzp-pay-btn"
-class="w-full py-4 rounded-xl bg-[#00d1b2] text-black font-bold text-lg hover:bg-[#00b8a5] transition duration-300">          Pay ₹{{ booking.total_fee|floatformat:"0" }} Now
+          class="w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-3
+                 bg-[#00d1b2] text-black hover:shadow-[0_0_30px_rgba(0,209,178,0.5)] hover:scale-[1.02] active:scale-[0.98]">
+          <span id="rzp-btn-text">💳 Pay ₹{{ booking.total_fee|floatformat:"0" }} Now</span>
+          <svg id="rzp-spinner" class="hidden w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+          </svg>
         </button>
 
         <p id="rzp-error-msg" class="hidden mt-4 text-red-400 text-sm text-center"></p>

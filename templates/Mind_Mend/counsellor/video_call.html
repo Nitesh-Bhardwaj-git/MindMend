@@ -9,23 +9,135 @@
   <div class="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-[#00d1b2]/5 rounded-full blur-[120px] pointer-events-none"></div>
 
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex-1 flex flex-col z-10 w-full">
+
     <!-- Top Bar -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 shrink-0">
       <div>
-        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-purple-500/30 bg-purple-500/5 text-purple-300 text-[10px] font-bold tracking-[0.2em] mb-2 uppercase">
-          📹 Video Session
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border
+          {% if session_state == 'early' %}border-yellow-500/30 bg-yellow-500/5 text-yellow-300
+          {% elif session_state == 'active' %}border-purple-500/30 bg-purple-500/5 text-purple-300
+          {% else %}border-white/10 bg-white/5 text-gray-400{% endif %}
+          text-[10px] font-bold tracking-[0.2em] mb-2 uppercase">
+          {% if session_state == 'early' %}⏳ Upcoming Video Session
+          {% elif session_state == 'active' %}📹 Video Session Live
+          {% else %}🔒 Session Ended{% endif %}
         </div>
         <h1 class="text-2xl md:text-3xl font-bold text-white flex items-center gap-3">
           Session with {{ booking.counsellor.name }}
+          {% if session_state == 'active' %}
           <span class="h-2.5 w-2.5 rounded-full bg-[#00d1b2] animate-ping" title="Connected"></span>
+          {% endif %}
         </h1>
+        <p class="text-gray-400 text-sm mt-1">
+          {{ booking.date|date:"l, M d, Y" }} at {{ booking.time_slot|time:"H:i" }}
+        </p>
       </div>
 
+      {% if session_state == 'active' %}
       <div class="flex items-center gap-4 bg-[#0a1428]/80 border border-white/5 px-5 py-3 rounded-2xl">
         <span class="text-xs text-gray-400 uppercase tracking-widest font-semibold">Remaining</span>
         <span id="session-timer" class="text-xl font-mono text-[#00d1b2] font-black">30:00</span>
       </div>
+      {% endif %}
+
+      {% if request.user.id == booking.counsellor.user_id %}
+      <a href="{% url 'doctor_dashboard' %}"
+         class="px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-white text-sm font-medium hover:bg-white/10 transition">
+        ← Doctor Dashboard
+      </a>
+      {% else %}
+      <a href="{% url 'my_bookings' %}"
+         class="px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-white text-sm font-medium hover:bg-white/10 transition">
+        ← My Bookings
+      </a>
+      {% endif %}
     </div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- STATE 1: TOO EARLY — Countdown Overlay              -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    {% if session_state == 'early' %}
+    <div class="flex-1 bg-[#0a1428]/70 border border-yellow-500/20 rounded-[2rem] shadow-2xl flex flex-col items-center justify-center py-24 px-8 text-center gap-8 min-h-[500px]">
+
+      <!-- Animated rings -->
+      <div class="relative flex items-center justify-center">
+        <div class="absolute h-48 w-48 rounded-full border border-yellow-500/10 animate-ping"></div>
+        <div class="absolute h-36 w-36 rounded-full border border-yellow-500/15 animate-pulse"></div>
+        <div class="h-28 w-28 rounded-full bg-yellow-500/10 border border-yellow-500/30 flex items-center justify-center text-6xl z-10">
+          📹
+        </div>
+      </div>
+
+      <div>
+        <h2 class="text-3xl font-bold text-white mb-3">Video Session Hasn't Started Yet</h2>
+        <p class="text-gray-400 max-w-lg mx-auto">
+          Your video call with <strong class="text-white">{{ booking.counsellor.name }}</strong> is
+          scheduled for <strong class="text-yellow-300">{{ booking.date|date:"l, M d, Y" }}</strong>
+          at <strong class="text-yellow-300">{{ booking.time_slot|time:"H:i" }}</strong>.
+          The call will unlock automatically when your session begins.
+        </p>
+      </div>
+
+      <!-- Countdown blocks -->
+      <div class="flex items-center gap-3 sm:gap-5 flex-wrap justify-center">
+        <div class="flex flex-col items-center bg-white/5 border border-white/10 rounded-2xl px-5 sm:px-8 py-5 min-w-[80px]">
+          <span id="cdDays" class="text-4xl font-black font-mono text-white">00</span>
+          <span class="text-[10px] uppercase tracking-widest text-gray-500 mt-1">Days</span>
+        </div>
+        <span class="text-3xl text-gray-600 font-bold">:</span>
+        <div class="flex flex-col items-center bg-white/5 border border-white/10 rounded-2xl px-5 sm:px-8 py-5 min-w-[80px]">
+          <span id="cdHours" class="text-4xl font-black font-mono text-white">00</span>
+          <span class="text-[10px] uppercase tracking-widest text-gray-500 mt-1">Hours</span>
+        </div>
+        <span class="text-3xl text-gray-600 font-bold">:</span>
+        <div class="flex flex-col items-center bg-white/5 border border-white/10 rounded-2xl px-5 sm:px-8 py-5 min-w-[80px]">
+          <span id="cdMins" class="text-4xl font-black font-mono text-[#00d1b2]">00</span>
+          <span class="text-[10px] uppercase tracking-widest text-gray-500 mt-1">Mins</span>
+        </div>
+        <span class="text-3xl text-gray-600 font-bold">:</span>
+        <div class="flex flex-col items-center bg-white/5 border border-white/10 rounded-2xl px-5 sm:px-8 py-5 min-w-[80px]">
+          <span id="cdSecs" class="text-4xl font-black font-mono text-[#00d1b2]">00</span>
+          <span class="text-[10px] uppercase tracking-widest text-gray-500 mt-1">Secs</span>
+        </div>
+      </div>
+
+      <p class="text-xs text-gray-600">The page will automatically unlock when the session begins.</p>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- STATE 2: SESSION EXPIRED / ENDED                    -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    {% elif session_state == 'expired' %}
+    <div class="flex-1 bg-[#0a1428]/70 border border-white/10 rounded-[2rem] shadow-2xl flex flex-col items-center justify-center py-20 px-8 text-center gap-6 min-h-[500px]">
+      <div class="h-24 w-24 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-5xl">
+        🔒
+      </div>
+      <div>
+        <h2 class="text-2xl font-bold text-white mb-3">Video Session Has Ended</h2>
+        <p class="text-gray-400 max-w-md mx-auto">
+          {% if booking.status == 'completed' %}
+            This session has been <strong class="text-white">completed</strong>. The video call is now closed.
+          {% elif booking.status == 'cancelled' %}
+            This session was <strong class="text-red-400">cancelled</strong>.
+          {% else %}
+            The 30-minute video session window for
+            <strong class="text-white">{{ booking.date|date:"M d, Y" }}</strong>
+            at <strong class="text-white">{{ booking.time_slot|time:"H:i" }}</strong> has passed.
+          {% endif %}
+        </p>
+      </div>
+      {% if booking.user_id == request.user.id and booking.status == 'completed' %}
+      <a href="{% url 'submit_review' booking.id %}"
+         class="px-6 py-3 rounded-xl bg-[#00d1b2] text-[#04111d] font-bold hover:bg-[#00b8a5] transition">
+        Leave a Review
+      </a>
+      {% endif %}
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- STATE 3: SESSION ACTIVE — Full Video Call UI        -->
+    <!-- ═══════════════════════════════════════════════════ -->
+    {% else %}
 
     <!-- Main Conference Area -->
     <div class="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-[500px] items-stretch">
@@ -66,34 +178,34 @@
         </div>
 
         <!-- Floating Controls overlay -->
-        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 bg-[#0a1428]/90 backdrop-blur-xl border border-white/10 px-6 py-4 rounded-3xl z-30 shadow-2xl">
+        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-wrap items-center justify-center gap-3 bg-[#0a1428]/90 backdrop-blur-xl border border-white/10 px-4 py-3 rounded-3xl z-30 shadow-2xl max-w-[calc(100%-2rem)]">
           <!-- Audio Toggle -->
-          <button id="toggle-mic" class="h-12 w-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center text-white hover:bg-white/15 hover:border-white/20 active:scale-95 transition" title="Toggle Microphone">
+          <button id="toggle-mic" class="h-11 w-11 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center text-white hover:bg-white/15 hover:border-white/20 active:scale-95 transition" title="Toggle Microphone">
             <i data-lucide="mic" class="h-5 w-5"></i>
           </button>
           
           <!-- Camera Toggle -->
-          <button id="toggle-cam" class="h-12 w-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center text-white hover:bg-white/15 hover:border-white/20 active:scale-95 transition" title="Toggle Camera">
+          <button id="toggle-cam" class="h-11 w-11 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center text-white hover:bg-white/15 hover:border-white/20 active:scale-95 transition" title="Toggle Camera">
             <i data-lucide="video" class="h-5 w-5"></i>
           </button>
 
           <!-- Share Screen (Simulated) -->
-          <button id="toggle-share" class="h-12 w-12 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center text-white hover:bg-white/15 hover:border-white/20 active:scale-95 transition" title="Simulate Screen Share">
+          <button id="toggle-share" class="h-11 w-11 rounded-2xl border border-white/10 bg-white/5 flex items-center justify-center text-white hover:bg-white/15 hover:border-white/20 active:scale-95 transition hidden sm:flex" title="Simulate Screen Share">
             <i data-lucide="monitor" class="h-5 w-5"></i>
           </button>
 
           <!-- Toggle Chat sidebar -->
-          <button id="toggle-chat-btn" class="h-12 w-12 rounded-2xl border border-white/10 bg-[#00d1b2]/10 border-[#00d1b2]/30 flex items-center justify-center text-[#00d1b2] hover:bg-[#00d1b2]/20 active:scale-95 transition" title="Toggle Live Chat">
+          <button id="toggle-chat-btn" class="h-11 w-11 rounded-2xl border border-white/10 bg-[#00d1b2]/10 border-[#00d1b2]/30 flex items-center justify-center text-[#00d1b2] hover:bg-[#00d1b2]/20 active:scale-95 transition" title="Toggle Live Chat">
             <i data-lucide="message-square" class="h-5 w-5"></i>
           </button>
 
-          <div class="h-8 w-px bg-white/10 mx-1"></div>
+          <div class="h-8 w-px bg-white/10 mx-1 hidden sm:block"></div>
 
           <!-- End Call Button -->
           <form method="post" action="{% url 'finish_session' booking.id %}" class="inline">
             {% csrf_token %}
             <input type="hidden" name="next" value="{% if is_counsellor_view %}{% url 'counsellor_sessions' %}{% else %}{% url 'counsellor_booking' %}{% endif %}">
-            <button type="submit" class="h-12 px-6 rounded-2xl bg-red-500 hover:bg-red-600 text-white font-bold flex items-center gap-2 active:scale-95 transition shadow-lg shadow-red-500/20" onclick="return confirm('Are you sure you want to end this video call and finish the session?');">
+            <button type="submit" class="h-11 px-4 rounded-2xl bg-red-500 hover:bg-red-600 text-white font-bold flex items-center gap-2 active:scale-95 transition shadow-lg shadow-red-500/20" onclick="return confirm('Are you sure you want to end this video call and finish the session?');">
               <i data-lucide="phone-off" class="h-5 w-5"></i>
               <span class="hidden sm:inline">End Call</span>
             </button>
@@ -139,11 +251,6 @@
         </div>
 
         <!-- Message input form -->
-        {% if chat_locked %}
-        <div class="p-3 border-t border-white/10 bg-white/5 text-xs text-gray-400 text-center shrink-0">
-          Chat is locked for completed sessions.
-        </div>
-        {% else %}
         <form method="post" class="p-4 border-t border-white/10 bg-[#0a1428]/80 flex gap-2 shrink-0" id="chatForm">
           {% csrf_token %}
           <input type="text"
@@ -157,14 +264,16 @@
             Send
           </button>
         </form>
-        {% endif %}
       </div>
     </div>
+    {% endif %}
+
   </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
+
 <!-- Chat integration configurations -->
 <script>
   window.CHAT_CONFIG = {
@@ -174,7 +283,40 @@
     counsellorUserId: {% if booking.counsellor.user_id %}{{ booking.counsellor.user_id }}{% else %}null{% endif %}
   };
 </script>
-<script src="{% static 'js/counsellor_chat.js' %}?v=1.0"></script>
+
+{% if session_state == 'early' %}
+<!-- Countdown script for "too early" state -->
+<script>
+(function() {
+    var remaining = {{ seconds_until_start }};
+
+    function pad(n) { return n < 10 ? '0' + n : String(n); }
+
+    function tick() {
+        if (remaining <= 0) {
+            window.location.reload();
+            return;
+        }
+        remaining--;
+        var days  = Math.floor(remaining / 86400);
+        var hours = Math.floor((remaining % 86400) / 3600);
+        var mins  = Math.floor((remaining % 3600) / 60);
+        var secs  = remaining % 60;
+
+        document.getElementById('cdDays').textContent  = pad(days);
+        document.getElementById('cdHours').textContent = pad(hours);
+        document.getElementById('cdMins').textContent  = pad(mins);
+        document.getElementById('cdSecs').textContent  = pad(secs);
+    }
+
+    tick();
+    setInterval(tick, 1000);
+})();
+</script>
+
+{% elif session_state == 'active' %}
+<!-- Load chat JS polling for active session -->
+<script src="{% static 'js/counsellor_chat.js' %}?v=1.1"></script>
 
 <!-- Camera streaming & sidebar toggle logic -->
 <script>
@@ -278,22 +420,23 @@
       });
     }
 
-    // 3. Countdown Timer (30 minutes)
+    // 3. Countdown Timer (counts down to end of session slot)
     const timerText = document.getElementById('session-timer');
-    let durationSeconds = 30 * 60; // 30 minutes in seconds
+    var sessionEndEpoch = {{ session_end|date:"U" }} * 1000; // ms
 
     const timerInterval = setInterval(() => {
-      if (durationSeconds <= 0) {
+      var now = Date.now();
+      var diff = Math.max(0, Math.floor((sessionEndEpoch - now) / 1000));
+      var mins = Math.floor(diff / 60);
+      var secs = diff % 60;
+      timerText.textContent = (mins < 10 ? '0' : '') + mins + ':' + (secs < 10 ? '0' : '') + secs;
+      if (diff <= 0) {
         clearInterval(timerInterval);
-        timerText.textContent = "00:00";
-        alert("Your session time has elapsed. Please finish the session.");
-        return;
+        window.location.reload();
       }
-      durationSeconds--;
-      const mins = Math.floor(durationSeconds / 60);
-      const secs = durationSeconds % 60;
-      timerText.textContent = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     }, 1000);
   });
 </script>
+{% endif %}
+
 {% endblock %}

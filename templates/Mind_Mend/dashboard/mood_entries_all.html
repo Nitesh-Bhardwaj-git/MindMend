@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}All Mood Entries{% endblock %}
+
+{% block extra_css %}
+<style>
+  .entry-card { transition: transform .2s, box-shadow .2s; }
+  .entry-card:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.35); }
+
+  .filter-chip { transition: all .2s; }
+  .filter-chip.active {
+    background: rgba(0,209,178,0.12);
+    border-color: rgba(0,209,178,0.4);
+    color: #00d1b2;
+  }
+
+  .mood-1 { border-left-color: #ef4444; }
+  .mood-2 { border-left-color: #f97316; }
+  .mood-3 { border-left-color: #eab308; }
+  .mood-4 { border-left-color: #22c55e; }
+  .mood-5 { border-left-color: #00d1b2; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-[#050b1a] pt-2 md:pt-4 pb-24 relative overflow-hidden">
+
+  <!-- Ambient glow -->
+  <div class="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[#00d1b2]/5 rounded-full blur-[140px] pointer-events-none -z-10"></div>
+  <div class="absolute bottom-0 right-1/4 w-[400px] h-[400px] bg-purple-500/6 rounded-full blur-[120px] pointer-events-none -z-10"></div>
+
+  <div class="max-w-3xl mx-auto px-4 sm:px-6 relative z-10">
+
+    <!-- ── HEADER ── -->
+    <div class="flex items-center justify-between gap-4 mb-8">
+      <div>
+        <a href="{% url 'mood_tracker' %}" class="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-[#00d1b2] transition mb-2">
+          ← Back to Mood Tracker
+        </a>
+        <h1 class="text-3xl sm:text-4xl font-bold text-white">All Entries</h1>
+        <p class="text-gray-400 text-sm mt-1">{{ total_count }} total log{{ total_count|pluralize }}{% if avg_mood %} · avg mood <strong class="text-white">{{ avg_mood }}/5</strong>{% endif %}</p>
+      </div>
+      <div class="text-5xl hidden sm:block">
+        {% if avg_mood >= 4.0 %}😊{% elif avg_mood >= 3.0 %}🙂{% elif avg_mood >= 2.0 %}😐{% elif avg_mood %}😔{% else %}📋{% endif %}
+      </div>
+    </div>
+
+    <!-- ── MOOD FILTER CHIPS ── -->
+    <div class="flex flex-wrap gap-2 mb-6">
+      <a href="{% url 'mood_entries_all' %}"
+         class="filter-chip px-4 py-2 rounded-full border border-white/10 bg-white/5 text-gray-400 text-sm font-medium {% if not mood_filter %}active{% endif %}">
+        All
+      </a>
+      {% for val, label in mood_choices %}
+      <a href="{% url 'mood_entries_all' %}?mood={{ val }}"
+         class="filter-chip px-4 py-2 rounded-full border border-white/10 bg-white/5 text-gray-400 text-sm font-medium {% if mood_filter == val|stringformat:'s' %}active{% endif %}">
+        {% if val == 1 %}😢{% elif val == 2 %}😔{% elif val == 3 %}😐{% elif val == 4 %}🙂{% else %}😊{% endif %}
+        {{ label }}
+      </a>
+      {% endfor %}
+    </div>
+
+    <!-- ── ENTRIES LIST ── -->
+    {% if entries %}
+    <div class="space-y-3">
+
+      {% regroup entries by date as entries_by_date %}
+      {% for day_group in entries_by_date %}
+
+      <!-- Date separator -->
+      <div class="flex items-center gap-3 pt-2 {% if not forloop.first %}mt-2{% endif %}">
+        <span class="text-xs font-bold text-gray-500 uppercase tracking-widest whitespace-nowrap">{{ day_group.grouper|date:"l, M d Y" }}</span>
+        <div class="flex-1 h-px bg-white/6"></div>
+        <span class="text-[10px] text-gray-600">{{ day_group.list|length }} entr{{ day_group.list|length|pluralize:"y,ies" }}</span>
+      </div>
+
+      {% for e in day_group.list %}
+      <div class="entry-card bg-[#0a1428]/70 backdrop-blur-sm rounded-2xl p-5 border border-white/8 border-l-4 mood-{{ e.mood }}">
+        <div class="flex items-start justify-between gap-4">
+
+          <!-- Left: emoji + info -->
+          <div class="flex items-start gap-4 min-w-0">
+            <div class="text-4xl leading-none mt-0.5 shrink-0">
+              {% if e.mood == 1 %}😢{% elif e.mood == 2 %}😔{% elif e.mood == 3 %}😐{% elif e.mood == 4 %}🙂{% else %}😊{% endif %}
+            </div>
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 flex-wrap mb-1">
+                <p class="text-white font-semibold">{{ e.get_mood_display }}</p>
+                {% if e.energy_level %}
+                <span class="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 font-medium">⚡ {{ e.get_energy_level_display }}</span>
+                {% endif %}
+              </div>
+              {% if e.notes %}
+              <p class="text-gray-400 text-sm leading-relaxed">{{ e.notes }}</p>
+              {% endif %}
+              {% if e.activities %}
+              <div class="flex flex-wrap gap-1.5 mt-2">
+                {% for act in e.activities.split %}
+                <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-gray-400 font-medium">{{ act|title }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <!-- Right: time -->
+          <div class="text-right shrink-0">
+            <p class="text-gray-500 text-xs whitespace-nowrap">{{ e.created_at|time:"g:i A" }}</p>
+          </div>
+
+        </div>
+      </div>
+      {% endfor %}
+
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- Empty state -->
+    <div class="text-center py-24">
+      <p class="text-7xl mb-4">📊</p>
+      <h2 class="text-white text-xl font-semibold mb-2">No entries found</h2>
+      <p class="text-gray-500 text-sm mb-6">
+        {% if mood_filter %}No entries match this mood filter.{% else %}Start logging your mood on the tracker page.{% endif %}
+      </p>
+      <a href="{% url 'mood_tracker' %}"
+         class="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-[#00d1b2] text-[#03120f] font-bold hover:shadow-[0_0_24px_rgba(0,209,178,0.4)] transition-all duration-200">
+        ← Go to Mood Tracker
+      </a>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

@@ -38,31 +38,72 @@ except ModuleNotFoundError:
 
 @login_required
 def mood_tracker(request):
-    entries_qs = MoodEntry.objects.filter(user=request.user).order_by('-date', '-created_at')
-    show_all = (request.GET.get('all') or '').strip() in ('1', 'true', 'yes', 'all')
+    entries_qs = MoodEntry.objects.filter(user=request.user).order_by("-date", "-created_at")
+    show_all = (request.GET.get("all") or "").strip() in ("1", "true", "yes", "all")
     entries = entries_qs if show_all else entries_qs[:30]
-    if request.method == 'POST':
+    if request.method == "POST":
         form = MoodEntryForm(request.POST)
         if form.is_valid():
             cd = form.cleaned_data
-            if MoodEntry.objects.filter(user=request.user, date=cd['date']).count() >= 4:
-                messages.error(request, 'You can only log your mood up to 4 times a day.')
+            if MoodEntry.objects.filter(user=request.user, date=cd["date"]).count() >= 4:
+                messages.error(request, "You can only log your mood up to 4 times a day.")
             else:
                 MoodEntry.objects.create(
-                    user=request.user, date=cd['date'],
-                    mood=cd['mood'], energy_level=cd.get('energy_level'), activities=cd.get('activities', ''), notes=cd.get('notes', '')
+                    user=request.user, date=cd["date"],
+                    mood=cd["mood"], energy_level=cd.get("energy_level"), activities=cd.get("activities", ""), notes=cd.get("notes", "")
                 )
-            return redirect('mood_tracker')
+                messages.success(request, "Mood entry saved! Keep up the great work. 💚")
+            return redirect("mood_tracker")
     else:
-        form = MoodEntryForm(initial={'date': timezone.now().date()})
+        form = MoodEntryForm(initial={"date": timezone.now().date()})
+
+    def _period_chart(days):
+        cutoff = timezone.now().date() - timedelta(days=days)
+        qs = MoodEntry.objects.filter(user=request.user, date__gte=cutoff).order_by("date", "created_at")
+        data = [{"date": e.date.strftime("%b %d"), "mood": e.mood} for e in qs]
+        return {
+            "labels": json.dumps([d["date"] for d in data]),
+            "data": json.dumps([d["mood"] for d in data]),
+        }
+
+    chart_7  = _period_chart(7)
+    chart_14 = _period_chart(14)
+    chart_30 = _period_chart(30)
 
     seven_days_ago = timezone.now().date() - timedelta(days=7)
-    week_entries = MoodEntry.objects.filter(user=request.user, date__gte=seven_days_ago).order_by('-date', '-created_at')
-    avg_mood_7 = week_entries.aggregate(Avg('mood'))['mood__avg']
-    mood_data = [{'date': f"{e.date.strftime('%b %d')} {e.created_at.strftime('%H:%M')}", 'mood': e.mood} for e in list(week_entries)[::-1]]
-    
+    week_entries = list(MoodEntry.objects.filter(user=request.user, date__gte=seven_days_ago).order_by("date", "created_at"))
+    avg_mood_7_raw = (sum(e.mood for e in week_entries) / len(week_entries)) if week_entries else None
+    avg_mood_7 = round(avg_mood_7_raw, 1) if avg_mood_7_raw else None
+
+    mood_trend_direction = "stable"
+    if len(week_entries) >= 4:
+        mid = len(week_entries) // 2
+        first_avg = sum(e.mood for e in week_entries[:mid]) / mid
+        second_avg = sum(e.mood for e in week_entries[mid:]) / (len(week_entries) - mid)
+        if second_avg > first_avg + 0.3:
+            mood_trend_direction = "up"
+        elif second_avg < first_avg - 0.3:
+            mood_trend_direction = "down"
+
+    best_mood_entry = max(week_entries, key=lambda e: e.mood, default=None)
+    total_entries_count = MoodEntry.objects.filter(user=request.user).count()
+
+    heatmap_days = []
+    today = timezone.now().date()
+    for i in range(20, -1, -1):
+        day = today - timedelta(days=i)
+        day_entries = list(MoodEntry.objects.filter(user=request.user, date=day))
+        avg = round(sum(e.mood for e in day_entries) / len(day_entries)) if day_entries else 0
+        heatmap_days.append({
+            "date": day.strftime("%b %d"),
+            "iso": day.isoformat(),
+            "weekday": day.strftime("%a"),
+            "mood": avg,
+            "count": len(day_entries),
+        })
+
     streak = _streak_days(request.user)
-    recent_for_alert = list(MoodEntry.objects.filter(user=request.user).order_by('-date')[:10])
+    recent_for_alert = list(MoodEntry.objects.filter(user=request.user).order_by("-date")[:10])
     very_low_streak = 0
     prev_date = None
     for e in recent_for_alert:
@@ -74,12 +115,56 @@ def mood_tracker(request):
         else: break
     crisis_alert = very_low_streak >= 2
 
-    return render(request, 'Mind_Mend/dashboard/mood_tracker.html', {
-        'form': form, 'entries': entries, 'avg_mood_7': round(avg_mood_7, 1) if avg_mood_7 else None,
-        'mood_data': mood_data, 'chart_labels': json.dumps([d['date'] for d in mood_data]),
-        'chart_data': json.dumps([d['mood'] for d in mood_data]), 'streak': streak,
-        'crisis_alert': crisis_alert, 'very_low_streak': very_low_streak,
-        'activity_chips': ['work', 'sleep', 'exercise', 'family', 'social', 'study', 'music', 'gaming', 'others'], 'show_all_entries': show_all,
+    activity_chips = [
+        ("work", "💼"), ("sleep", "😴"), ("exercise", "🏃"),
+        ("family", "👪"), ("social", "👥"), ("study", "📚"),
+        ("music", "🎵"), ("gaming", "🎮"), ("others", "✨"),
+    ]
+
+    return render(request, "Mind_Mend/dashboard/mood_tracker.html", {
+        "form": form,
+        "entries": entries,
+        "avg_mood_7": avg_mood_7,
+        "mood_trend_direction": mood_trend_direction,
+        "best_mood_entry": best_mood_entry,
+        "total_entries_count": total_entries_count,
+        "chart_7": chart_7,
+        "chart_14": chart_14,
+        "chart_30": chart_30,
+        "chart_labels": chart_7["labels"],
+        "chart_data": chart_7["data"],
+        "streak": streak,
+        "crisis_alert": crisis_alert,
+        "very_low_streak": very_low_streak,
+        "activity_chips": activity_chips,
+        "show_all_entries": show_all,
+        "heatmap_days": heatmap_days,
+    })
+
+
+@login_required
+def mood_entries_all(request):
+    """Dedicated page showing all mood entries with filtering."""
+    entries_qs = MoodEntry.objects.filter(user=request.user).order_by("-date", "-created_at")
+    total_count = entries_qs.count()
+
+    # Optional filter by mood value
+    mood_filter = request.GET.get("mood", "").strip()
+    if mood_filter and mood_filter.isdigit():
+        entries_qs = entries_qs.filter(mood=int(mood_filter))
+
+    entries = list(entries_qs)
+    avg_mood_raw = (sum(e.mood for e in entries) / len(entries)) if entries else None
+    avg_mood = round(avg_mood_raw, 1) if avg_mood_raw else None
+
+    MOOD_CHOICES = [(1, "Very Low"), (2, "Low"), (3, "Neutral"), (4, "Good"), (5, "Very Good")]
+
+    return render(request, "Mind_Mend/dashboard/mood_entries_all.html", {
+        "entries": entries,
+        "total_count": total_count,
+        "avg_mood": avg_mood,
+        "mood_filter": mood_filter,
+        "mood_choices": MOOD_CHOICES,
     })
 
 

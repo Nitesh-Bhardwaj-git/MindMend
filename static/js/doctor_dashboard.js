@@ -62,7 +62,13 @@
         try {
             var data = JSON.parse(event.data);
             if (data.type === 'doctor_notification' && data.notification) {
-                prependNotification(data.notification);
+                var evType = data.notification.event_type || '';
+                // Only show booking-level events in the notifications panel.
+                // Chat message events (chat_started, message_received) are excluded
+                // because their counts appear on the "Open Chat" button instead.
+                if (evType === 'booking_created' || evType === 'booking_status') {
+                    prependNotification(data.notification);
+                }
             }
         } catch (err) {}
     };

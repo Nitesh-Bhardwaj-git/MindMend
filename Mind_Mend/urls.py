@@ -2,6 +2,11 @@ from django.urls import path
 from .views import auth, core, assessments, forum, counsellor, analytics
 
 urlpatterns = [
+    # ── Keep-alive endpoint for Render free-tier ──────────────────────────
+    # Ping https://mindmend-1.onrender.com/cron-ping/ every 14 min via
+    # cron-job.org (or any cron service) to prevent the dyno from sleeping.
+    path('cron-ping/', core.cron_ping, name='cron_ping'),
+
     path('', core.home, name='home'),
     path('privacy/', core.privacy_policy, name='privacy_policy'),
     path('register/', auth.register, name='register'),

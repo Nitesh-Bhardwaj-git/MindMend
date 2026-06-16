@@ -5,69 +5,137 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 {% endblock %}
 
+{% block title %}User Insights Map — MindMend{% endblock %}
+
 {% block content %}
 
-<div class="min-h-screen bg-[#050b1a] overflow-hidden py-6">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)] gap-6 lg:gap-8 lg:h-[calc(100vh-120px)]">
+<div class="min-h-screen bg-[#050b1a] relative overflow-hidden py-6">
 
-    <!-- ================= SIDEBAR ================= -->
-    <div class="w-full lg:w-auto border border-white/10 bg-[#0a1428]/40 backdrop-blur-xl flex flex-col overflow-hidden min-h-0 rounded-2xl lg:h-full lg:overflow-y-auto">
+  <!-- Ambient glows -->
+  {% include 'Mind_Mend/partials/_bg_glows.html' %}
 
-        <!-- HEADER -->
-        <div class="p-8 space-y-4">
-            <h2 class="text-3xl font-bold text-white">🌍 User Insights</h2>
-            <p class="text-gray-500 text-sm">Live user tracking dashboard</p>
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+
+    <!-- PAGE HEADER -->
+    <div class="mb-6" data-reveal>
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-purple-400/30 bg-purple-500/5 text-purple-300 text-[10px] font-bold tracking-[0.2em] mb-4">
+        📡 LIVE TRACKING
+      </div>
+      <h1 class="text-3xl md:text-4xl font-bold text-white">
+        User Insights <span class="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-[#00d1b2]">Map</span>
+      </h1>
+      <p class="text-gray-500 text-sm mt-1">Real-time user activity and geographic distribution dashboard</p>
+    </div>
+
+    <!-- MAIN GRID: sidebar + map -->
+    <div class="grid grid-cols-1 lg:grid-cols-[340px_minmax(0,1fr)] gap-5 lg:h-[calc(100vh-200px)] min-h-[600px]">
+
+      <!-- ====== SIDEBAR ====== -->
+      <div class="flex flex-col gap-4 lg:overflow-y-auto lg:pr-1 scrollbar-thin">
+
+        <!-- STAT CARDS -->
+        <div class="grid grid-cols-2 gap-3" data-reveal>
+
+          <div class="flex flex-col gap-1 p-4 rounded-2xl bg-[#0a1428]/70 backdrop-blur-xl border border-[#00d1b2]/15 hover:border-[#00d1b2]/30 transition-colors">
+            <div class="w-8 h-8 rounded-xl bg-[#00d1b2]/10 flex items-center justify-center text-base mb-1">👥</div>
+            <p class="text-2xl font-extrabold text-white tabular-nums">{{ active_now|default:0 }}</p>
+            <p class="text-[11px] text-gray-500 font-medium uppercase tracking-wide">Active Now</p>
+            <span class="inline-flex items-center gap-1 text-[10px] text-emerald-400 mt-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Live
+            </span>
+          </div>
+
+          <div class="flex flex-col gap-1 p-4 rounded-2xl bg-[#0a1428]/70 backdrop-blur-xl border border-purple-500/15 hover:border-purple-500/30 transition-colors">
+            <div class="w-8 h-8 rounded-xl bg-purple-500/10 flex items-center justify-center text-base mb-1">🌐</div>
+            <p class="text-2xl font-extrabold text-white tabular-nums">{{ stats.total|default:0 }}</p>
+            <p class="text-[11px] text-gray-500 font-medium uppercase tracking-wide">Total Access</p>
+            <span class="text-[10px] text-purple-400 mt-1">All time</span>
+          </div>
+
+          <div class="flex flex-col gap-1 p-4 rounded-2xl bg-[#0a1428]/70 backdrop-blur-xl border border-amber-500/15 hover:border-amber-500/30 transition-colors">
+            <div class="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-base mb-1">📍</div>
+            <p class="text-2xl font-extrabold text-white tabular-nums">{{ stats.gps_shared|default:0 }}</p>
+            <p class="text-[11px] text-gray-500 font-medium uppercase tracking-wide">GPS Shared</p>
+            <span class="text-[10px] text-amber-400 mt-1">Precise locations</span>
+          </div>
+
+          <div class="flex flex-col gap-1 p-4 rounded-2xl bg-[#0a1428]/70 backdrop-blur-xl border border-blue-500/15 hover:border-blue-500/30 transition-colors">
+            <div class="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center text-base mb-1">🌎</div>
+            <p class="text-2xl font-extrabold text-white tabular-nums">{{ stats.countries|default:0 }}</p>
+            <p class="text-[11px] text-gray-500 font-medium uppercase tracking-wide">Countries</p>
+            <span class="text-[10px] text-blue-400 mt-1">Global reach</span>
+          </div>
+
         </div>
 
-        <!-- STATS -->
-        <div class="px-6 space-y-3 text-sm">
-            <div class="bg-white/5 p-3 rounded-lg text-white">
-                👥 Active Now: <b>{{ active_now|default:0 }}</b>
-            </div>
-            <div class="bg-white/5 p-3 rounded-lg text-white">
-                🌐 Total Access: <b>{{ stats.total|default:0 }}</b>
-            </div>
-            <div class="bg-white/5 p-3 rounded-lg text-white">
-                📍 GPS Shared: <b>{{ stats.gps_shared|default:0 }}</b>
-            </div>
-            <div class="bg-white/5 p-3 rounded-lg text-white">
-                🌎 Countries: <b>{{ stats.countries|default:0 }}</b>
-            </div>
-        </div>
+        <!-- STATE / REGION LIST -->
+        <div class="flex-1 bg-[#0a1428]/60 backdrop-blur-xl rounded-[1.75rem] border border-white/8 flex flex-col overflow-hidden min-h-[200px]" data-reveal data-delay="1">
 
-        <!-- STATE LIST -->
-        <div id="stateList" class="flex-1 min-h-0 overflow-y-auto px-4 mt-6 space-y-3">
+          <div class="flex items-center justify-between px-5 py-4 border-b border-white/8">
+            <div class="flex items-center gap-3">
+              <div class="w-7 h-7 rounded-lg bg-[#00d1b2]/10 flex items-center justify-center text-sm">📊</div>
+              <p class="text-white font-bold text-sm">Users by Region</p>
+            </div>
+            <span class="text-[10px] text-gray-500 bg-white/5 px-2 py-1 rounded-lg">Click to focus map</span>
+          </div>
+
+          <div id="stateList" class="flex-1 overflow-y-auto px-4 py-3 space-y-2 scrollbar-thin">
             {% if users_per_state %}
-                {% for row in users_per_state %}
-                <div onclick="focusState('{{ row.state }}')"
-                     class="bg-white/5 p-4 rounded-xl cursor-pointer hover:bg-white/10 transition">
-
-                    <h3 class="text-white font-semibold break-words">
-                        {{ row.state|default:"Unknown" }}
-                        {% if row.country %}, {{ row.country }}{% endif %}
-                    </h3>
-
-                    <p class="text-blue-400 text-sm">
-                        👥 Users: {{ row.count }}
-                    </p>
+              {% for row in users_per_state %}
+              <div onclick="focusState('{{ row.state }}')" id="stateRow-{{ forloop.counter }}"
+                   class="state-row flex items-center justify-between p-3.5 rounded-xl cursor-pointer bg-white/3 hover:bg-[#00d1b2]/5 hover:border-[#00d1b2]/20 border border-transparent transition-all duration-200 group">
+                <div>
+                  <h3 class="text-white text-sm font-semibold group-hover:text-[#00d1b2] transition-colors">
+                    {{ row.state|default:"Unknown" }}
+                  </h3>
+                  {% if row.country %}
+                  <p class="text-gray-500 text-xs mt-0.5">{{ row.country }}</p>
+                  {% endif %}
                 </div>
-                {% endfor %}
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-[#00d1b2]/10 text-[#00d1b2]">
+                    {{ row.count }} <span class="font-normal opacity-70">users</span>
+                  </span>
+                  <svg class="w-4 h-4 text-gray-600 group-hover:text-[#00d1b2] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path d="M9 18l6-6-6-6"/></svg>
+                </div>
+              </div>
+              {% endfor %}
             {% else %}
-                <p class="text-gray-400 text-sm px-2">No state data</p>
+              <div class="flex flex-col items-center justify-center h-full py-12 text-center">
+                <span class="text-4xl mb-3">🌐</span>
+                <p class="text-gray-400 font-medium mb-1">No location data yet</p>
+                <p class="text-gray-600 text-xs">Data appears as users share their location</p>
+              </div>
             {% endif %}
+          </div>
+
+          <!-- Footer -->
+          <div class="px-5 py-3 border-t border-white/8 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <p class="text-xs text-gray-500">Real-time user analytics</p>
+          </div>
         </div>
 
-        <!-- FOOTER -->
-        <div class="p-6 border-t border-white/10 text-xs text-gray-500">
-            ✔ Real-time user analytics
+      </div>
+
+      <!-- ====== MAP ====== -->
+      <div class="relative rounded-[2rem] overflow-hidden border border-white/8 bg-[#0a1428]/40 h-[420px] sm:h-[520px] lg:h-full" data-reveal data-delay="2">
+
+        <!-- Map overlay header -->
+        <div class="absolute top-4 left-4 right-4 z-[1000] flex items-center justify-between pointer-events-none">
+          <div class="flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#050b1a]/80 backdrop-blur-xl border border-white/10">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="text-white text-xs font-semibold">Live Map</span>
+          </div>
+          <div class="px-3 py-2 rounded-2xl bg-[#050b1a]/80 backdrop-blur-xl border border-white/10 text-xs text-gray-400">
+            {{ stats.total|default:0 }} users tracked
+          </div>
         </div>
-    </div>
 
-    <!-- ================= MAP ================= -->
-    <div class="relative h-[420px] sm:h-[520px] lg:h-full">
-        <div id="map" class="absolute inset-0 w-full h-full rounded-2xl border border-white/10"></div>
-    </div>
+        <div id="map" class="absolute inset-0 w-full h-full"></div>
+      </div>
 
+    </div>
   </div>
 </div>
 

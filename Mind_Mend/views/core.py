@@ -12,6 +12,15 @@ from ..location_tracker import reverse_geocode, get_client_ip
 from django.utils import timezone
 
 
+def cron_ping(request):
+    """Lightweight keep-alive endpoint for Render free-tier.
+    Ping this every 14 minutes from an external cron service
+    (e.g. cron-job.org) to prevent the dyno from sleeping.
+    Returns a minimal JSON response — no DB queries, no auth required.
+    """
+    return JsonResponse({"status": "ok"})
+
+
 def home(request):
     return render(request, 'Mind_Mend/core/home.html')
 

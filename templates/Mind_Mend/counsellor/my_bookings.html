@@ -14,6 +14,18 @@
       <p class="text-gray-500 text-lg max-w-2xl">
         Manage your upcoming appointments and review past conversations with your counsellors.
       </p>
+      <div class="flex gap-2">
+        {% if request.user.profile.wallet_balance > 0 %}
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#00d1b2]/10 border border-[#00d1b2]/30 text-[#00d1b2] font-bold text-sm">
+          <span>💰 Cash Balance: ₹{{ request.user.profile.wallet_balance|floatformat:"2" }}</span>
+        </div>
+        {% endif %}
+        {% if request.user.profile.bonus_balance > 0 %}
+        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500/10 border border-purple-500/30 text-purple-400 font-bold text-sm">
+          <span>🎁 Bonus Credits: ₹{{ request.user.profile.bonus_balance|floatformat:"2" }}</span>
+        </div>
+        {% endif %}
+      </div>
     </div>
     <a href="{% url 'counsellor_booking' %}"
        class="px-8 py-4 rounded-xl bg-[#00d1b2] text-black font-extrabold text-sm tracking-wider hover:scale-105 transition-transform flex items-center justify-center gap-2">
@@ -78,6 +90,18 @@
               <div class="flex items-center gap-2">📅 {{ b.date|date:"d M Y" }}</div>
               <div class="flex items-center gap-2">⏰ {{ b.time_slot|time:"H:i" }}</div>
             </div>
+            
+            {% if b.status == 'cancelled' %}
+              {% if b.cancellation %}
+              <div class="mt-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-left">
+                  <p class="text-red-400 font-bold text-sm mb-1">Session Cancelled due to Emergency</p>
+                  <p class="text-gray-300 text-xs italic mb-2">"{{ b.cancellation.message_to_patient }}"</p>
+                  <p class="text-[#00d1b2] font-semibold text-xs mt-2 border-t border-red-500/20 pt-2">
+                    A refund has been initiated, and an extra <span class="text-white">₹{{ b.cancellation.compensation_credited }}</span> MindMend Credits have been added to your wallet! Please check your notifications for the detailed financial breakdown.
+                  </p>
+              </div>
+              {% endif %}
+            {% endif %}
           </div>
 
           <!-- Actions -->
@@ -88,6 +112,15 @@
                  class="w-full sm:w-auto px-8 py-4 rounded-xl bg-amber-500/10 text-amber-400 font-bold text-xs uppercase tracking-widest hover:bg-amber-500/20 flex items-center justify-center gap-2 border border-amber-500/20">
                 💳 Complete Payment
               </a>
+            {% endif %}
+
+            {% if b.status == 'confirmed' %}
+              {% if not b.is_instant %}
+              <a href="{% url 'patient_cancel_booking' b.id %}"
+                 class="w-full sm:w-auto px-8 py-4 rounded-xl bg-white/5 text-gray-300 font-bold text-xs uppercase tracking-widest hover:bg-red-500/10 hover:text-red-400 hover:border-red-500/30 flex items-center justify-center gap-2 border border-white/10 transition">
+                🚫 Cancel Session
+              </a>
+              {% endif %}
             {% endif %}
 
             {% if b.status == 'confirmed' or b.status == 'completed' %}
@@ -122,6 +155,42 @@
                 <a href="{% url 'submit_review' b.id %}" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-amber-500/10 text-amber-500 font-bold text-xs uppercase tracking-widest hover:bg-amber-500/20 flex items-center justify-center gap-2">
                   ⭐ Leave Review
                 </a>
+              {% endif %}
+              
+              {% if not b.is_settled and not b.is_disputed %}
+                {% if b.is_dispute_window_open %}
+                <button onclick="document.getElementById('dispute-modal-{{b.id}}').classList.remove('hidden');" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-red-500/10 text-red-500 font-bold text-xs uppercase tracking-widest hover:bg-red-500/20 flex items-center justify-center gap-2">
+                  🚨 Dispute Session
+                </button>
+
+                <!-- Dispute Modal -->
+                <div id="dispute-modal-{{b.id}}" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                  <div class="bg-[#0a1428] border border-red-500/30 rounded-2xl p-6 max-w-md w-full relative">
+                    <button type="button" onclick="document.getElementById('dispute-modal-{{b.id}}').classList.add('hidden');" class="absolute top-4 right-4 text-gray-500 hover:text-white">✕</button>
+                    <h3 class="text-xl font-bold text-red-400 mb-2">Dispute Session</h3>
+                    <p class="text-sm text-gray-400 mb-6">Disputed sessions will withhold the counsellor's payout until reviewed by an admin.</p>
+                    
+                    <form method="POST" action="{% url 'raise_dispute' b.id %}" class="space-y-4">
+                        {% csrf_token %}
+                        <div>
+                            <label class="block text-gray-400 text-xs font-bold uppercase tracking-widest mb-2">Reason for Dispute</label>
+                            <textarea name="reason" rows="3" required class="w-full bg-black/50 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-red-500/50" placeholder="Please describe what went wrong..."></textarea>
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-red-500/20 hover:bg-red-500 text-red-200 hover:text-white font-bold rounded-xl transition">
+                            Submit Dispute
+                        </button>
+                    </form>
+                  </div>
+                </div>
+                {% else %}
+                <button disabled class="w-full sm:w-auto px-8 py-4 rounded-xl bg-gray-500/10 text-gray-500 font-bold text-xs uppercase tracking-widest cursor-not-allowed flex items-center justify-center gap-2" title="The 24-hour dispute window has closed.">
+                  🚨 WINDOW CLOSED
+                </button>
+                {% endif %}
+              {% elif b.is_disputed %}
+                <span class="px-8 py-4 rounded-xl bg-orange-500/10 text-orange-400 font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2">
+                  🚨 Under Dispute
+                </span>
               {% endif %}
             {% endif %}
 

@@ -181,6 +181,42 @@
     }
   }
 
+  // ── Day-availability banner ─────────────────────────────────────────────
+  function showDayUnavailable(msg) {
+    clearDayUnavailable();
+    const el = document.createElement('div');
+    el.id = 'dayUnavailableMsg';
+    el.className = [
+      'flex items-start gap-3 px-5 py-4 rounded-2xl mt-3',
+      'bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm font-medium',
+    ].join(' ');
+    el.innerHTML = `<span class="text-lg leading-none mt-0.5 shrink-0">📅</span><span>${msg}</span>`;
+    if (slotGrid) slotGrid.parentElement.insertBefore(el, slotGrid);
+    slotGrid.innerHTML = '';
+  }
+
+  function clearDayUnavailable() {
+    const el = document.getElementById('dayUnavailableMsg');
+    if (el) el.remove();
+  }
+
+  // Map JS getDay() (0=Sun…6=Sat) to 3-letter abbreviation
+  const DAY_ABBR = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+
+  function isDayAvailable(cData, dateStr) {
+    // dateStr is 'YYYY-MM-DD'. Use UTC to avoid timezone shifts.
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dayIndex = new Date(y, m - 1, d).getDay();
+    const dayAbbr  = DAY_ABBR[dayIndex];
+    return cData.days.includes(dayAbbr);
+  }
+
+  function getDayName(dateStr) {
+    const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return days[new Date(y, m - 1, d).getDay()];
+  }
+
   // ── Fetch booked slots & rebuild grid ──────────────────────────────────
   function refresh() {
     const cId   = counsellorSel ? counsellorSel.value : null;
@@ -189,8 +225,23 @@
 
     if (!slotGrid) return; // instant booking — no slot grid
 
+    clearDayUnavailable();
+
     if (!cId || !date || !cData) {
       slotGrid.innerHTML = '<p class="text-sm text-gray-500 italic">Select a counsellor and date to see available time slots.</p>';
+      return;
+    }
+
+    // ── Day availability check ──────────────────────────────────────────
+    if (!isDayAvailable(cData, date)) {
+      const dayName = getDayName(date);
+      // Build human-readable available days list
+      const dayNames = { mon:'Monday', tue:'Tuesday', wed:'Wednesday', thu:'Thursday', fri:'Friday', sat:'Saturday', sun:'Sunday' };
+      const availList = cData.days.map(d => dayNames[d] || d).join(', ');
+      showDayUnavailable(
+        `This counsellor is <strong>not available on ${dayName}s</strong>. ` +
+        `Please pick a date that falls on: <strong>${availList}</strong>.`
+      );
       return;
     }
 

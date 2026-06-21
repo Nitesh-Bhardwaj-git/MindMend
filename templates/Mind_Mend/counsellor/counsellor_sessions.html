@@ -24,6 +24,19 @@
       </a>
     </div>
 
+    {% if is_masquerading %}
+    <div class="bg-red-500/20 border border-red-500/50 text-red-200 px-6 py-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-[0_0_20px_rgba(239,68,68,0.2)]">
+        <div class="flex items-center gap-3">
+            <span class="text-2xl">⚠️</span>
+            <div>
+                <p class="font-bold text-white">Viewing Sessions as: {{ counsellor.name }} (Read-Only Mode)</p>
+                <p class="text-sm opacity-80 mt-1">You are an Admin masquerading as this counsellor. Action buttons are disabled.</p>
+            </div>
+        </div>
+        <a href="{% url 'admin_counsellors_dashboard' %}" class="px-5 py-2 bg-red-500/20 hover:bg-red-500 border border-red-500/50 text-white font-bold rounded-xl transition text-sm flex-shrink-0 text-center shadow-lg">Exit Masquerade</a>
+    </div>
+    {% endif %}
+
     <!-- SESSIONS LIST -->
     <div class="space-y-4">
       {% for b in bookings %}

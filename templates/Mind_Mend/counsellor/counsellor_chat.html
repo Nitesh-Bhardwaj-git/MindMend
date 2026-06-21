@@ -51,14 +51,79 @@
         {% endif %}
 
         {% if session_state == 'active' and booking.status != 'completed' and booking.status != 'cancelled' %}
-        <form method="post" action="{% url 'finish_session' booking.id %}" onsubmit="return confirm('Finish this session now? This will disable chat and mark it as completed.');">
-          {% csrf_token %}
-          <input type="hidden" name="next" value="{% url 'counsellor_chat' booking.id %}">
-          <button type="submit"
-                  class="px-5 py-3 rounded-xl bg-white/10 text-white hover:bg-red-500 hover:text-white transition font-medium border border-white/10">
-            Finish Session
-          </button>
-        </form>
+          <div class="flex flex-wrap gap-2 justify-end">
+            {% if is_counsellor_view and minutes_since_start >= 20 %}
+              <form method="post" action="{% url 'mark_patient_no_show' booking.id %}" onsubmit="return confirm('Mark Patient as No-Show? They will not receive a refund.');">
+                {% csrf_token %}
+                <button type="submit" class="px-5 py-3 rounded-xl bg-orange-500/10 text-orange-400 hover:bg-orange-500 hover:text-white transition font-medium border border-orange-500/20">
+                  Patient No-Show
+                </button>
+              </form>
+            {% elif not is_counsellor_view and minutes_since_start >= 15 %}
+              <form method="post" action="{% url 'report_counsellor_no_show' booking.id %}" onsubmit="return confirm('Report Counsellor as No-Show? You will receive a full refund and compensation.');">
+                {% csrf_token %}
+                <button type="submit" class="px-5 py-3 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white transition font-medium border border-red-500/20">
+                  Report No-Show
+                </button>
+              </form>
+            {% endif %}
+
+            {# ── Early Finish Mutual Consent UI ── #}
+            {% if is_counsellor_view %}
+              {% if booking.counsellor_requested_finish %}
+                {# Counsellor already requested – waiting for patient #}
+                <span class="px-5 py-3 rounded-xl bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 font-medium text-sm flex items-center gap-2">
+                  ⏳ Waiting for patient to confirm...
+                </span>
+              {% else %}
+                <form method="post" action="{% url 'request_early_finish' booking.id %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{% url 'counsellor_chat' booking.id %}">
+                  <button type="submit"
+                          onclick="return confirm('Request to finish this session early? The session will end once the patient also confirms.')"
+                          class="px-5 py-3 rounded-xl bg-white/10 text-white hover:bg-emerald-500 hover:text-white transition font-medium border border-white/10">
+                    ✅ End Session Early
+                  </button>
+                </form>
+              {% endif %}
+              {% if booking.patient_requested_finish and not booking.counsellor_requested_finish %}
+                <div class="px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-sm font-medium">
+                  🙋 Patient wants to end early.
+                  <form method="post" action="{% url 'request_early_finish' booking.id %}" class="inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{% url 'counsellor_sessions' %}">
+                    <button type="submit" class="ml-2 underline font-bold hover:text-white transition">Confirm &amp; End Now</button>
+                  </form>
+                </div>
+              {% endif %}
+            {% else %}
+              {% if booking.patient_requested_finish %}
+                <span class="px-5 py-3 rounded-xl bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 font-medium text-sm flex items-center gap-2">
+                  ⏳ Waiting for counsellor to confirm...
+                </span>
+              {% else %}
+                <form method="post" action="{% url 'request_early_finish' booking.id %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{% url 'counsellor_chat' booking.id %}">
+                  <button type="submit"
+                          onclick="return confirm('Request to finish this session early? The session will end once the counsellor also confirms.')"
+                          class="px-5 py-3 rounded-xl bg-white/10 text-white hover:bg-emerald-500 hover:text-white transition font-medium border border-white/10">
+                    ✅ End Session Early
+                  </button>
+                </form>
+              {% endif %}
+              {% if booking.counsellor_requested_finish and not booking.patient_requested_finish %}
+                <div class="px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-sm font-medium">
+                  🩺 Counsellor wants to end early.
+                  <form method="post" action="{% url 'request_early_finish' booking.id %}" class="inline">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{% url 'counsellor_booking' %}">
+                    <button type="submit" class="ml-2 underline font-bold hover:text-white transition">Confirm &amp; End Now</button>
+                  </form>
+                </div>
+              {% endif %}
+            {% endif %}
+          </div>
         {% endif %}
       </div>
     </div>

@@ -58,21 +58,57 @@
             {% if booking.include_chat %}
             <div class="flex justify-between items-center text-gray-300 text-sm">
                 <span>Chat Session Fee</span>
-                <span class="font-semibold text-white">₹{{ booking.chat_fee|floatformat:"0" }}</span>
+                <span class="font-semibold text-white">₹{{ booking.chat_fee|floatformat:"2" }}</span>
             </div>
             {% endif %}
             {% if booking.include_video %}
             <div class="flex justify-between items-center text-gray-300 text-sm">
                 <span>Video Calling Fee</span>
-                <span class="font-semibold text-white">₹{{ booking.video_fee|floatformat:"0" }}</span>
+                <span class="font-semibold text-white">₹{{ booking.video_fee|floatformat:"2" }}</span>
+            </div>
+            {% endif %}
+            {% if booking.platform_fee > 0 %}
+            <div class="flex justify-between items-center text-amber-400/80 text-sm">
+                <span class="flex items-center gap-1">
+                  Platform Fee
+                  <span class="text-[10px] text-gray-500 bg-white/5 rounded px-1.5 py-0.5">non-refundable</span>
+                </span>
+                <span class="font-semibold">₹{{ booking.platform_fee|floatformat:"2" }}</span>
+            </div>
+            {% endif %}
+            {% if bonus_used > 0 %}
+            <div class="flex justify-between items-center text-purple-400 text-sm">
+                <span>Bonus Credits Applied</span>
+                <span class="font-bold">-₹{{ bonus_used|floatformat:"2" }}</span>
+            </div>
+            {% endif %}
+            {% if wallet_used > 0 %}
+            <div class="flex justify-between items-center text-[#00d1b2] text-sm">
+                <span>Cash Balance Applied</span>
+                <span class="font-bold">-₹{{ wallet_used|floatformat:"2" }}</span>
             </div>
             {% endif %}
         </div>
 
+        {% if total_balance > 0 %}
+        <div class="pt-4 border-t border-white/10 mt-4">
+          <label class="flex items-center gap-3 cursor-pointer group">
+            <input type="checkbox" id="toggleWallet" class="w-5 h-5 accent-[#00d1b2] rounded bg-[#111c33] border-white/10 focus:ring-[#00d1b2]"
+              {% if apply_wallet %}checked{% endif %}
+              onchange="window.location.href='?apply_wallet=' + (this.checked ? '1' : '0')"
+            >
+            <div class="flex flex-col text-left">
+              <span class="text-white text-sm font-semibold group-hover:text-[#00d1b2] transition">Apply Available Balances</span>
+              <span class="text-xs text-gray-500">Bonus: ₹{{ bonus_balance|floatformat:"2" }} | Cash: ₹{{ wallet_balance|floatformat:"2" }}</span>
+            </div>
+          </label>
+        </div>
+        {% endif %}
+
         <div class="pt-6 border-t border-white/10 flex justify-between items-end">
           <div class="text-gray-400 text-sm">Total Due</div>
           <div class="text-4xl font-bold text-[#00d1b2] shrink-0">
-             ₹{{ booking.total_fee|floatformat:"0" }}
+             ₹{{ amount_to_pay|floatformat:"2" }}
           </div>
         </div>
 
@@ -102,10 +138,11 @@
 
         <!-- Hidden verification form submitted by JS after payment -->
         <form id="razorpay-verify-form" method="POST" action="{% url 'razorpay_payment_verify' booking.id %}">
-          {% csrf_token %}
-          <input type="hidden" name="razorpay_order_id"   id="rzp_order_id">
-          <input type="hidden" name="razorpay_payment_id" id="rzp_payment_id">
-          <input type="hidden" name="razorpay_signature"  id="rzp_signature">
+            {% csrf_token %}
+            <input type="hidden" name="apply_wallet" value="{% if apply_wallet %}1{% else %}0{% endif %}">
+            <input type="hidden" name="razorpay_order_id"   id="rzp_order_id">
+            <input type="hidden" name="razorpay_payment_id" id="rzp_payment_id">
+            <input type="hidden" name="razorpay_signature"  id="rzp_signature">
         </form>
 
         <!-- Trust badges -->
@@ -124,15 +161,26 @@
           </div>
         </div>
 
+        {% if amount_to_pay > 0 %}
         <button id="rzp-pay-btn"
           class="w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-3
                  bg-[#00d1b2] text-black hover:shadow-[0_0_30px_rgba(0,209,178,0.5)] hover:scale-[1.02] active:scale-[0.98]">
-          <span id="rzp-btn-text">💳 Pay ₹{{ booking.total_fee|floatformat:"0" }} Now</span>
+          <span id="rzp-btn-text">💳 Pay ₹{{ amount_to_pay|floatformat:"2" }} Now</span>
           <svg id="rzp-spinner" class="hidden w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
           </svg>
         </button>
+        {% else %}
+        <form method="POST" action="{% url 'checkout_payment' booking.id %}">
+          {% csrf_token %}
+          <button type="submit"
+            class="w-full py-4 rounded-xl font-bold text-lg transition-all duration-300 flex items-center justify-center gap-3
+                   bg-[#00d1b2] text-black hover:shadow-[0_0_30px_rgba(0,209,178,0.5)] hover:scale-[1.02] active:scale-[0.98]">
+            <span>✅ Confirm Booking (Fully Paid by Wallet)</span>
+          </button>
+        </form>
+        {% endif %}
 
         <p id="rzp-error-msg" class="hidden mt-4 text-red-400 text-sm text-center"></p>
       </div>

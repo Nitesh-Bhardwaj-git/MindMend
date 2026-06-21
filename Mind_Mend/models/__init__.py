@@ -35,6 +35,14 @@ class UserProfile(models.Model):
         default=False,
         help_text='Set to True after the user completes the mandatory profile setup after registration.'
     )
+    wallet_balance = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00,
+        help_text='Real cash deposited by the user.'
+    )
+    bonus_balance = models.DecimalField(
+        max_digits=10, decimal_places=2, default=0.00,
+        help_text='Promotional or compensation credits awarded to the user.'
+    )
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
@@ -89,15 +97,21 @@ class Counsellor(models.Model):
     specialization = models.CharField(max_length=200)
     bio = models.TextField(blank=True)
     profile_picture = models.ImageField(upload_to='counsellors/', null=True, blank=True)
-    session_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Session fee")
+    session_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Fee per 30-minute session")
+    is_active = models.BooleanField(default=True, help_text="Can receive new bookings")
+    is_approved = models.BooleanField(default=False, help_text="Approved by admin to practice")
+    trust_score = models.IntegerField(default=100, help_text="Decreases on no-shows or bad behavior")
+    outstanding_debt = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Unpaid penalties carried forward")
+    
     is_instant_enabled = models.BooleanField(default=False, help_text="Available for instant counselling")
     instant_session_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Instant session fee")
+    
+    # Optional fields for detailed profile
     video_session_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Video session fee")
     instant_video_session_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Instant video session fee")
     available_days = models.CharField(max_length=100, help_text="e.g., Mon,Wed,Fri")
     available_time_start = models.TimeField()
     available_time_end = models.TimeField()
-    is_active = models.BooleanField(default=True)
     
     # New detailed fields
     verified_qualification = models.TextField(blank=True, default="", help_text="Verified degrees and licenses")
@@ -127,25 +141,178 @@ class CounsellorBooking(models.Model):
     status = models.CharField(
         max_length=20,
         choices=[
-            ('pending', 'Pending'),
+            ('pending', 'Pending Payment'),
             ('confirmed', 'Confirmed'),
             ('completed', 'Completed'),
             ('cancelled', 'Cancelled'),
         ],
         default='pending'
     )
+    is_instant = models.BooleanField(default=False)
+    
+    # Financial fields
+    wallet_used = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Cash balance used")
+    bonus_used = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Bonus credits used")
+    
+    # Cancellation & No-Show tracking
+    CANCELLED_BY_CHOICES = [
+        ('counsellor', 'Counsellor'),
+        ('patient', 'Patient'),
+        ('system', 'System')
+    ]
+    cancelled_by = models.CharField(max_length=20, choices=CANCELLED_BY_CHOICES, null=True, blank=True)
+    cancellation_reason = models.TextField(null=True, blank=True)
+    is_no_show = models.BooleanField(default=False, help_text="True if either party was marked as no-show")
+
     is_paid = models.BooleanField(default=False)
-    is_instant = models.BooleanField(default=False, help_text="Whether this is an instant booking")
+    is_approved = models.BooleanField(default=False)
+    is_disputed = models.BooleanField(default=False, help_text="True if patient raised a dispute")
     include_chat = models.BooleanField(default=True, help_text="Include Chat Session")
     include_video = models.BooleanField(default=False, help_text="Include Video Calling Session")
     chat_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     video_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    platform_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Flat convenience fee charged to the patient (₹2 normal, ₹3 instant)")
     total_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    
+    # Counsellor Payouts
+    is_settled = models.BooleanField(default=False, help_text="Has MindMend paid the counsellor for this session?")
+    counsellor_earnings = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Total fee minus platform commission")
+    completed_at = models.DateTimeField(null=True, blank=True, help_text="When the session was marked as completed")
+    completion_reminder_sent = models.BooleanField(default=False)
+    payout_settlement = models.ForeignKey('PayoutSettlement', on_delete=models.SET_NULL, null=True, blank=True, related_name='settled_bookings')
+    
+    # Attendance tracking
+    counsellor_joined_at = models.DateTimeField(null=True, blank=True)
+    patient_joined_at = models.DateTimeField(null=True, blank=True)
+    session_ended_at = models.DateTimeField(null=True, blank=True)
+    actual_duration_minutes = models.IntegerField(null=True, blank=True)
+    
+    # Early finish mutual consent
+    patient_requested_finish = models.BooleanField(default=False, help_text="Patient wants to end session early")
+    counsellor_requested_finish = models.BooleanField(default=False, help_text="Counsellor wants to end session early")
+    
+    @property
+    def is_dispute_window_open(self):
+        from django.utils import timezone
+        import datetime
+        if self.status != 'completed' or not self.completed_at:
+            return False
+        return timezone.now() <= self.completed_at + datetime.timedelta(hours=24)
+    
+    razorpay_payment_id = models.CharField(max_length=100, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def patient_display_name(self):
+        """Returns the patient's name shown to counsellors.
+        Respects both the booking-level anonymous flag and the user's global show_username toggle."""
+        if self.is_anonymous:
+            return 'Anonymous Patient'
+        try:
+            if not self.user.profile.show_username:
+                return 'Anonymous Patient'
+        except Exception:
+            pass
+        return get_display_name(self.user)
 
     class Meta:
         unique_together = ['counsellor', 'date', 'time_slot']
         ordering = ['date', 'time_slot']
+
+class SessionDispute(models.Model):
+    """Tracks disputes raised by patients against completed sessions."""
+    OUTCOME_CHOICES = [
+        ('pending', 'Pending Admin Review'),
+        ('patient_won', 'Resolved in favor of Patient'),
+        ('counsellor_won', 'Resolved in favor of Counsellor'),
+    ]
+    booking = models.OneToOneField(CounsellorBooking, on_delete=models.CASCADE, related_name='dispute')
+    patient_reason = models.TextField()
+    admin_notes = models.TextField(blank=True, help_text="Notes from admin resolution")
+    outcome = models.CharField(max_length=30, choices=OUTCOME_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"Dispute for Booking #{self.booking.id}"
+
+class WalletTransaction(models.Model):
+    """Tracks history of wallet credits and debits."""
+    TRANSACTION_TYPES = [
+        ('add_money', 'Added Money'),
+        ('session_booking', 'Session Booking'),
+        ('compensation', 'Compensation Credit'),
+        ('refund', 'Refund Credit'),
+        ('expired', 'Expired Bonus'),
+    ]
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='wallet_transactions')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    transaction_type = models.CharField(max_length=50, choices=TRANSACTION_TYPES)
+    description = models.CharField(max_length=255)
+    reference_id = models.CharField(max_length=100, blank=True, help_text="e.g., Razorpay payment ID or booking ID")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username} - {self.transaction_type} - ₹{self.amount}"
+
+class BonusCredit(models.Model):
+    """Tracks individual bonus credit grants and their expiry dates."""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='bonus_credits')
+    initial_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    remaining_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    
+    class Meta:
+        ordering = ['expires_at']
+        
+    def __str__(self):
+        return f"Bonus: ₹{self.remaining_amount} remaining (Expires: {self.expires_at})"
+
+class CounsellorBankDetails(models.Model):
+    counsellor = models.OneToOneField(Counsellor, on_delete=models.CASCADE, related_name='bank_details')
+    account_holder_name = models.CharField(max_length=100)
+    bank_name = models.CharField(max_length=100)
+    account_number = models.CharField(max_length=50)
+    ifsc_code = models.CharField(max_length=20)
+    upi_id = models.CharField(max_length=100, blank=True)
+
+    def __str__(self):
+        return f"Bank Details for {self.counsellor.name}"
+
+class PayoutSettlement(models.Model):
+    """Tracks historical payouts settled to counsellors."""
+    counsellor = models.ForeignKey(Counsellor, on_delete=models.CASCADE, related_name='settlements')
+    settled_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='processed_settlements')
+    gross_amount = models.DecimalField(max_digits=10, decimal_places=2)
+    total_deductions = models.DecimalField(max_digits=10, decimal_places=2)
+    net_amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
+    bank_reference_id = models.CharField(max_length=100, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"Settlement {self.id} - {self.counsellor.name} - ₹{self.net_amount_paid}"
+
+class BookingCancellation(models.Model):
+    """Tracks emergency cancellations initiated by a counsellor."""
+    booking = models.OneToOneField(CounsellorBooking, on_delete=models.CASCADE, related_name='cancellation')
+    counsellor = models.ForeignKey(Counsellor, on_delete=models.CASCADE)
+    reason = models.TextField()
+    message_to_patient = models.TextField()
+    compensation_credited = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    counsellor_penalty = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, help_text="Fine deducted from counsellor's payout")
+    refund_status = models.CharField(max_length=20, default='Pending')
+    payout_settlement = models.ForeignKey(PayoutSettlement, on_delete=models.SET_NULL, null=True, blank=True, related_name='settled_cancellations')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
 
     def patient_display_name(self):
         """Returns name shown to counsellors. Respects both the booking-level anonymous flag

@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Payout History - MindMend{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-4 md:pt-6 pb-20">
+  <div class="absolute top-0 right-1/4 w-[360px] h-[360px] bg-[#00d1b2]/10 rounded-full blur-[120px] animate-pulse pointer-events-none"></div>
+
+  <div class="max-w-6xl mx-auto px-4 md:px-12 relative z-10">
+    <div class="mb-10 text-center md:text-left flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div>
+        <a href="{% url 'counsellor_earnings_dashboard' %}" class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 text-[10px] font-bold uppercase tracking-widest mb-4 transition">
+          <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+          Back to Earnings
+        </a>
+        <h1 class="text-3xl md:text-5xl font-bold text-white mb-2">Payout History</h1>
+        <p class="text-gray-400">A detailed ledger of all settlements transferred to your bank account.</p>
+      </div>
+    </div>
+
+    <!-- Payout Ledger -->
+    <div class="bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 rounded-[2rem] p-6 shadow-2xl">
+      <div class="overflow-x-auto custom-scrollbar">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-white/10 text-gray-400 text-xs uppercase tracking-widest bg-[#0a1428] z-10">
+              <th class="pb-4 pt-2 font-semibold">Date Processed</th>
+              <th class="pb-4 pt-2 font-semibold">Reference ID</th>
+              <th class="pb-4 pt-2 font-semibold">Gross Amount</th>
+              <th class="pb-4 pt-2 font-semibold">Deductions</th>
+              <th class="pb-4 pt-2 font-semibold">Net Payout</th>
+              <th class="pb-4 pt-2 font-semibold text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="text-sm">
+            {% for s in settlements %}
+            <tr class="border-b border-white/5 hover:bg-white/5 transition group">
+              <td class="py-4 text-gray-300 whitespace-nowrap">{{ s.created_at|date:"M d, Y, h:i A" }}</td>
+              <td class="py-4 text-gray-400 font-mono">
+                {% if s.bank_reference_id %}
+                  <span class="text-[#00d1b2]">{{ s.bank_reference_id }}</span>
+                {% else %}
+                  <span class="text-gray-600">Pending</span>
+                {% endif %}
+              </td>
+              <td class="py-4 text-gray-400 font-mono">
+                ₹{{ s.gross_amount|floatformat:"2" }}
+              </td>
+              <td class="py-4 text-red-400/70 font-mono">
+                {% if s.total_deductions > 0 %}-₹{{ s.total_deductions|floatformat:"2" }}{% else %}-{% endif %}
+              </td>
+              <td class="py-4 font-bold text-[#00d1b2] font-mono text-lg">
+                ₹{{ s.net_amount_paid|floatformat:"2" }}
+              </td>
+              <td class="py-4 text-right">
+                <button onclick="toggleDetails('details-{{ s.id }}')" class="px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-bold transition inline-flex items-center gap-2">
+                  View Breakdown
+                  <svg class="w-3 h-3 transition-transform" id="icon-{{ s.id }}" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                </button>
+              </td>
+            </tr>
+            <tr id="details-{{ s.id }}" class="hidden bg-black/40 border-b border-white/5">
+              <td colspan="6" class="p-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <!-- Sessions Included -->
+                  <div class="bg-white/5 border border-white/10 rounded-2xl p-4">
+                    <h4 class="text-white text-sm font-bold mb-3 flex items-center justify-between">
+                      Sessions Settled
+                      <span class="bg-[#00d1b2]/20 text-[#00d1b2] px-2 py-0.5 rounded text-xs">{{ s.settled_bookings.count }}</span>
+                    </h4>
+                    <div class="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                      {% for b in s.settled_bookings.all %}
+                      <div class="flex justify-between items-center text-xs py-2 border-b border-white/5 last:border-0">
+                        <div class="text-gray-400">
+                          <span class="text-white block">{{ b.date|date:"M d, Y" }}</span>
+                          {{ b.user.get_full_name|default:b.user.username }}
+                        </div>
+                        <div class="font-mono text-[#00d1b2]">₹{{ b.counsellor_earnings|floatformat:"2" }}</div>
+                      </div>
+                      {% empty %}
+                      <p class="text-gray-500 text-xs italic">No sessions included.</p>
+                      {% endfor %}
+                    </div>
+                  </div>
+                  
+                  <!-- Penalties Included -->
+                  <div class="bg-red-500/5 border border-red-500/10 rounded-2xl p-4">
+                    <h4 class="text-red-400 text-sm font-bold mb-3 flex items-center justify-between">
+                      Penalties Deducted
+                      <span class="bg-red-500/20 text-red-400 px-2 py-0.5 rounded text-xs">{{ s.settled_cancellations.count }}</span>
+                    </h4>
+                    <div class="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                      {% for c in s.settled_cancellations.all %}
+                      <div class="flex justify-between items-center text-xs py-2 border-b border-white/5 last:border-0">
+                        <div class="text-gray-400">
+                          <span class="text-white block">{{ c.created_at|date:"M d, Y" }}</span>
+                          {{ c.reason|truncatechars:30 }}
+                        </div>
+                        <div class="font-mono text-red-400">-₹{{ c.counsellor_penalty|floatformat:"2" }}</div>
+                      </div>
+                      {% empty %}
+                      <p class="text-gray-500 text-xs italic">No penalties deducted.</p>
+                      {% endfor %}
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            {% empty %}
+            <tr>
+              <td colspan="6" class="py-12 text-center text-gray-500">
+                <div class="flex flex-col items-center gap-3">
+                  <div class="w-12 h-12 rounded-full bg-[#00d1b2]/10 flex items-center justify-center text-[#00d1b2] text-xl">🏦</div>
+                  <p>You haven't received any payouts yet.</p>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function toggleDetails(id) {
+    const row = document.getElementById(id);
+    const icon = document.getElementById(id.replace('details-', 'icon-'));
+    
+    if (row.classList.contains('hidden')) {
+      row.classList.remove('hidden');
+      icon.classList.add('rotate-180');
+    } else {
+      row.classList.add('hidden');
+      icon.classList.remove('rotate-180');
+    }
+  }
+</script>
+
+<style>
+  .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 4px; }
+</style>
+{% endblock %}

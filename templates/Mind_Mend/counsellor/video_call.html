@@ -151,21 +151,52 @@
             <div class="absolute inset-0 rounded-full bg-[#00d1b2]/10 scale-150 animate-ping duration-1000"></div>
             <div class="absolute inset-0 rounded-full bg-[#00d1b2]/5 scale-[2.2] animate-pulse"></div>
             <div class="h-32 w-32 rounded-full border-2 border-[#00d1b2]/30 shadow-2xl overflow-hidden relative z-10">
-              {% if booking.counsellor.profile_picture %}
-                <img src="{{ booking.counsellor.profile_picture.url }}" alt="{{ booking.counsellor.name }}" class="w-full h-full object-cover">
-              {% else %}
+              {% if is_counsellor_view %}
                 <div class="w-full h-full bg-[#111c33] flex items-center justify-center text-3xl font-bold text-white">
-                  {{ booking.counsellor.name|slice:":1"|upper }}
+                  {{ booking.patient_display_name|slice:":1"|upper }}
                 </div>
+              {% else %}
+                {% if booking.counsellor.profile_picture %}
+                  <img src="{{ booking.counsellor.profile_picture.url }}" alt="{{ booking.counsellor.name }}" class="w-full h-full object-cover">
+                {% else %}
+                  <div class="w-full h-full bg-[#111c33] flex items-center justify-center text-3xl font-bold text-white">
+                    {{ booking.counsellor.name|slice:":1"|upper }}
+                  </div>
+                {% endif %}
               {% endif %}
             </div>
           </div>
-          <h3 class="text-xl font-bold text-white">{{ booking.counsellor.name }}</h3>
-          <p class="text-[#00d1b2] text-xs uppercase tracking-widest mt-1 font-semibold">{{ booking.counsellor.specialization }}</p>
+          <h3 class="text-xl font-bold text-white">
+            {% if is_counsellor_view %}
+              {{ booking.patient_display_name }}
+            {% else %}
+              {{ booking.counsellor.name }}
+            {% endif %}
+          </h3>
+          <p class="text-[#00d1b2] text-xs uppercase tracking-widest mt-1 font-semibold">
+            {% if is_counsellor_view %}
+              Patient
+            {% else %}
+              {{ booking.counsellor.specialization }}
+            {% endif %}
+          </p>
           <div class="mt-4 flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs text-gray-400">
             <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
-            Simulated Doctor Video Stream
+            {% if is_counsellor_view %}Simulated Patient Video Stream{% else %}Simulated Doctor Video Stream{% endif %}
           </div>
+        </div>
+
+        <!-- Waiting Overlay -->
+        <div id="waitingOverlay" class="absolute inset-0 z-40 bg-[#0a1428]/95 backdrop-blur-md flex flex-col items-center justify-center text-center p-8 transition-opacity duration-500">
+          <div class="h-16 w-16 mb-6 rounded-full border-4 border-white/10 border-t-[#00d1b2] animate-spin"></div>
+          <h2 class="text-2xl font-bold text-white mb-2">
+            {% if is_counsellor_view %}
+            Waiting for Patient to join...
+            {% else %}
+            Waiting for Counsellor to join...
+            {% endif %}
+          </h2>
+          <p class="text-gray-400 text-sm">Please stay on this page. The video feed will start automatically once they connect.</p>
         </div>
 
         <!-- floating picture-in-picture user feed (real camera) -->
@@ -201,15 +232,60 @@
 
           <div class="h-8 w-px bg-white/10 mx-1 hidden sm:block"></div>
 
-          <!-- End Call Button -->
-          <form method="post" action="{% url 'finish_session' booking.id %}" class="inline">
-            {% csrf_token %}
-            <input type="hidden" name="next" value="{% if is_counsellor_view %}{% url 'counsellor_sessions' %}{% else %}{% url 'counsellor_booking' %}{% endif %}">
-            <button type="submit" class="h-11 px-4 rounded-2xl bg-red-500 hover:bg-red-600 text-white font-bold flex items-center gap-2 active:scale-95 transition shadow-lg shadow-red-500/20" onclick="return confirm('Are you sure you want to end this video call and finish the session?');">
-              <i data-lucide="phone-off" class="h-5 w-5"></i>
-              <span class="hidden sm:inline">End Call</span>
-            </button>
-          </form>
+          <!-- End Call / Early Finish Mutual Consent -->
+          {% if is_counsellor_view %}
+            {% if booking.counsellor_requested_finish %}
+              <span class="h-11 px-4 rounded-2xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 font-bold text-xs flex items-center gap-2">
+                ⏳ Waiting for patient...
+              </span>
+            {% else %}
+              <form method="post" action="{% url 'request_early_finish' booking.id %}" class="inline">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{% url 'counsellor_sessions' %}">
+                <button type="submit" class="h-11 px-4 rounded-2xl bg-red-500 hover:bg-red-600 text-white font-bold flex items-center gap-2 active:scale-95 transition shadow-lg shadow-red-500/20"
+                        onclick="return confirm('Request to end this video session early? It will complete once the patient confirms.');">
+                  <i data-lucide="phone-off" class="h-5 w-5"></i>
+                  <span class="hidden sm:inline">End Call Early</span>
+                </button>
+              </form>
+            {% endif %}
+            {% if booking.patient_requested_finish and not booking.counsellor_requested_finish %}
+              <div class="h-11 px-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center gap-2">
+                🙋 Patient wants to end.
+                <form method="post" action="{% url 'request_early_finish' booking.id %}" class="inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{% url 'counsellor_sessions' %}">
+                  <button type="submit" class="underline hover:text-white transition">Confirm</button>
+                </form>
+              </div>
+            {% endif %}
+          {% else %}
+            {% if booking.patient_requested_finish %}
+              <span class="h-11 px-4 rounded-2xl bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 font-bold text-xs flex items-center gap-2">
+                ⏳ Waiting for counsellor...
+              </span>
+            {% else %}
+              <form method="post" action="{% url 'request_early_finish' booking.id %}" class="inline">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{% url 'counsellor_booking' %}">
+                <button type="submit" class="h-11 px-4 rounded-2xl bg-red-500 hover:bg-red-600 text-white font-bold flex items-center gap-2 active:scale-95 transition shadow-lg shadow-red-500/20"
+                        onclick="return confirm('Request to end this video session early? It will complete once the counsellor confirms.');">
+                  <i data-lucide="phone-off" class="h-5 w-5"></i>
+                  <span class="hidden sm:inline">End Call Early</span>
+                </button>
+              </form>
+            {% endif %}
+            {% if booking.counsellor_requested_finish and not booking.patient_requested_finish %}
+              <div class="h-11 px-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold flex items-center gap-2">
+                🩺 Counsellor wants to end.
+                <form method="post" action="{% url 'request_early_finish' booking.id %}" class="inline">
+                  {% csrf_token %}
+                  <input type="hidden" name="next" value="{% url 'counsellor_booking' %}">
+                  <button type="submit" class="underline hover:text-white transition">Confirm</button>
+                </form>
+              </div>
+            {% endif %}
+          {% endif %}
         </div>
 
       </div>
@@ -435,6 +511,16 @@
         window.location.reload();
       }
     }, 1000);
+
+    // 4. Waiting Overlay Logic (Simulate the other party joining)
+    setTimeout(() => {
+      const overlay = document.getElementById('waitingOverlay');
+      if (overlay) {
+        overlay.classList.add('opacity-0');
+        setTimeout(() => overlay.remove(), 500); // allow transition to finish
+      }
+    }, Math.floor(Math.random() * 3000) + 3000); // 3 to 6 seconds
+
   });
 </script>
 {% endif %}

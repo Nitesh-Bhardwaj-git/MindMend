@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Emergency Cancellation{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-4 md:pt-6 pb-20">
+  <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+    <div class="bg-[#0a1428]/80 backdrop-blur-xl border border-red-500/20 rounded-[2rem] p-8 shadow-[0_0_50px_rgba(239,68,68,0.05)] text-center mb-8">
+      <div class="h-16 w-16 bg-red-500/10 border border-red-500/20 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+        ⚠️
+      </div>
+      <h2 class="text-3xl font-bold text-white mb-2">Emergency Cancellation</h2>
+      <p class="text-gray-400">
+        You are about to cancel a confirmed session with <strong class="text-white">{{ booking.patient_display_name }}</strong> on {{ booking.date }} at {{ booking.time_slot }}.
+      </p>
+      
+      <div class="mt-6 p-4 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-left">
+        <h4 class="text-yellow-400 font-bold text-sm mb-2">Fairness Protection Policy</h4>
+        <ul class="text-xs text-gray-300 space-y-2 list-disc list-inside">
+          <li>The patient will receive a full refund.</li>
+          <li>A {{ booking.is_instant|yesno:"20%,10%" }} compensation credit will be paid from your account to the patient.</li>
+          <li>If you accumulate 3 or more emergency cancellations within a 30-day window, your account will be automatically suspended.</li>
+        </ul>
+      </div>
+    </div>
+
+    <form method="POST" action="{% url 'emergency_cancel_booking' booking.id %}" class="space-y-6">
+      {% csrf_token %}
+      
+      <div>
+        <label for="reason" class="block text-sm font-medium text-gray-300 mb-2">Internal Reason (Only for MindMend Admin)</label>
+        <textarea name="reason" id="reason" rows="3" required
+          class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:border-red-500/50 focus:ring-1 focus:ring-red-500/50"
+          placeholder="Please explain the emergency..."></textarea>
+      </div>
+
+      <div>
+        <label for="message_to_patient" class="block text-sm font-medium text-gray-300 mb-2">Message to Patient</label>
+        <textarea name="message_to_patient" id="message_to_patient" rows="4" required
+          class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:border-red-500/50 focus:ring-1 focus:ring-red-500/50"
+          placeholder="We apologize, but due to an unexpected emergency, I am unable to attend our session today..."></textarea>
+      </div>
+
+      <div class="flex gap-4 pt-4">
+        <a href="{% url 'doctor_dashboard' %}" class="flex-1 px-6 py-4 rounded-xl border border-white/10 bg-white/5 text-white font-bold text-center hover:bg-white/10 transition flex items-center justify-center">
+          Go Back
+        </a>
+        <button type="submit" onclick="return confirm('Are you absolutely sure you want to cancel this session? This action cannot be undone.');" 
+          class="flex-1 px-6 py-4 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold shadow-[0_0_20px_rgba(239,68,68,0.3)] transition active:scale-95 flex items-center justify-center">
+          Confirm Cancellation
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

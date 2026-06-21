@@ -59,11 +59,10 @@ INSTALLED_APPS = [
     'Mind_Mend',
     'rest_framework',
     'rest_framework.authtoken',
+    'widget_tweaks',
 ]
 if _HAS_CHANNELS:
     INSTALLED_APPS.append('channels')
-if _HAS_WIDGET_TWEAKS:
-    INSTALLED_APPS.append('widget_tweaks')
 
 # Django REST Framework
 REST_FRAMEWORK = {

@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Admin Revenue Dashboard - MindMend{% endblock %}
+
+{% block content %}
+<div class="min-h-screen bg-[#050b1a] relative overflow-hidden pt-4 md:pt-6 pb-20">
+  <!-- Glowing background elements -->
+  <div class="absolute top-0 right-1/4 w-[500px] h-[500px] bg-[#00d1b2]/5 rounded-full blur-[150px] animate-pulse pointer-events-none"></div>
+  <div class="absolute bottom-0 left-1/4 w-[400px] h-[400px] bg-purple-500/5 rounded-full blur-[120px] pointer-events-none"></div>
+
+  <div class="max-w-6xl mx-auto px-4 md:px-12 relative z-10">
+    <div class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-[10px] font-bold uppercase tracking-widest mb-4">👑 Superadmin Panel</div>
+        <h1 class="text-3xl md:text-5xl font-bold text-white mb-4">Revenue & Payouts</h1>
+        <p class="text-gray-400">Manage earnings, view platform analytics, and settle verified payouts.</p>
+      </div>
+      <div class="flex-shrink-0">
+        <a href="{% url 'admin_payout_history' %}" class="px-6 py-3 bg-[#0a1428]/80 hover:bg-white/10 border border-white/10 hover:border-white/20 text-white font-bold rounded-xl transition inline-flex items-center gap-2 shadow-xl">
+          <svg class="w-5 h-5 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Global Payout Ledger
+        </a>
+      </div>
+    </div>
+
+    <!-- Analytics Dashboard -->
+    <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
+      <div class="col-span-2 bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-5 shadow-xl">
+        <h3 class="text-gray-400 text-[10px] font-semibold uppercase tracking-widest mb-1">Today's Revenue</h3>
+        <div class="text-2xl font-bold text-[#00d1b2]">₹{{ today_revenue|floatformat:"2" }}</div>
+      </div>
+      <div class="col-span-2 bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-5 shadow-xl">
+        <h3 class="text-gray-400 text-[10px] font-semibold uppercase tracking-widest mb-1">Monthly Revenue</h3>
+        <div class="text-2xl font-bold text-white">₹{{ month_revenue|floatformat:"2" }}</div>
+      </div>
+      <div class="col-span-2 bg-gradient-to-br from-purple-500/20 to-transparent border border-purple-500/20 rounded-3xl p-5 shadow-xl">
+        <h3 class="text-purple-300 text-[10px] font-semibold uppercase tracking-widest mb-1">Total Platform Revenue</h3>
+        <div class="text-2xl font-bold text-purple-400">₹{{ total_platform_revenue|floatformat:"2" }}</div>
+      </div>
+      
+      <div class="col-span-2 bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-5 shadow-xl">
+        <h3 class="text-gray-400 text-[10px] font-semibold uppercase tracking-widest mb-1">Total Sessions</h3>
+        <div class="text-2xl font-bold text-white font-mono">{{ total_sessions }}</div>
+      </div>
+      <div class="col-span-2 bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-5 shadow-xl">
+        <h3 class="text-gray-400 text-[10px] font-semibold uppercase tracking-widest mb-1">Cancellation Rate</h3>
+        <div class="text-2xl font-bold text-red-400 font-mono">{{ cancellation_rate|floatformat:"1" }}%</div>
+      </div>
+      <div class="col-span-2 bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 rounded-3xl p-5 shadow-xl">
+        <h3 class="text-gray-400 text-[10px] font-semibold uppercase tracking-widest mb-1">Credits Issued</h3>
+        <div class="text-2xl font-bold text-orange-400 font-mono">₹{{ wallet_credits_issued|floatformat:"0" }}</div>
+      </div>
+    </div>
+
+    <!-- Payouts Table -->
+    <div class="bg-[#0a1428]/80 backdrop-blur-xl border border-white/10 rounded-[2rem] p-8 shadow-2xl flex flex-col">
+        <h3 class="text-xl font-bold text-white mb-6">Counsellor Payout Ledger</h3>
+        
+        <style>
+          .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+          .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); border-radius: 10px; }
+          .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(0, 209, 178, 0.3); border-radius: 10px; }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0, 209, 178, 0.5); }
+        </style>
+        
+        <div class="overflow-x-auto custom-scrollbar">
+          <table class="w-full text-left border-collapse">
+            <thead>
+              <tr class="border-b border-white/10 text-gray-400 text-xs uppercase tracking-widest bg-[#0a1428]">
+                <th class="pb-4 pt-2 font-semibold px-4 rounded-tl-xl">Counsellor</th>
+                <th class="pb-4 pt-2 font-semibold text-center">24h Hold</th>
+                <th class="pb-4 pt-2 font-semibold text-right">Cleared Earnings</th>
+                <th class="pb-4 pt-2 font-semibold text-right text-red-400">Deductions</th>
+                <th class="pb-4 pt-2 font-semibold text-right text-[#00d1b2]">Net Payout</th>
+                <th class="pb-4 pt-2 font-semibold text-right px-4 rounded-tr-xl">Action</th>
+              </tr>
+            </thead>
+            <tbody class="text-sm">
+              {% for data in counsellor_data %}
+              <tr class="border-b border-white/5 hover:bg-white/5 transition group">
+                <td class="py-6 px-4">
+                  <div class="flex items-center gap-4">
+                    {% if data.counsellor.profile_picture %}
+                      <img src="{{ data.counsellor.profile_picture.url }}" alt="{{ data.counsellor.name }}" class="w-10 h-10 rounded-full object-cover border border-white/10">
+                    {% else %}
+                      <div class="w-10 h-10 rounded-full bg-gray-700 border border-white/10 flex items-center justify-center text-gray-400 font-bold uppercase">{{ data.counsellor.name|slice:":1" }}</div>
+                    {% endif %}
+                    <div>
+                      <p class="text-white font-bold">{{ data.counsellor.name }}</p>
+                      <p class="text-xs text-gray-500">{{ data.counsellor.user.email }}</p>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-6 text-center">
+                  {% if data.pending_verification_amount > 0 %}
+                    <span class="inline-flex flex-col items-center justify-center px-3 py-1 rounded-lg bg-orange-500/10 border border-orange-500/20 text-orange-400 font-mono text-xs">
+                      ₹{{ data.pending_verification_amount|floatformat:"2" }}
+                      <span class="text-[9px] uppercase tracking-wider text-orange-400/70">{{ data.pending_count }} Sessions Locked</span>
+                    </span>
+                  {% else %}
+                    <span class="text-gray-600 font-mono text-xs">-</span>
+                  {% endif %}
+                </td>
+                <td class="py-6 text-right text-gray-300 font-mono">
+                  ₹{{ data.cleared_payout|floatformat:"2" }}
+                </td>
+                <td class="py-6 text-right font-mono flex flex-col justify-center items-end gap-1">
+                  {% if data.penalties > 0 %}
+                    <span class="text-red-400 text-[10px] uppercase tracking-widest border border-red-500/20 bg-red-500/10 px-2 py-0.5 rounded-md">Penalty: -₹{{ data.penalties|floatformat:"2" }}</span>
+                  {% endif %}
+                  {% if data.outstanding_debt > 0 %}
+                    <span class="text-orange-400 text-[10px] uppercase tracking-widest border border-orange-500/20 bg-orange-500/10 px-2 py-0.5 rounded-md">Debt: -₹{{ data.outstanding_debt|floatformat:"2" }}</span>
+                  {% endif %}
+                  {% if data.penalties <= 0 and data.outstanding_debt <= 0 %}
+                    <span class="text-gray-500">-</span>
+                  {% endif %}
+                </td>
+                <td class="py-6 text-right">
+                  {% if data.net_payout > 0 %}
+                    <div class="text-[#00d1b2] font-bold text-lg font-mono inline-block">
+                      ₹{{ data.net_payout|floatformat:"2" }}
+                    </div>
+                  {% else %}
+                    <span class="text-gray-500 font-mono">₹0.00</span>
+                  {% endif %}
+                </td>
+                <td class="py-6 px-4 text-right">
+                  {% if data.net_payout > 0 %}
+                  <button onclick="openModal('modal-{{ data.counsellor.id }}')" class="px-4 py-2 bg-[#00d1b2]/10 hover:bg-[#00d1b2] text-[#00d1b2] hover:text-black border border-[#00d1b2]/20 hover:border-[#00d1b2] rounded-lg text-xs font-bold uppercase tracking-widest transition-all duration-300">
+                    Settle
+                  </button>
+                  
+                  <!-- Settle Modal -->
+                  <div id="modal-{{ data.counsellor.id }}" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/80 backdrop-blur-sm opacity-0 transition-opacity duration-300 text-left">
+                    <div class="bg-[#0a1428] border border-white/10 rounded-3xl p-8 max-w-md w-full shadow-2xl scale-95 transition-transform duration-300" id="modal-content-{{ data.counsellor.id }}">
+                      <h3 class="text-xl font-bold text-white mb-2">Confirm Settlement</h3>
+                      <p class="text-sm text-gray-400 mb-6">You are about to permanently mark <strong class="text-white">₹{{ data.net_payout|floatformat:"2" }}</strong> as settled for {{ data.counsellor.name }}.</p>
+                      
+                      {% if data.bank_details %}
+                      <div class="bg-black/50 border border-white/5 rounded-xl p-4 mb-6 space-y-2">
+                        <p class="text-xs text-gray-500 uppercase tracking-widest font-semibold mb-2 border-b border-white/10 pb-2">Bank Details</p>
+                        <p class="text-sm text-gray-300"><span class="text-gray-500 w-24 inline-block">Name:</span> <span class="text-white">{{ data.bank_details.account_holder_name }}</span></p>
+                        <p class="text-sm text-gray-300"><span class="text-gray-500 w-24 inline-block">Bank:</span> <span class="text-white">{{ data.bank_details.bank_name }}</span></p>
+                        <p class="text-sm text-gray-300"><span class="text-gray-500 w-24 inline-block">Account:</span> <span class="text-white font-mono">{{ data.bank_details.account_number }}</span></p>
+                        <p class="text-sm text-gray-300"><span class="text-gray-500 w-24 inline-block">IFSC:</span> <span class="text-white font-mono">{{ data.bank_details.ifsc_code }}</span></p>
+                        {% if data.bank_details.upi_id %}
+                        <p class="text-sm text-gray-300 mt-2 pt-2 border-t border-white/5"><span class="text-gray-500 w-24 inline-block">UPI:</span> <span class="text-[#00d1b2] font-mono">{{ data.bank_details.upi_id }}</span></p>
+                        {% endif %}
+                      </div>
+                      <p class="text-xs text-orange-400 mb-6 italic">⚠️ Ensure you have transferred the funds to this account before confirming.</p>
+                      {% else %}
+                      <div class="bg-red-500/10 border border-red-500/20 rounded-xl p-4 mb-6">
+                        <p class="text-sm text-red-400"><strong>No Bank Details Provided!</strong><br>Please ask the counsellor to update their bank details on their Earnings Dashboard.</p>
+                      </div>
+                      {% endif %}
+
+                      <div class="flex gap-4">
+                        <button onclick="closeModal('modal-{{ data.counsellor.id }}')" class="flex-1 px-4 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl text-sm font-bold transition">Cancel</button>
+                        <form method="POST" action="{% url 'admin_mark_settled' data.counsellor.id %}" class="flex-1">
+                          {% csrf_token %}
+                          <button type="submit" class="w-full px-4 py-3 bg-[#00d1b2] hover:bg-[#00b09b] text-black rounded-xl text-sm font-bold transition">
+                            Confirm Settle
+                          </button>
+                        </form>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {% else %}
+                  <button disabled class="px-4 py-2 bg-white/5 text-gray-500 border border-white/5 rounded-lg text-xs font-bold uppercase tracking-widest cursor-not-allowed">
+                    All Settled
+                  </button>
+                  {% endif %}
+                </td>
+              </tr>
+              {% empty %}
+              <tr>
+                <td colspan="6" class="py-12 text-center text-gray-500">No active counsellors found.</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function openModal(id) {
+    const modal = document.getElementById(id);
+    const content = document.getElementById('modal-content-' + id.split('-')[1]);
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    setTimeout(() => {
+      modal.classList.remove('opacity-0');
+      content.classList.remove('scale-95');
+    }, 10);
+  }
+  
+  function closeModal(id) {
+    const modal = document.getElementById(id);
+    const content = document.getElementById('modal-content-' + id.split('-')[1]);
+    modal.classList.add('opacity-0');
+    content.classList.add('scale-95');
+    setTimeout(() => {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+    }, 300);
+  }
+</script>
+{% endblock %}
